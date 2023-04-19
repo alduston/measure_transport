@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def radial_kernel(x,x_tilde, l, sigma):
@@ -49,6 +50,7 @@ class TransportKernel(nn.Module):
         self.params = base_params
         self.X = torch.tensor(base_params['X'], device=self.device, dtype = self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+        self.N = len(self.X)
 
         self.fit_kernel = self.get_fit_kernel()
         self.fit_kXX = self.get_kXX(self.fit_kernel)
@@ -76,24 +78,23 @@ class TransportKernel(nn.Module):
         return nn.init.normal_(Lambda_0)
 
 
+    def get_kX1X2(self, kernel, X_1, X_2):
+        N_1 = len(X_1)
+        N_2 = len(X_2)
+        k_X1X2 = torch.zeros((N_1,N_2), device = self.device, dtype= self.dtype)
+        for i,xi in enumerate(X_1):
+            for j,xj in enumerate(X_2):
+                k_X1X2[i,j] += kernel(xi, xj)
+        return k_X1X2
+
     def get_kXX(self, kernel):
         X = self.X
-        N = len(X)
-        k_XX = torch.zeros((N,N), device = self.device, dtype= self.dtype)
-        for i,xi in enumerate(X):
-            for j,xj in enumerate(X):
-                k_XX[i,j] += kernel(xi, xj)
-        return k_XX
+        return self.get_kX1X2(kernel, X, X)
 
 
     def get_kXx(self, kernel, X_tilde):
         X = self.X
-        Kxx_list = []
-        for xj in X_tilde:
-            k_Xxj = torch.tensor([kernel(xi, xj) for xi in X], device = self.device, dtype = self.dtype)
-            Kxx_list.append(k_Xxj)
-        k_Xx = torch.stack(Kxx_list)
-        return k_Xx
+        return self.get_kX1X2(kernel, X, X_tilde)
 
 
     def map(self, x):
@@ -107,9 +108,25 @@ class TransportKernel(nn.Module):
         Y = self.Y
         Lambda  = self.Lambda
         diff_vec =  fit_kXX @ Lambda - Y
-
         return torch.trace(diff_vec.T @ mmd_kXX @ diff_vec)
 
+    def loss_fit2(self):
+        Y = self.Y
+        Lambda  = self.Lambda
+        fit_kXX = self.fit_kXX
+        N = self.N
+        mmd_kernel = self.mmd_kernel
+
+        fit_loss = 0
+        V = fit_kXX @ Lambda
+
+        for i in range(N):
+            for j in range(N):
+                v_i = V[i]
+                v_j = V[j]
+                y_j = Y[j]
+                fit_loss += mmd_kernel(v_i,v_j) - 2*mmd_kernel(v_i, y_j)
+        return fit_loss
 
     def loss_reg(self):
         fit_kXX = self.fit_kXX
@@ -121,7 +138,7 @@ class TransportKernel(nn.Module):
         loss_fit = self.loss_fit()
         loss_reg  = self.loss_reg()
 
-        loss = self.loss_fit() + self.loss_reg()
+        loss = self.loss_fit2() + self.loss_reg()
         loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
         return loss, loss_dict
 

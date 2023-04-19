@@ -3,6 +3,7 @@ import torch
 import numpy as np
 from transport_kernel import TransportKernel, get_kernel
 import matplotlib.pyplot as plt
+import random
 
 
 def clear_plt():
@@ -48,7 +49,7 @@ def update_list_dict(Dict, update):
     return Dict
 
 
-def train_kernel_transport(kernel_model, n_iters = 20000):
+def train_kernel_transport(kernel_model, n_iters = 5000):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr=kernel_model.params['learning_rate'])
     Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
     kernel_model.train()
@@ -83,7 +84,6 @@ def sample_hmap(sample, save_loc, bins = 10, d = 2):
     return True
 
 
-
 def run():
     X = sample_uniform(N = 200, d = 1)
     Y = sample_normal(N = 200, d = 1)
@@ -91,18 +91,23 @@ def run():
     sample_hmap(X, '../data/X_hmap.png', d = 1)
     sample_hmap(Y, '../data/Y_hmap.png', d = 1)
 
-    fit_kernel_params = {'name': 'radial', 'l': 1, 'sigma': 1}
-    mmd_kernel_params = {'name': 'radial', 'l': 1, 'sigma': 1}
+    fit_kernel_params = {'name': 'radial', 'l': 10, 'sigma': 1}
+    mmd_kernel_params = {'name': 'radial', 'l': 10, 'sigma': 1}
 
     model_params = {'X': X, 'Y': Y, 'fit_kernel_params': fit_kernel_params, 'mmd_kernel_params': mmd_kernel_params,
-                    'reg_lambda': 1, 'print_freq': 100, 'learning_rate':.001}
+                    'reg_lambda': 1, 'print_freq': 1, 'learning_rate':.001}
 
     kernel_model = TransportKernel(model_params)
     train_kernel_transport(kernel_model)
 
-    X_tilde = sample_uniform(200, d = 1)
+    #X_tilde = sample_uniform(200, d = 1)
     Y_tilde = kernel_model.map(X).detach().cpu().numpy()
     sample_hmap(Y_tilde, '../data/Y_tilde_hmap.png', d = 1)
+
+
+
+
+
 
 if __name__=='__main__':
     run()
