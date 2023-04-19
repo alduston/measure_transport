@@ -56,7 +56,7 @@ class TransportKernel(nn.Module):
 
         self.fit_kernel = self.get_fit_kernel()
         self.fit_kXX = self.get_kXX(self.fit_kernel)
-        nugget_matrix = self.nugget * torch.eye(self.N,device=self.device, dtype = self.dtype)
+        nugget_matrix = self.nugget * torch.eye(self.N ,device=self.device, dtype = self.dtype)
         self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + nugget_matrix)
 
         self.mmd_kernel = self.get_mmd_kernel()
@@ -156,7 +156,7 @@ class TransportKernel(nn.Module):
 
 
     def loss_reg_z(self):
-        fit_kXX_inv =  self.fit_kXX_inv +
+        fit_kXX_inv =  self.fit_kXX_inv
         Z = self.Z
         return self.params['reg_lambda'] * torch.trace(Z.T @ fit_kXX_inv @ Z)
 

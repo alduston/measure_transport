@@ -96,7 +96,7 @@ def run():
     mmd_kernel_params = {'name': 'radial', 'l': 10, 'sigma': 1}
 
     model_params = {'X': X, 'Y': Y, 'fit_kernel_params': fit_kernel_params, 'mmd_kernel_params': mmd_kernel_params,
-                    'reg_lambda': 1, 'print_freq': 1, 'learning_rate':.001}
+                    'reg_lambda': 1, 'print_freq': 1, 'learning_rate':.001, 'nugget': .1}
 
     kernel_model = TransportKernel(model_params)
     train_kernel_transport(kernel_model)
