@@ -2,6 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
 
 def radial_kernel(x,x_tilde, l, sigma):
@@ -51,15 +52,19 @@ class TransportKernel(nn.Module):
         self.X = torch.tensor(base_params['X'], device=self.device, dtype = self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
         self.N = len(self.X)
+        self.nugget = self.params['nugget']
 
         self.fit_kernel = self.get_fit_kernel()
         self.fit_kXX = self.get_kXX(self.fit_kernel)
+        nugget_matrix = self.nugget * torch.eye(self.N,device=self.device, dtype = self.dtype)
+        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + nugget_matrix)
 
         self.mmd_kernel = self.get_mmd_kernel()
         self.mmd_kXX = self.get_kXX(self.mmd_kernel)
 
         self.iters = 0
-        self.Lambda = nn.Parameter(self.init_Lambda(), requires_grad=True)
+        #self.Lambda = nn.Parameter(self.init_Lambda(), requires_grad=True)
+        self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
 
 
     def get_fit_kernel(self):
@@ -70,6 +75,10 @@ class TransportKernel(nn.Module):
     def get_mmd_kernel(self):
         kernel_params = self.params['mmd_kernel_params']
         return get_kernel(kernel_params, device = self.device, dtype= self.dtype)
+
+
+    def init_Z(self):
+        return deepcopy(self.Y)
 
 
     def init_Lambda(self):
@@ -101,6 +110,10 @@ class TransportKernel(nn.Module):
         x = torch.tensor(x, device = self.device, dtype = self.dtype)
         return self.get_kXx(self.fit_kernel, x) @ self.Lambda
 
+    def map_z(self, x):
+        Lambda = self.Z @ self.self.fit_kXX_inv
+        return self.get_kXx(self.fit_kernel, x) @ Lambda
+
 
     def loss_fit(self):
         fit_kXX = self.fit_kXX
@@ -109,6 +122,13 @@ class TransportKernel(nn.Module):
         Lambda  = self.Lambda
         diff_vec =  fit_kXX @ Lambda - Y
         return torch.trace(diff_vec.T @ mmd_kXX @ diff_vec)
+
+
+    def loss_fit_z(self):
+        k_ZZ = self.get_kX1X2(self.mmd_kernel, self.Z, self.Z)
+        k_ZY = self.get_kX1X2(self.mmd_kernel, self.Z, self.Y)
+        return torch.linalg.norm(k_ZZ)**2 - 2*(torch.linalg.norm(k_ZY)**2)
+
 
     def loss_fit2(self):
         Y = self.Y
@@ -128,10 +148,17 @@ class TransportKernel(nn.Module):
                 fit_loss += mmd_kernel(v_i,v_j) - 2*mmd_kernel(v_i, y_j)
         return fit_loss
 
+
     def loss_reg(self):
         fit_kXX = self.fit_kXX
         Lambda = self.Lambda
         return self.params['reg_lambda'] * torch.trace(Lambda.T @ fit_kXX @ Lambda)
+
+
+    def loss_reg_z(self):
+        fit_kXX_inv =  self.fit_kXX_inv +
+        Z = self.Z
+        return self.params['reg_lambda'] * torch.trace(Z.T @ fit_kXX_inv @ Z)
 
 
     def loss(self):
@@ -139,6 +166,14 @@ class TransportKernel(nn.Module):
         loss_reg  = self.loss_reg()
 
         loss = self.loss_fit2() + self.loss_reg()
+        loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
+        return loss, loss_dict
+
+    def loss_z(self):
+        loss_fit = self.loss_fit_z()
+        loss_reg  = self.loss_reg_z()
+
+        loss = loss_fit + loss_reg
         loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
         return loss, loss_dict
 

@@ -63,7 +63,8 @@ def train_kernel_transport(kernel_model, n_iters = 5000):
 
 def train_step(kernel_model, optimizer):
     optimizer.zero_grad()
-    loss, loss_dict = kernel_model.loss()
+    #loss, loss_dict = kernel_model.loss()
+    loss, loss_dict = kernel_model.loss_z()
     loss.backward()
     optimizer.step()
 
