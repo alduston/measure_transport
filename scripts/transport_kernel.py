@@ -7,8 +7,8 @@ import time
 
 
 def fast_k_matrix(X,X_tilde):
-    res = torch.norm(X.unsqueeze(1) - X_tilde, dim=2, p=1)
-    return res
+    return torch.norm(X.unsqueeze(1) - X_tilde, dim=2, p=1)
+
 
 def radial_kernel(x,x_tilde, l, sigma):
     return (sigma**2) * torch.exp(-torch.linalg.norm(x-x_tilde)**2/(2*(l**2)))
@@ -135,8 +135,8 @@ class TransportKernel(nn.Module):
     def map_z(self, x):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda =  self.fit_kXX_inv.T @ self.Z
-        return Lambda.T @ self.get_kXx(self.fit_kernel, x)
 
+        return Lambda.T @ self.get_kXx(self.fit_kernel, x)
 
 
     def loss_fit(self):
@@ -192,6 +192,7 @@ class TransportKernel(nn.Module):
         loss = self.loss_fit2() + self.loss_reg()
         loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
         return loss, loss_dict
+
 
     def loss_z(self):
         loss_fit = self.loss_fit_z()
