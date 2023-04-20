@@ -61,8 +61,8 @@ def train_kernel_transport(kernel_model, n_iters = 500):
         if not i % kernel_model.params['print_freq']:
             print(f'At step {i}: fit_loss = {round(float(loss_dict["fit"]),2)}, reg_loss = {round(float(loss_dict["reg"]),2)}')
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
-        if not i % 5:
-            sample_hmap(kernel_model.Z.detach(),'../data/Y_tilde_hmap.png', d = 1)
+        if not i % 10:
+            sample_hmap(kernel_model.Z.detach().cpu().numpy(),'../data/Y_tilde_hmap.png', d = 2)
 
     return kernel_model, Loss_dict
 
@@ -92,8 +92,8 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2):
 
 
 def run():
-    X = sample_uniform(N = 1000, d = 2)
-    Y = sample_normal(N = 1000, d = 2)
+    X = sample_uniform(N = 500, d = 2)
+    Y = sample_normal(N = 500, d = 2)
 
 
     sample_hmap(X, '../data/X_hmap.png', d = 2)
@@ -110,7 +110,7 @@ def run():
 
     X_tilde = sample_uniform(50000, d = 2)
     Y_tilde = kernel_model.map_z(X_tilde).detach().cpu().numpy()
-    sample_hmap(Y_tilde, '../data/Y_tilde_hmap_2.png', d = 1, bins = 30)
+    sample_hmap(Y_tilde.T, '../data/Y_tilde_hmap_2.png', d = 2, bins = 30)
 
 
 
