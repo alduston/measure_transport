@@ -9,10 +9,6 @@ def fast_k_matrix(X,X_tilde):
     res = torch.norm(X.unsqueeze(1) - X_tilde, dim=2, p=1)
     return res
 
-
-
-
-
 def radial_kernel(x,x_tilde, l, sigma):
     return (sigma**2) * torch.exp(-torch.linalg.norm(x-x_tilde)**2/(2*(l**2)))
 
@@ -144,7 +140,7 @@ class TransportKernel(nn.Module):
     def loss_fit_z(self):
         k_ZZ = self.get_kX1X2(self.mmd_kernel, self.Z, self.Z)
         k_ZY = self.get_kX1X2(self.mmd_kernel, self.Z, self.Y)
-        return torch.linalg.norm(k_ZZ)**2 - 2*(torch.linalg.norm(k_ZY)**2)
+        return torch.sum(k_ZZ) - 2*(torch.sum(k_ZY))
 
 
     def loss_fit2(self):
