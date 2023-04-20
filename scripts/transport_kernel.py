@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import deepcopy
+import time
 
 
 def fast_k_matrix(X,X_tilde):
@@ -71,7 +72,10 @@ class TransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
 
 
-    def rad_kernel(self, norm_diffs, l = 1, sigma = 1):
+    def rad_kernel(self, norm_diffs, kern_params):
+        l =  kern_params['l']
+        sigma = kern_params['sigma']
+        (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
         return (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
 
 
@@ -86,7 +90,7 @@ class TransportKernel(nn.Module):
 
 
     def init_Z(self):
-        return deepcopy(self.Y)
+        return self.X.detach()
 
 
     def init_Lambda(self):
@@ -94,9 +98,14 @@ class TransportKernel(nn.Module):
         Lambda_0 = torch.zeros(N,d, device = self.device, dtype= self.dtype)
         return nn.init.normal_(Lambda_0)
 
-    def get_rad_kX1X2(self, X_1, X_2):
+
+    def get_rad_kX1X2(self, X_1, X_2, kern = 'fit'):
+        if kern == 'fit':
+            kern_params = self.params['fit_kernel_params']
+        elif kern == 'mmd':
+            kern_params = self.params['mmd_kernel_params']
         k_X1X2 = fast_k_matrix(X_1,X_2)
-        return self.rad_kernel(k_X1X2)
+        return self.rad_kernel(k_X1X2, kern_params)
 
     def get_kX1X2(self, kernel, X_1, X_2):
         N_1 = len(X_1)
@@ -129,6 +138,7 @@ class TransportKernel(nn.Module):
         return Lambda.T @ self.get_kXx(self.fit_kernel, x)
 
 
+
     def loss_fit(self):
         fit_kXX = self.fit_kXX
         mmd_kXX = self.mmd_kXX
@@ -139,8 +149,8 @@ class TransportKernel(nn.Module):
 
 
     def loss_fit_z(self):
-        k_ZZ = self.get_kX1X2(self.mmd_kernel, self.Z, self.Z)
-        k_ZY = self.get_kX1X2(self.mmd_kernel, self.Z, self.Y)
+        k_ZZ = self.get_rad_kX1X2(self.Z, self.Z, kern = 'mmd')
+        k_ZY = self.get_rad_kX1X2(self.Z, self.Y, kern = 'mmd')
         return torch.sum(k_ZZ) - 2*(torch.sum(k_ZY))
 
 
