@@ -26,6 +26,17 @@ def sample_normal(N = 100, d = 2):
     return X_sample
 
 
+def sample_2normal(N = 100, d = 2):
+    mu_1 = np.ones(d)
+    mu_2 =  - mu_1
+    sigma = np.identity(d)
+    X_1 = np.random.multivariate_normal(mu_1, sigma, N)
+    X_2 = np.random.multivariate_normal(mu_2, sigma, N)
+    X_sample = X_1 + X_2
+    return X_sample
+
+
+
 def sample_uniform(N = 100,  d = 2, l = -1, h = 1):
     Y = []
     for i in range(d):
@@ -52,9 +63,9 @@ def update_list_dict(Dict, update):
     return Dict
 
 
-def train_kernel_transport(kernel_model, n_iters = 500):
+def train_kernel_transport(kernel_model, n_iters = 200):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr=kernel_model.params['learning_rate'])
-    Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
+    Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'var': [], 'total': []}
     kernel_model.train()
     for i in range(n_iters):
         loss, loss_dict = train_step(kernel_model, optimizer)
@@ -62,7 +73,7 @@ def train_kernel_transport(kernel_model, n_iters = 500):
             print(f'At step {i}: fit_loss = {round(float(loss_dict["fit"]),2)}, reg_loss = {round(float(loss_dict["reg"]),2)}')
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
         if not i % 10:
-            sample_hmap(kernel_model.Z.detach().cpu().numpy(),'../data/Y_tilde_hmap.png', d = 2)
+            sample_hmap(kernel_model.Z.detach().cpu().numpy(),'../data/Y_tilde_hmap.png', d = 1)
 
     return kernel_model, Loss_dict
 
@@ -92,25 +103,28 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2):
 
 
 def run():
-    X = sample_uniform(N = 500, d = 2)
-    Y = sample_normal(N = 500, d = 2)
+    X = sample_uniform(N = 500, d = 1)
+    Y = sample_normal(N = 500, d = 1)
+    X_tilde = sample_uniform(1000, d=1)
+
+    #l = l_scale(torch.tensor(X))
 
 
-    sample_hmap(X, '../data/X_hmap.png', d = 2)
-    sample_hmap(Y, '../data/Y_hmap.png', d = 2)
+    sample_hmap(X, '../data/X_hmap.png', d = 1)
+    sample_hmap(Y, '../data/Y_hmap.png', d = 1)
 
-    fit_kernel_params = {'name': 'radial', 'l': .03, 'sigma': 1}
+    fit_kernel_params = {'name': 'radial', 'l': .05, 'sigma': 1}
     mmd_kernel_params = {'name': 'radial', 'l': .02, 'sigma': 1}
 
     model_params = {'X': X, 'Y': Y, 'fit_kernel_params': fit_kernel_params, 'mmd_kernel_params': mmd_kernel_params,
-                    'reg_lambda': 10, 'print_freq': 1, 'learning_rate':.05, 'nugget': .1}
+                    'reg_lambda': 10, 'print_freq': 1, 'learning_rate':.05, 'nugget': .1, 'X_tilde': X_tilde}
 
     kernel_model = TransportKernel(model_params)
     train_kernel_transport(kernel_model)
 
-    X_tilde = sample_uniform(50000, d = 2)
+    X_tilde = sample_uniform(500000, d = 1)
     Y_tilde = kernel_model.map_z(X_tilde).detach().cpu().numpy()
-    sample_hmap(Y_tilde.T, '../data/Y_tilde_hmap_2.png', d = 2, bins = 30)
+    sample_hmap(Y_tilde.T, '../data/Y_tilde_hmap_2.png', d = 1, bins = 20)
 
 
 

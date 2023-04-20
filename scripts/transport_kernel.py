@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import deepcopy
+from copy import copy, deepcopy
 import time
 
 
@@ -56,13 +56,16 @@ class TransportKernel(nn.Module):
         self.params = base_params
         self.X = torch.tensor(base_params['X'], device=self.device, dtype = self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+        self.X_tilde = torch.tensor(base_params['Y'], device=self.device, dtype=self.dtype)
         self.N = len(self.X)
         self.nugget = self.params['nugget']
+        self.init_kernel_params()
+        self.detach_l = True
 
         self.fit_kernel = self.get_fit_kernel()
         self.fit_kXX = self.get_kXX(self.fit_kernel)
-        nugget_matrix = self.nugget * torch.eye(self.N ,device=self.device, dtype = self.dtype)
-        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + nugget_matrix)
+        self.nugget_matrix = self.nugget * torch.eye(self.N ,device=self.device, dtype = self.dtype)
+        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
 
         self.mmd_kernel = self.get_mmd_kernel()
         self.mmd_kXX = self.get_kXX(self.mmd_kernel)
@@ -72,10 +75,15 @@ class TransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
 
 
-    def rad_kernel(self, norm_diffs, kern_params):
-        l =  kern_params['l']
+    def init_kernel_params(self):
+        l_fit = torch.tensor(self.params['fit_kernel_params']['l'], device=self.device, dtype = self.dtype)
+        l_mmd = torch.tensor(self.params['mmd_kernel_params']['l'], device=self.device, dtype=self.dtype)
+        self.l_fit = l_fit
+        self.l_mmd = l_mmd
+        return True
+
+    def rad_kernel(self, norm_diffs, kern_params, l):
         sigma = kern_params['sigma']
-        (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
         return (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
 
 
@@ -100,17 +108,17 @@ class TransportKernel(nn.Module):
 
 
     def get_rad_kX1X2(self, X_1, X_2, kern = 'fit'):
+        k_X1X2 = fast_k_matrix(X_1,X_2)
         if kern == 'fit':
             kern_params = self.params['fit_kernel_params']
+            return self.rad_kernel(k_X1X2, kern_params, self.l_fit)
         elif kern == 'mmd':
             kern_params = self.params['mmd_kernel_params']
-        k_X1X2 = fast_k_matrix(X_1,X_2)
-        return self.rad_kernel(k_X1X2, kern_params)
+            return self.rad_kernel(k_X1X2, kern_params, self.l_mmd)
+
 
     def get_kX1X2(self, kernel, X_1, X_2):
-        N_1 = len(X_1)
-        N_2 = len(X_2)
-        k_X1X2 = torch.zeros((N_1,N_2), device = self.device, dtype= self.dtype)
+        k_X1X2 = torch.zeros((len(X_1),len(X_2)), device = self.device, dtype= self.dtype)
         for i,xi in enumerate(X_1):
             for j,xj in enumerate(X_2):
                 k_X1X2[i,j] += kernel(xi, xj)
@@ -118,24 +126,22 @@ class TransportKernel(nn.Module):
 
     def get_kXX(self, kernel):
         X = self.X
-        #return self.get_kX1X2(kernel, X, X)
-        return self.get_rad_kX1X2( X, X)
+        return self.get_rad_kX1X2(X, X)
 
 
     def get_kXx(self, kernel, X_tilde):
         X = self.X
         return self.get_rad_kX1X2(X, X_tilde)
-        #return self.get_kX1X2(kernel, X, X_tilde)
 
 
     def map(self, x):
         x = torch.tensor(x, device = self.device, dtype = self.dtype)
         return self.get_kXx(self.fit_kernel, x) @ self.Lambda
 
+
     def map_z(self, x):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda =  self.fit_kXX_inv.T @ self.Z
-
         return Lambda.T @ self.get_kXx(self.fit_kernel, x)
 
 
@@ -185,6 +191,18 @@ class TransportKernel(nn.Module):
         return self.params['reg_lambda'] * torch.trace(Z.T @ fit_kXX_inv @ Z)
 
 
+    def loss_var(self):
+        self.detach_l = False
+        X_tilde = self.X_tilde
+        Y_tilde = self.map_z(X_tilde).T
+        Y = self.Y
+        in_var = .5 * (torch.sum(fast_k_matrix(Y_tilde,Y_tilde)) + torch.sum(fast_k_matrix(Y,Y)))
+        Y_combined = torch.concat([Y_tilde, Y])
+        out_var =  torch.sum(fast_k_matrix(Y_combined,Y_combined))
+        self.detach_l = True
+        return 1e-4 * (out_var - in_var)
+
+
     def loss(self):
         loss_fit = self.loss_fit()
         loss_reg  = self.loss_reg()
@@ -197,9 +215,8 @@ class TransportKernel(nn.Module):
     def loss_z(self):
         loss_fit = self.loss_fit_z()
         loss_reg  = self.loss_reg_z()
-
         loss = loss_fit + loss_reg
-        loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
+        loss_dict = {'fit': loss_fit.detach().cpu(),'reg': loss_reg.detach().cpu(),'total': loss.detach().cpu()}
         return loss, loss_dict
 
 
