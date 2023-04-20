@@ -124,8 +124,9 @@ class TransportKernel(nn.Module):
         return self.get_kXx(self.fit_kernel, x) @ self.Lambda
 
     def map_z(self, x):
-        Lambda = self.Z @ self.self.fit_kXX_inv
-        return self.get_kXx(self.fit_kernel, x) @ Lambda
+        x = torch.tensor(x, device=self.device, dtype=self.dtype)
+        Lambda =  self.fit_kXX_inv.T @ self.Z
+        return Lambda.T @ self.get_kXx(self.fit_kernel, x)
 
 
     def loss_fit(self):
