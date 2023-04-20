@@ -5,6 +5,14 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 
 
+def fast_k_matrix(X,X_tilde):
+    res = torch.norm(X.unsqueeze(1) - X_tilde, dim=2, p=1)
+    return res
+
+
+
+
+
 def radial_kernel(x,x_tilde, l, sigma):
     return (sigma**2) * torch.exp(-torch.linalg.norm(x-x_tilde)**2/(2*(l**2)))
 
@@ -67,6 +75,10 @@ class TransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
 
 
+    def rad_kernel(self, norm_diffs, l = 1, sigma = 1):
+        return (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
+
+
     def get_fit_kernel(self):
         kernel_params = self.params['fit_kernel_params']
         return get_kernel(kernel_params, device = self.device, dtype= self.dtype)
@@ -86,6 +98,9 @@ class TransportKernel(nn.Module):
         Lambda_0 = torch.zeros(N,d, device = self.device, dtype= self.dtype)
         return nn.init.normal_(Lambda_0)
 
+    def get_rad_kX1X2(self, X_1, X_2):
+        k_X1X2 = fast_k_matrix(X_1,X_2)
+        return self.rad_kernel(k_X1X2)
 
     def get_kX1X2(self, kernel, X_1, X_2):
         N_1 = len(X_1)
@@ -98,12 +113,14 @@ class TransportKernel(nn.Module):
 
     def get_kXX(self, kernel):
         X = self.X
-        return self.get_kX1X2(kernel, X, X)
+        #return self.get_kX1X2(kernel, X, X)
+        return self.get_rad_kX1X2( X, X)
 
 
     def get_kXx(self, kernel, X_tilde):
         X = self.X
-        return self.get_kX1X2(kernel, X, X_tilde)
+        return self.get_rad_kX1X2(X, X_tilde)
+        #return self.get_kX1X2(kernel, X, X_tilde)
 
 
     def map(self, x):
