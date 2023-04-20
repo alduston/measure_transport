@@ -37,7 +37,7 @@ def sample_2normal(N = 100, d = 2):
 
 
 
-def sample_uniform(N = 100,  d = 2, l = -1, h = 1):
+def sample_uniform(N = 100,  d = 2, l = -1.5, h = 1.5):
     Y = []
     for i in range(d):
         yi = np.random.uniform(l,h, N)
@@ -103,9 +103,9 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2):
 
 
 def run():
-    X = sample_uniform(N = 500, d = 1)
-    Y = sample_normal(N = 500, d = 1)
-    X_tilde = sample_uniform(1000, d=1)
+    X = sample_uniform(N = 2000, d = 1)
+    Y = sample_2normal(N = 2000, d = 1)
+    X_tilde = sample_uniform(2000, d=1)
 
     #l = l_scale(torch.tensor(X))
 
