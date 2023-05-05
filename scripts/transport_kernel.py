@@ -6,21 +6,35 @@ from copy import copy, deepcopy
 import time
 
 
-def fast_k_matrix(X,X_tilde):
+def l_scale(X):
+    if X.shape[1] > 1:
+        return torch.quantile(k_matrix(X,X), q = .25, dim= 0)
+    return torch.quantile(k_matrix(X, X), q=.25)
+    #return torch.median(k_matrix(X,X))
+
+
+def k_matrix(X,X_tilde):
     return torch.norm(X.unsqueeze(1) - X_tilde, dim=2, p=1)
 
 
-def radial_kernel(x,x_tilde, l, sigma):
-    return (sigma**2) * torch.exp(-torch.linalg.norm(x-x_tilde)**2/(2*(l**2)))
+def radial_kernel(X, X_tilde, kern_params):
+    norm_diffs = k_matrix(X, X_tilde)
+    sigma = kern_params['sigma']
+    l = kern_params['l']
+    return (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
 
 
-def linear_kernel(x, x_tilde, sig_b, sig_v, c):
-    return sig_b**2 + (sig_v**2)*torch.inner(x-c, x_tilde-c)
+def linear_kernel(X, X_tilde, kern_params):
+    sig_b = kern_params['sig_b']
+    sig_v = kern_params['sig_v']
+    c = kern_params['c']
+    return sig_b**2 + (sig_v**2)*torch.matmul(X-c, (X_tilde-c).T)
 
 
-def poly_kernel(x, x_tilde, l, sigma, alpha):
-    inner_val = 1 + (torch.linalg.norm(x-x_tilde)**2)/(2*alpha*(l**2))
-    return (sigma**2)*torch.exp(torch.log(inner_val) * -alpha)
+def poly_kernel(X, X_tilde, kern_params):
+    c = kern_params['c']
+    alpha = kern_params['alpha']
+    return (c + torch.matmul(X, X_tilde.T))**alpha
 
 
 def get_kernel(kernel_params, device, dtype = torch.float32):
@@ -30,15 +44,18 @@ def get_kernel(kernel_params, device, dtype = torch.float32):
             kernel_params[key] = torch.tensor(val, device = device, dtype = dtype)
 
     if kernel_name == 'radial':
-        sigma = kernel_params['sigma']
-        l = kernel_params['l']
-        return lambda x,x_tilde: radial_kernel(x,x_tilde, l, sigma)
+        return lambda x,x_tilde: radial_kernel(x,x_tilde, kernel_params)
 
-    elif kernel_name == 'linear':
-        sig_b = kernel_params['sig_b']
-        sig_v = kernel_params['sig_v']
-        c = kernel_params['c']
-        return lambda x,x_tilde: linear_kernel(x, x_tilde, sig_b, sig_v, c)
+    elif kernel_name == 'poly':
+        return lambda x, x_tilde: poly_kernel(x, x_tilde, kernel_params)
+
+    elif  kernel_name == 'linear':
+        return lambda x, x_tilde: linear_kernel(x, x_tilde, kernel_params)
+
+def normalize(tensor):
+    normal_tensor = tensor - torch.mean(tensor, dim=0)
+    normal_tensor = normal_tensor/torch.var(normal_tensor, dim = 0)
+    return normal_tensor
 
 
 class TransportKernel(nn.Module):
@@ -54,167 +71,57 @@ class TransportKernel(nn.Module):
         self.dtype = torch.float32
         base_params['device'] = self.device
         self.params = base_params
-        self.X = torch.tensor(base_params['X'], device=self.device, dtype = self.dtype)
-        self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
-        self.X_tilde = torch.tensor(base_params['Y'], device=self.device, dtype=self.dtype)
+
+        self.X = normalize(torch.tensor(base_params['X'], device=self.device, dtype = self.dtype))
+        self.Y = normalize(torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype))
+
         self.N = len(self.X)
-        self.nugget = self.params['nugget']
-        self.init_kernel_params()
-        self.detach_l = True
 
-        self.fit_kernel = self.get_fit_kernel()
-        self.fit_kXX = self.get_kXX(self.fit_kernel)
-        self.nugget_matrix = self.nugget * torch.eye(self.N ,device=self.device, dtype = self.dtype)
+
+        self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
+        self.fit_kXX = self.fit_kernel(self.X, self.X)
+        self.nugget_matrix = self.params['nugget'] * torch.eye(self.N ,device=self.device, dtype = self.dtype)
+
         self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
-
-        self.mmd_kernel = self.get_mmd_kernel()
-        self.mmd_kXX = self.get_kXX(self.mmd_kernel)
+        self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
+        self.mmd_kXX = self.mmd_kernel(self.X, self.X)
 
         self.iters = 0
-        #self.Lambda = nn.Parameter(self.init_Lambda(), requires_grad=True)
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
 
 
-    def init_kernel_params(self):
-        l_fit = torch.tensor(self.params['fit_kernel_params']['l'], device=self.device, dtype = self.dtype)
-        l_mmd = torch.tensor(self.params['mmd_kernel_params']['l'], device=self.device, dtype=self.dtype)
-        self.l_fit = l_fit
-        self.l_mmd = l_mmd
-        return True
-
-    def rad_kernel(self, norm_diffs, kern_params, l):
-        sigma = kern_params['sigma']
-        return (sigma ** 2) * torch.exp(-norm_diffs ** 2 / (2 * (l ** 2)))
-
-
-    def get_fit_kernel(self):
-        kernel_params = self.params['fit_kernel_params']
-        return get_kernel(kernel_params, device = self.device, dtype= self.dtype)
-
-
-    def get_mmd_kernel(self):
-        kernel_params = self.params['mmd_kernel_params']
-        return get_kernel(kernel_params, device = self.device, dtype= self.dtype)
-
+    def init_alpha(self):
+        return torch.tensor([0], device = self.device, dtype = self.dtype)
 
     def init_Z(self):
-        return self.X.detach()
-
-
-    def init_Lambda(self):
-        N,d = self.X.shape
-        Lambda_0 = torch.zeros(N,d, device = self.device, dtype= self.dtype)
-        return nn.init.normal_(Lambda_0)
-
-
-    def get_rad_kX1X2(self, X_1, X_2, kern = 'fit'):
-        k_X1X2 = fast_k_matrix(X_1,X_2)
-        if kern == 'fit':
-            kern_params = self.params['fit_kernel_params']
-            return self.rad_kernel(k_X1X2, kern_params, self.l_fit)
-        elif kern == 'mmd':
-            kern_params = self.params['mmd_kernel_params']
-            return self.rad_kernel(k_X1X2, kern_params, self.l_mmd)
-
-
-    def get_kX1X2(self, kernel, X_1, X_2):
-        k_X1X2 = torch.zeros((len(X_1),len(X_2)), device = self.device, dtype= self.dtype)
-        for i,xi in enumerate(X_1):
-            for j,xj in enumerate(X_2):
-                k_X1X2[i,j] += kernel(xi, xj)
-        return k_X1X2
-
-    def get_kXX(self, kernel):
-        X = self.X
-        return self.get_rad_kX1X2(X, X)
-
-
-    def get_kXx(self, kernel, X_tilde):
-        X = self.X
-        return self.get_rad_kX1X2(X, X_tilde)
+        return torch.zeros(self.X.shape)
 
 
     def map(self, x):
-        x = torch.tensor(x, device = self.device, dtype = self.dtype)
-        return self.get_kXx(self.fit_kernel, x) @ self.Lambda
-
-
-    def map_z(self, x):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
-        Lambda =  self.fit_kXX_inv.T @ self.Z
-        return Lambda.T @ self.get_kXx(self.fit_kernel, x)
+        Lambda =  self.fit_kXX_inv @ self.Z
+        return (Lambda.T @ self.fit_kernel(self.X, x) + x.T)
 
 
     def loss_fit(self):
-        fit_kXX = self.fit_kXX
-        mmd_kXX = self.mmd_kXX
-        Y = self.Y
-        Lambda  = self.Lambda
-        diff_vec =  fit_kXX @ Lambda - Y
-        return torch.trace(diff_vec.T @ mmd_kXX @ diff_vec)
-
-
-    def loss_fit_z(self):
-        k_ZZ = self.get_rad_kX1X2(self.Z, self.Z, kern = 'mmd')
-        k_ZY = self.get_rad_kX1X2(self.Z, self.Y, kern = 'mmd')
-        return torch.sum(k_ZZ) - 2*(torch.sum(k_ZY))
-
-
-    def loss_fit2(self):
-        Y = self.Y
-        Lambda  = self.Lambda
-        fit_kXX = self.fit_kXX
-        N = self.N
-        mmd_kernel = self.mmd_kernel
-
-        fit_loss = 0
-        V = fit_kXX @ Lambda
-
-        for i in range(N):
-            for j in range(N):
-                v_i = V[i]
-                v_j = V[j]
-                y_j = Y[j]
-                fit_loss += mmd_kernel(v_i,v_j) - 2*mmd_kernel(v_i, y_j)
-        return fit_loss
+        mapp_vec = self.Z + self.X
+        k_ZZ = self.mmd_kernel(mapp_vec, mapp_vec)
+        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
+        k_ZY =  self.mmd_kernel(mapp_vec, self.Y)
+        k_YY = self.mmd_kernel(self.Y, self.Y)
+        normal_factor = self.N/(self.N-1)
+        return torch.log(1 + (normal_factor * torch.mean(k_ZZ + k_YY) - 2*torch.mean(k_ZY)))
 
 
     def loss_reg(self):
-        fit_kXX = self.fit_kXX
-        Lambda = self.Lambda
-        return self.params['reg_lambda'] * torch.trace(Lambda.T @ fit_kXX @ Lambda)
-
-
-    def loss_reg_z(self):
         fit_kXX_inv =  self.fit_kXX_inv
         Z = self.Z
-        return self.params['reg_lambda'] * torch.trace(Z.T @ fit_kXX_inv @ Z)
-
-
-    def loss_var(self):
-        self.detach_l = False
-        X_tilde = self.X_tilde
-        Y_tilde = self.map_z(X_tilde).T
-        Y = self.Y
-        in_var = .5 * (torch.sum(fast_k_matrix(Y_tilde,Y_tilde)) + torch.sum(fast_k_matrix(Y,Y)))
-        Y_combined = torch.concat([Y_tilde, Y])
-        out_var =  torch.sum(fast_k_matrix(Y_combined,Y_combined))
-        self.detach_l = True
-        return 1e-4 * (out_var - in_var)
+        return self.params['reg_lambda'] * torch.log(1 + torch.trace(Z.T @ fit_kXX_inv @ Z))
 
 
     def loss(self):
         loss_fit = self.loss_fit()
         loss_reg  = self.loss_reg()
-
-        loss = self.loss_fit2() + self.loss_reg()
-        loss_dict = {'fit': loss_fit.detach().cpu(), 'reg': loss_reg.detach().cpu(), 'total': loss.detach().cpu()}
-        return loss, loss_dict
-
-
-    def loss_z(self):
-        loss_fit = self.loss_fit_z()
-        loss_reg  = self.loss_reg_z()
         loss = loss_fit + loss_reg
         loss_dict = {'fit': loss_fit.detach().cpu(),'reg': loss_reg.detach().cpu(),'total': loss.detach().cpu()}
         return loss, loss_dict
