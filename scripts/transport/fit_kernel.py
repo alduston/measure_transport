@@ -120,10 +120,9 @@ def transport_exp(X_gen, Y_gen, exp_name, N=1000, plt_range=None, t_iter = 400):
     sample_scatter(Y_tilde.T, f'{save_dir}/Ypred_scatter.png', d=2, bins=30, range=plt_range)
     return True
 
-#[[-5, 5], [-5, 5]]
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
-                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4]):
+                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -202,7 +201,6 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha_tilde = one_normalize(smoothing(alpha_inv, W_tilde, l=.1))
     Y_tilde_resample = resample(Y_tilde, alpha_tilde, N = tilde_scale)
 
-    q = 1.01
     Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
     Y_alt = (Y_alt.T[Y_alt[0] < q][:N]).T
     sample_hmap(Y_alt.T, f'{save_dir}/Y_alt_hmap.png', d=d, bins=30, range=plt_range)
@@ -226,7 +224,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
 def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
-    Ns = [100,200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
+    Ns = [100, 200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
     MMD_naives = []
     MMD_unifs = []
     Y_gen = normal_theta_circle
@@ -234,11 +232,14 @@ def run():
     diff_map = circle_diffs
     exp_name = 'mmd_sample_test'
     n_trials = 20
+    q = 1
     for N in Ns:
         MMD_naive = 0
         MMD_unif = 0
         for n in n_trials:
-            mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name, diff_map = diff_map, N  = N, plt_range = plt_range)
+            mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
+                                                 diff_map = diff_map, N  = N, q = q,
+                                                 plt_range = plt_range)
             MMD_naive += mmd_naive
             MMD_unif += mmd_unif
 
