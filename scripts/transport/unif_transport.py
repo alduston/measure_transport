@@ -228,10 +228,11 @@ def one_normalize_trunc(vec, q = .4):
 def get_res_dict(Y,params):
     Y_model = UnifKernel(params)
 
-    W = np.asarray(Y_model.W)
-    W_rank = np.asarray(Y_model.W_rank)
+
+    W = np.asarray(Y_model.W.cpu())
+    W_rank = np.asarray(Y_model.W_rank.cpu())
     W_rank_2 = W_rank @ W_rank
-    target = np.asarray(Y_model.target_vec)
+    target = np.asarray(Y_model.target_vec.cpu())
     W_rank_t = W_rank @ target
 
     def f(alpha):
