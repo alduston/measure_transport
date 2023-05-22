@@ -168,9 +168,9 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
 
     if X_gen == None:
-        X = (Y_resample + sample_normal(N,d).reshape(Y.shape)).T
+        X = (Y_resample + torch.tensor(sample_normal(N,d), device = device).reshape(Y.shape)).T
         Y_tilde = resample(Y, alpha, tilde_scale)
-        X_tilde = (Y_tilde + sample_normal(tilde_scale ,d).reshape(Y_tilde.shape)).T
+        X_tilde = (Y_tilde + torch.tensor(sample_normal(tilde_scale ,d), device = device).reshape(Y_tilde.shape)).T
     else:
         X = torch.tensor(X_gen(N),  device = device)
         X_tilde =  torch.tensor(X_gen(tilde_scale),  device = device)
