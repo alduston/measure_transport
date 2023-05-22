@@ -10,7 +10,6 @@ from scipy.optimize import least_squares
 import os
 from ellipse import rand_ellipse
 import pandas as pd
-import seaborn as sns
 
 
 

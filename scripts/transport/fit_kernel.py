@@ -242,7 +242,6 @@ def run():
                                                  plt_range = plt_range)
             MMD_naive += mmd_naive
             MMD_unif += mmd_unif
-
         MMD_naives.append(MMD_naive/n_trials)
         MMD_unifs.append(MMD_unif/n_trials)
 
