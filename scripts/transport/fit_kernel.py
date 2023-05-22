@@ -50,7 +50,10 @@ def train_step(kernel_model, optimizer):
 
 
 def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
-    sample = sample.detach().cpu()
+    try:
+        sample = sample.detach().cpu()
+    except AttributeError:
+        pass
     if d == 2:
         x, y = sample.T
         x = np.asarray(x)
