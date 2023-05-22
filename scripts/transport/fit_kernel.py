@@ -218,8 +218,6 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     mmd_naive = kernel_model.loss_fit(torch.tensor(Y_pred_naive.T), torch.tensor(Y_alt.T))
     mmd_unif = kernel_model.loss_fit(torch.tensor(Y_pred.T),  torch.tensor(Y_alt.T))
 
-    print(f'naive mmd was {mmd_naive}')
-    print(f'unif mmd was {mmd_unif}')
 
     sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range)
     sample_scatter(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_scatter.png', d=d, bins=30, range=plt_range)
@@ -229,21 +227,29 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     Ns = [100,200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
-    mmd_naives = []
-    mmd_unifs = []
+    MMD_naives = []
+    MMD_unifs = []
     Y_gen = normal_theta_circle
     X_gen = None
     diff_map = circle_diffs
     exp_name = 'mmd_sample_test'
+    n_trials = 20
     for N in Ns:
-        mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name, diff_map = diff_map, N  = N, plt_range = plt_range)
-        mmd_naives.append(mmd_naive)
-        mmd_unifs.append(mmd_unif)
+        MMD_naive = 0
+        MMD_unif = 0
+        for n in n_trials:
+            mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name, diff_map = diff_map, N  = N, plt_range = plt_range)
+            MMD_naive += mmd_naive
+            MMD_unif += mmd_unif
 
-    plt.plot(Ns, mmd_naives, label='naive')
-    plt.plot(Ns, mmd_unifs, label='unif')
+        MMD_naives.append(MMD_naive/n_trials)
+        MMD_unifs.append(MMD_unif/n_trials)
+
+    plt.plot(Ns, MMD_naives, label='naive')
+    plt.plot(Ns, MMD_unifs, label='unif')
     plt.xlabel('Sample size')
     plt.ylabel('MMD')
+    plt.ylim(bottom = 0)
     plt.legend()
     plt.savefig(f'../../data/kernel_transport/{exp_name}/mmd_v_sample_size.png')
 
