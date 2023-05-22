@@ -229,8 +229,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
     sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range)
 
-    mmd_naive = kernel_model.loss_fit(torch.tensor(Y_pred_naive.T), torch.tensor(Y_alt.T))
-    mmd_unif = kernel_model.loss_fit(torch.tensor(Y_pred.T),  torch.tensor(Y_alt.T))
+    mmd_naive = kernel_model.loss_fit(Y_pred_naive.T, Y_alt.T)
+    mmd_unif = kernel_model.loss_fit(Y_pred.T, Y_alt.T)
 
 
     sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range)
