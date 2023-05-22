@@ -122,6 +122,13 @@ def transport_exp(X_gen, Y_gen, exp_name, N=1000, plt_range=None, t_iter = 400):
     sample_scatter(Y_tilde.T, f'{save_dir}/Ypred_scatter.png', d=2, bins=30, range=plt_range)
     return True
 
+def dict_to_np(dict):
+    for key,val in dict.items():
+        try:
+            dict[key] = val.detach().cpu().numpy()
+        except BaseException:
+            pass
+    return dict
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
                    plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1):
@@ -149,7 +156,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     unif_params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1,
                    'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
-    Y_res = get_res_dict(Y, unif_params)
+    Y_res =  dict_to_np(get_res_dict(Y, unif_params))
+
 
     alpha = one_normalize(Y_res['alpha'] ** 1)
     alpha_inv = one_normalize(Y_res['alpha_inv'] ** 1)
