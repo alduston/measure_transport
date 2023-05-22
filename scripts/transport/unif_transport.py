@@ -52,8 +52,8 @@ def l_scale(X):
 def get_theta(X,Y):
     Y = Y.reshape(len(Y))
     X = X.reshape(len(X))
-    thetas = np.arctan2(Y , X)
-    return np.pi + thetas
+    thetas = torch.arctan2(Y , X)
+    return thetas + 3.14159265359
 
 
 def unif_diffs(sample, sample_alt =[]):
@@ -118,7 +118,7 @@ def W_inf_range(W, a,b):
     c_factor = (1/(1+(1/n)))
     c_min = a * c_factor
 
-    log_min = np.log(c_min)
+    log_min = torch.log(c_min)
     log_max = torch.log((b + c_min))
 
     W_inf = log_max - torch.log(W + c_min)
