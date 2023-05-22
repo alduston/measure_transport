@@ -50,6 +50,7 @@ def train_step(kernel_model, optimizer):
 
 
 def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
+    sample = sample.detach().cpu()
     if d == 2:
         x, y = sample.T
         x = np.asarray(x)
@@ -66,6 +67,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
 
 
 def sample_scatter(sample, save_loc, bins = 20, d = 2, range = []):
+    sample = sample.detach().cpu()
     x, y = sample.T
     x = np.asarray(x)
     y = np.asarray(y)
@@ -236,7 +238,7 @@ def run():
     for N in Ns:
         MMD_naive = 0
         MMD_unif = 0
-        for n in n_trials:
+        for n in range(n_trials):
             mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
                                                  diff_map = diff_map, N  = N, q = q,
                                                  plt_range = plt_range)
