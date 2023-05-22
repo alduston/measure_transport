@@ -221,11 +221,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_alt = (Y_alt.T[Y_alt[0] < q][:N]).T
     sample_hmap(Y_alt.T, f'{save_dir}/Y_alt_hmap.png', d=d, bins=30, range=plt_range)
 
-    Y_pred_naive = resample(Y_tilde_naive, N = tilde_scale)
+    Y_pred_naive = torch.tensor(resample(Y_tilde_naive, N = tilde_scale), device = device)
     Y_pred_naive = (Y_pred_naive.T[Y_pred_naive[0] < q][:N]).T
     sample_hmap(Y_pred_naive.T, f'{save_dir}/Y_alt_naive_hmap.png', d=d, bins=30, range=plt_range)
 
-    Y_pred = resample(Y_tilde, alpha_tilde, N= tilde_scale)
+    Y_pred = torch.tensor(resample(Y_tilde, alpha_tilde, N= tilde_scale), device = device)
     Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
     sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range)
 

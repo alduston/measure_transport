@@ -22,14 +22,9 @@ def k_matrix(X,X_tilde):
 
 
 def radial_kernel(X, X_tilde, kern_params):
-    print(X.device)
-    print(X_tilde.device)
-
     norm_diffs = k_matrix(X, X_tilde)
     sigma = kern_params['sigma']
-    print(sigma.device)
     l = kern_params['l']
-    print(l.device)
     res =  sigma * torch.exp(-((norm_diffs ** 2) / (2 * (l ** 2))))
     return res
 
