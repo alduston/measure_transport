@@ -70,7 +70,10 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
 
 
 def sample_scatter(sample, save_loc, bins = 20, d = 2, range = []):
-    sample = sample.detach().cpu()
+    try:
+        sample = sample.detach().cpu()
+    except AttributeError:
+        pass
     x, y = sample.T
     x = np.asarray(x)
     y = np.asarray(y)
