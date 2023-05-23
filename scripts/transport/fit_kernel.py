@@ -171,7 +171,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     W_resample, thetas, resample_thetas = diff_map(torch.tensor(Y, device=device),
                                                    torch.tensor(Y_resample, device=device))
     W_resample = W_resample.cpu().numpy()
-    alpha_resample_inv = one_normalize(smoothing(alpha_inv, W_resample, l=smoothing_l) + (1/N**2))
+    alpha_resample_inv = one_normalize(smoothing(alpha_inv, W_resample, l=smoothing_l))
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
 
     #thetas = thetas.cpu().numpy().reshape(len(thetas))
@@ -236,8 +236,9 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     sample_hmap(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_scatter.png', d=d, bins=30, range=plt_range)
 
-    W_tilde = diff_map(torch.tensor(Y, device = device), torch.tensor(Y_tilde, device = device))[0].cpu().numpy()
-    alpha_tilde_inv = one_normalize((smoothing(alpha_inv, W_tilde, l=smoothing_l) + (1/tilde_scale**2))**1.00)
+    #W_tilde = diff_map(torch.tensor(Y, device = device), torch.tensor(Y_tilde, device = device))[0].cpu().numpy()
+    W_tilde = unif_diffs(torch.tensor(Y, device=device), torch.tensor(Y_tilde, device=device))[0].cpu().numpy()
+    alpha_tilde_inv = one_normalize((smoothing(alpha_inv, W_tilde, l=smoothing_l))**1.00)
     Y_tilde_resample = resample(Y_tilde, alpha_tilde_inv, N = tilde_scale)
 
     Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
@@ -267,7 +268,6 @@ def run():
     MMD_naives = []
     MMD_unifs = []
     Y_gen = normal_theta_circle
-    #X_gen = sample_normal
     X_gen = None
     diff_map = circle_diffs
     exp_name = 'sample_test_p7'
