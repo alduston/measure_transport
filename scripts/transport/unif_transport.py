@@ -196,6 +196,7 @@ def normalize_rows(W):
 def inverse_smoothing(alpha, W, l = .08):
     try:
         alpha = alpha.cpu().numpy()
+        W = W.cpu().numpy()
     except BaseException:
         pass
     alpha_inv = 1/alpha
@@ -207,6 +208,7 @@ def inverse_smoothing(alpha, W, l = .08):
 def smoothing(alpha, W, l = .08):
     try:
         alpha = alpha.cpu().numpy()
+        W = W.cpu().numpy()
     except BaseException:
         pass
     smoothing = normalize_rows(np.exp(-np.abs(W)/ l))
