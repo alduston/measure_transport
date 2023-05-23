@@ -237,7 +237,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     sample_scatter(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_scatter.png', d=d, bins=30, range=plt_range)
 
     W_tilde = diff_map(torch.tensor(Y, device = device), torch.tensor(Y_tilde, device = device))[0].cpu().numpy()
-    alpha_tilde_inv = one_normalize((smoothing(alpha_inv.cpu().numpy(), W_tilde, l=smoothing_l) + (1/tilde_scale**2))**1.15)
+    alpha_tilde_inv = one_normalize((smoothing(alpha_inv, W_tilde, l=smoothing_l) + (1/tilde_scale**2))**1.15)
     Y_tilde_resample = resample(Y_tilde, alpha_tilde_inv, N = tilde_scale)
 
     Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
