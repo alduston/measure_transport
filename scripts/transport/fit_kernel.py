@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, one_normalize_trunc, circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles
+    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana
 
 
 def clear_plt():
@@ -49,7 +49,7 @@ def train_step(kernel_model, optimizer):
     return loss, loss_dict
 
 
-def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
+def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
     try:
         sample = sample.detach().cpu()
     except AttributeError:
@@ -58,7 +58,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None):
         x, y = sample.T
         x = np.asarray(x)
         y = np.asarray(y)
-        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0)
+        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax)
         plt.colorbar()
     elif d == 1:
         x =  sample
@@ -137,7 +137,7 @@ def dict_to_np(dict):
     return dict
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
-                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1):
+                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -149,7 +149,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
         device = 'cuda'
     else:
         device = 'cpu'
-
+    smoothing_l = .05
     d = 2
     tilde_scale = 10000
 
@@ -157,7 +157,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     if Y.shape[0] > Y.shape[1]:
         Y = Y.T
 
-    sample_hmap(Y.T, f'{save_dir}/Y_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y.T, f'{save_dir}/Y_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y.T, f'{save_dir}/Y_scatter.png', d=d, bins=30, range=plt_range)
 
     unif_params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1,
@@ -170,7 +170,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_resample = resample(Y, alpha, N).reshape(Y.shape)
 
     W = diff_map(torch.tensor(Y, device=device), torch.tensor(Y_resample, device=device))[0].cpu().numpy()
-    alpha_resample_inv = smoothing(alpha_inv, W, l=.1)
+    alpha_resample_inv = smoothing(alpha_inv, W, l=smoothing_l)
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
 
     if X_gen == None:
@@ -181,10 +181,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
         X = torch.tensor(X_gen(N),  device = device)
         X_tilde =  torch.tensor(X_gen(tilde_scale),  device = device)
 
+
     l = l_scale(X)
     sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins=30)
-    sample_hmap(Y_resample.T, f'{save_dir}/Y_resample_hmap.png', d=d, bins=30, range=plt_range)
-    sample_hmap(Y_resample_inv.T, f'{save_dir}/Y_resample_inv_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_resample.T, f'{save_dir}/Y_resample_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
+    sample_hmap(Y_resample_inv.T, f'{save_dir}/Y_resample_inv_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_resample.T, f'{save_dir}/Y_resample_scatter.png', d=d, bins=30, range=plt_range)
 
     fit_kernel_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
@@ -198,7 +199,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     naive_model_params = {'X': X, 'Y': Y.T, 'fit_kernel_params': fit_kernel_params,
                           'mmd_kernel_params': mmd_kernel_params, 'normalize':  False,
                           'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 1, 'learning_rate': .1, 'nugget': 1e-3,
-                          'X_tilde': X_tilde}
+                          'X_tilde': X}
 
     kernel_model = TransportKernel(model_params)
     train_kernel_transport(kernel_model, n_iter=t_iter, save_dir=save_dir, d=d, plt_range=plt_range)
@@ -207,55 +208,58 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     train_kernel_transport(naive_kernel_model, n_iter=t_iter, save_dir=save_dir, d=d, plt_range=plt_range)
 
     Y_tilde = kernel_model.map(X_tilde).detach().cpu().numpy()
-    sample_hmap(Y_tilde.T, f'{save_dir}/Ypred_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_tilde.T, f'{save_dir}/Ypred_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
     Y_tilde_naive = naive_kernel_model.map(X_tilde).detach().cpu().numpy()
-    sample_hmap(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_scatter.png', d=d, bins=30, range=plt_range)
 
     W_tilde = diff_map(torch.tensor(Y, device = device), torch.tensor(Y_tilde, device = device))[0].cpu().numpy()
-    alpha_tilde = one_normalize(smoothing(alpha_inv, W_tilde, l=.1))
+    alpha_tilde = one_normalize(smoothing(alpha_inv, W_tilde, l=smoothing_l))
     Y_tilde_resample = resample(Y_tilde, alpha_tilde, N = tilde_scale)
 
     Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
     Y_alt = (Y_alt.T[Y_alt[0] < q][:N]).T
-    sample_hmap(Y_alt.T, f'{save_dir}/Y_alt_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_alt.T, f'{save_dir}/Y_alt_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
     Y_pred_naive = torch.tensor(resample(Y_tilde_naive, N = tilde_scale), device = device)
     Y_pred_naive = (Y_pred_naive.T[Y_pred_naive[0] < q][:N]).T
-    sample_hmap(Y_pred_naive.T, f'{save_dir}/Y_alt_naive_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_pred_naive.T, f'{save_dir}/Y_alt_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
     Y_pred = torch.tensor(resample(Y_tilde, alpha_tilde, N= tilde_scale), device = device)
     Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
-    sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
     mmd_naive = kernel_model.loss_fit(Y_pred_naive.T, Y_alt.T)
     mmd_unif = kernel_model.loss_fit(Y_pred.T, Y_alt.T)
 
 
-    sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_scatter.png', d=d, bins=30, range=plt_range)
     return mmd_naive, mmd_unif
 
 
 def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
+    vmax = 8
+    #plt_range = None
     Ns = [100, 200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
     MMD_naives = []
     MMD_unifs = []
     Y_gen = normal_theta_circle
     X_gen = None
-    diff_map = circle_diffs
-    exp_name = 'mmd_sample_test'
+    diff_map = unif_diffs
+    exp_name = 'mmd_sample_test2'
     n_trials = 20
-    q = 1
+    q = .7
     for N in Ns:
         MMD_naive = 0
         MMD_unif = 0
         for n in range(n_trials):
             mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
                                                  diff_map = diff_map, N  = N, q = q,
-                                                 plt_range = plt_range)
+                                                 plt_range = plt_range, vmax = vmax)
+
             MMD_naive += mmd_naive
             MMD_unif += mmd_unif
         MMD_naives.append(MMD_naive/n_trials)
