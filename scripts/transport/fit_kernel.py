@@ -281,8 +281,8 @@ def run():
             mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
                                                  diff_map = diff_map, N  = N, q = q,
                                                  plt_range = plt_range, vmax = vmax)
-            MMD_naive += mmd_naive
-            MMD_unif += mmd_unif
+            MMD_naive += float(mmd_naive.detach().cpu())
+            MMD_unif += float(mmd_unif.detach().cpu())
         MMD_naives.append(MMD_naive/n_trials)
         MMD_unifs.append(MMD_unif/n_trials)
 

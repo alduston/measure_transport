@@ -231,8 +231,6 @@ def inverse_smoothing(alpha, W, l = .08):
 def smoothing(alpha, W, l = .08):
     smoothing = normalize_rows(np.exp(-np.abs(W)/ l))
     alpha_smooth = smoothing @ alpha
-    print(max(alpha_smooth))
-    print(min(alpha_smooth))
     return one_normalize(alpha_smooth)
 
 
