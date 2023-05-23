@@ -200,8 +200,6 @@ def inverse_smoothing(alpha, W, l = .08):
 
 
 def smoothing(alpha, W, l = .08):
-    print(alpha.type)
-    print(W.type)
     smoothing = normalize_rows(np.exp(-np.abs(W)/ l))
     alpha_smooth = smoothing @ alpha
     return one_normalize(alpha_smooth)
