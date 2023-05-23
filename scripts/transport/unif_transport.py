@@ -10,6 +10,34 @@ from scipy.optimize import least_squares
 import os
 from ellipse import rand_ellipse
 import pandas as pd
+from get_data import normal_theta_circle
+
+def clear_plt():
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    return True
+
+
+def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
+    try:
+        sample = sample.detach().cpu()
+    except AttributeError:
+        pass
+    if d == 2:
+        x, y = sample.T
+        x = np.asarray(x)
+        y = np.asarray(y)
+        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax)
+        plt.colorbar()
+    elif d == 1:
+        x =  sample
+        x = np.asarray(x)
+        plt.hist(x, bins = bins, range = range)
+    plt.savefig(save_loc)
+    clear_plt()
+    return True
 
 
 
@@ -145,6 +173,7 @@ class UnifKernel(nn.Module):
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
 
         self.W = torch.tensor(self.diff_map(self.Y)[0])
+        self.thetas = torch.tensor(self.diff_map(self.Y)[1])
 
         a,b = self.params['diff_quantiles']
         a = torch.quantile(self.W[self.W > 0], q = a)
@@ -202,12 +231,9 @@ def inverse_smoothing(alpha, W, l = .08):
 def smoothing(alpha, W, l = .08):
     smoothing = normalize_rows(np.exp(-np.abs(W)/ l))
     alpha_smooth = smoothing @ alpha
+    print(max(alpha_smooth))
+    print(min(alpha_smooth))
     return one_normalize(alpha_smooth)
-
-
-def alt_smoothing(alpha, W_inf):
-    alpha_smooth =  alpha.T @ W_inf.cpu().numpy()
-    return alpha_smooth
 
 
 def one_normalize(vec):
@@ -219,10 +245,54 @@ def one_normalize_trunc(vec, q = .4):
     vec[vec < thresh] = 0
     return one_normalize(vec)
 
+def get_res_dict_kern(Y,params):
+    Y_model = UnifKernel(params)
+    N = len(Y.T)
+
+    nugget = params['nugget']
+
+    W = np.asarray(Y_model.W.cpu())
+    W_rank = np.asarray(Y_model.W_rank.cpu())
+    W_rank_inv = np.linalg.inv(W_rank + nugget * np.eye(N))
+
+    w,v = np.linalg.eig(W_rank_inv)
+    plt.plot(w)
+    plt.savefig('W_inv_eigs.png')
+    clear_plt()
+
+    target = np.asarray(Y_model.target_vec.cpu())
+    lamdba = params['lambda_reg']
+
+    def f(alpha):
+        z = W_rank @ alpha
+        fit_loss =  np.dot(z-target, z-target)
+        reg_loss = lamdba * (alpha.T @ W_rank @ alpha.T)
+        return fit_loss + reg_loss
+
+    x_0 = np.zeros(N)
+    bnds = [(1 / N ** 2, np.inf) for i in range(N)]
+    result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds,
+                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
+
+    alpha =  result['x']
+    thetas = Y_model.thetas
+
+    sort_idx = np.argsort(thetas)
+    alpha_sorted = alpha[sort_idx]
+    alpha = one_normalize(alpha).reshape(len(alpha))
+
+    plt.plot(thetas[sort_idx].reshape(N), alpha_sorted.reshape(N))
+    plt.savefig('alpha_v_theta.png')
+    clear_plt()
+
+    alpha_inv = one_normalize(1 / alpha).reshape(len(alpha))
+    res_dict = {'alpha': alpha, 'alpha_inv': alpha_inv,
+                'W': W, 'W_rank': W_rank, 'model' : Y_model}
+    return res_dict
+
 
 def get_res_dict(Y,params):
     Y_model = UnifKernel(params)
-
 
     W = np.asarray(Y_model.W.cpu())
     W_rank = np.asarray(Y_model.W_rank.cpu())
@@ -242,7 +312,7 @@ def get_res_dict(Y,params):
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', jac=grad_f, bounds=bnds,
-                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
+                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
@@ -258,7 +328,16 @@ def get_res_dict(Y,params):
 
 
 def run():
-    pass
+    N = 1000
+    diff_quantiles = [0,.4]
+    Y = normal_theta_circle(1000)
+    diff_map = circle_diffs
+    params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1, 'lambda_reg': 1e-1,
+                   'nugget': 1e-3, 'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
+    res_dict = get_res_dict_kern(Y, params)
+    alpha = res_dict['alpha']
+    Y_resample = resample(Y, alpha , N)
+    sample_hmap(Y_resample, 'Y_hmmm.png')
 
 
 if __name__=='__main__':
