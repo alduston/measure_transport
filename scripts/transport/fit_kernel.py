@@ -167,7 +167,6 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     alpha = one_normalize(Y_res['alpha'] ** .99)
     alpha_inv = one_normalize(Y_res['alpha_inv'] ** .99)
-
     Y_resample = resample(Y, alpha, N).reshape(Y.shape)
 
     W, thetas, resample_thetas = diff_map(torch.tensor(Y, device=device), torch.tensor(Y_resample, device=device))
@@ -176,22 +175,22 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha_resample_inv = one_normalize(smoothing(alpha_inv, W, l=smoothing_l))
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
 
-    thetas = thetas.cpu().numpy().reshape(len(thetas))
-    resample_thetas = resample_thetas.cpu().numpy().reshape(len(resample_thetas))
+    #thetas = thetas.cpu().numpy().reshape(len(thetas))
+    #resample_thetas = resample_thetas.cpu().numpy().reshape(len(resample_thetas))
 
-    sort_idx = np.argsort(thetas)
-    resample_sort_idx = np.argsort(resample_thetas)
+    #sort_idx = np.argsort(thetas)
+    #resample_sort_idx = np.argsort(resample_thetas)
 
-    thetas_sorted = thetas[sort_idx]
-    resample_thetas_sorted = resample_thetas[resample_sort_idx].reshape(len(resample_thetas))
+    #thetas_sorted = thetas[sort_idx]
+    #resample_thetas_sorted = resample_thetas[resample_sort_idx].reshape(len(resample_thetas))
 
-    plt.plot(thetas_sorted, alpha_inv[sort_idx].reshape(len(thetas)))
-    plt.savefig('theta_v_alpha_inv.png')
-    clear_plt()
+    #plt.plot(thetas_sorted, alpha_inv[sort_idx].reshape(len(thetas)))
+    #plt.savefig('theta_v_alpha_inv.png')
+    #clear_plt()
 
-    plt.plot(resample_thetas_sorted, alpha_resample_inv[resample_sort_idx].reshape(len(resample_thetas)))
-    plt.savefig('theta_v_alpha_inv_resample.png')
-    clear_plt()
+    #plt.plot(resample_thetas_sorted, alpha_resample_inv[resample_sort_idx].reshape(len(resample_thetas)))
+    #plt.savefig('theta_v_alpha_inv_resample.png')
+    #clear_plt()
 
     if X_gen == None:
         X = (Y_resample + torch.tensor(sample_normal(N,d), device = device).reshape(Y.shape)).T
@@ -253,7 +252,6 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     mmd_naive = kernel_model.loss_fit(Y_pred_naive.T, Y_alt.T)
     mmd_unif = kernel_model.loss_fit(Y_pred.T, Y_alt.T)
 
-
     sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_scatter.png', d=d, bins=30, range=plt_range)
     return mmd_naive, mmd_unif
@@ -263,16 +261,15 @@ def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
     #plt_range = None
-    #Ns = [100, 200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
-    Ns = [500]
+    Ns = [100, 200, 300, 400, 500, 700, 900, 1200, 1600, 2000]
     MMD_naives = []
     MMD_unifs = []
     Y_gen = normal_theta_circle
     X_gen = None
     diff_map = circle_diffs
-    exp_name = 'mmd_sample_test3'
-    n_trials = 1
-    q = 1.01
+    exp_name = 'mmd_sample_test2'
+    n_trials = 20
+    q = .5
     for N in Ns:
         MMD_naive = 0
         MMD_unif = 0
