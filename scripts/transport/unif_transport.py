@@ -77,7 +77,7 @@ def circle_diffs(sample, sample_alt = []):
     diffs = k_matrix(thetas_alt, thetas)
     diffs_2pi = 2*np.pi - diffs
     diffs = torch.min(diffs,  diffs_2pi)
-    return diffs, thetas
+    return diffs, thetas, thetas_alt
 
 
 def sort_rank(sorted_vec,  val):
