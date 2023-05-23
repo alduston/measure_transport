@@ -138,7 +138,7 @@ def dict_to_np(dict):
     return dict
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
-                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
+                   plt_range = None, t_iter = 500, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:

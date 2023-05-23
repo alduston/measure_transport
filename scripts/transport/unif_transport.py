@@ -270,7 +270,7 @@ def get_res_dict_kern(Y,params):
     x_0 = np.zeros(N)
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds,
-                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
+                      options={'disp':True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
 
     alpha =  result['x']
     thetas = Y_model.thetas
@@ -326,7 +326,7 @@ def get_res_dict(Y,params):
 
 
 def run():
-    N = 1000
+    N = 400
     diff_quantiles = [0,.4]
     Y = normal_theta_circle(1000)
     diff_map = circle_diffs
