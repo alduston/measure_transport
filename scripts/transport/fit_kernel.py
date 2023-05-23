@@ -173,22 +173,22 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha_resample_inv = one_normalize(smoothing(alpha_inv, W_resample, l=smoothing_l) + (1/N**2))
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
 
-    thetas = thetas.cpu().numpy().reshape(len(thetas))
-    resample_thetas = resample_thetas.cpu().numpy().reshape(len(resample_thetas))
+    #thetas = thetas.cpu().numpy().reshape(len(thetas))
+    #resample_thetas = resample_thetas.cpu().numpy().reshape(len(resample_thetas))
 
-    sort_idx = np.argsort(thetas)
-    resample_sort_idx = np.argsort(resample_thetas)
+    #sort_idx = np.argsort(thetas)
+    #resample_sort_idx = np.argsort(resample_thetas)
 
-    thetas_sorted = thetas[sort_idx]
-    resample_thetas_sorted = resample_thetas[resample_sort_idx].reshape(len(resample_thetas))
+    #thetas_sorted = thetas[sort_idx]
+    #resample_thetas_sorted = resample_thetas[resample_sort_idx].reshape(len(resample_thetas))
 
-    plt.plot(thetas_sorted, alpha_inv[sort_idx].reshape(len(thetas)))
-    plt.savefig('theta_v_alpha_inv.png')
-    clear_plt()
+    #plt.plot(thetas_sorted, alpha_inv[sort_idx].reshape(len(thetas)))
+    #plt.savefig('theta_v_alpha_inv.png')
+    #clear_plt()
 
-    plt.plot(resample_thetas_sorted, alpha_resample_inv[resample_sort_idx].reshape(len(resample_thetas)))
-    plt.savefig('theta_v_alpha_inv_resample.png')
-    clear_plt()
+    #plt.plot(resample_thetas_sorted, alpha_resample_inv[resample_sort_idx].reshape(len(resample_thetas)))
+    #plt.savefig('theta_v_alpha_inv_resample.png')
+    #clear_plt()
 
     #plt.plot(resample_thetas_sorted, alpha_resample_inv_alt[resample_sort_idx].reshape(len(resample_thetas)))
     #plt.savefig('theta_v_alpha_inv_resample_alt.png')
