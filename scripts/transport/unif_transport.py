@@ -192,15 +192,6 @@ def normalize_rows(W):
     #return (np.diag(np.diag(W @ W.T)**-1) @ W.T).T
 
 
-def get_smoothing(W, l  = .1):
-    smoothing = normalize_rows(np.exp(-np.abs(W - np.diag(W))/l))
-    return smoothing
-
-
-def get_adaptive_smoothing(W):
-    smoothing = normalize_rows(np.exp(-np.abs(W - np.diag(W))/.07))
-    return smoothing
-
 
 def inverse_smoothing(alpha, W, l = .08):
     alpha_inv = 1/alpha
@@ -213,6 +204,11 @@ def smoothing(alpha, W, l = .08):
     smoothing = normalize_rows(np.exp(-np.abs(W)/ l))
     alpha_smooth = smoothing @ alpha
     return one_normalize(alpha_smooth)
+
+
+def alt_smoothing(alpha, W_inf):
+    alpha_smooth =  alpha.T @ W_inf.cpu().numpy()
+    return alpha_smooth
 
 
 def one_normalize(vec):
