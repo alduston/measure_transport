@@ -168,7 +168,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha = one_normalize(Y_res['alpha'] ** 1)
     alpha_inv = one_normalize(Y_res['alpha_inv'] ** 1)
     Y_resample = resample(Y, alpha, N).reshape(Y.shape)
-    W_resample, thetas, resample_thetas = diff_map(torch.tensor(Y, device=device), torch.tensor(Y_resample, device=device))
+    W_resample, thetas, resample_thetas = diff_map(torch.tensor(Y, device=device),
+                                                   torch.tensor(Y_resample, device=device))
 
     alpha_resample_inv = one_normalize(smoothing(alpha_inv, W_resample, l=smoothing_l) + (1/N**2))
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
