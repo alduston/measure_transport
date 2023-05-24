@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, normalize
 import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize,\
-    one_normalize_trunc, circle_diffs
+    one_normalize_trunc, circle_diffs, inverse_smoothing,  get_inverse_res_dict
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
     sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana
 
@@ -32,7 +32,7 @@ def train_kernel_transport(kernel_model, n_iter = 100, save_dir = '', d = 1,plt_
             Y_pred = kernel_model.map(kernel_model.X).detach().cpu().numpy().T
             sample_hmap(Y_pred, f'{save_dir}/Y_in_progress{0 if i==0 else ""}.png', d=d, bins=30, range= plt_range)
         loss, loss_dict = train_step(kernel_model, optimizer)
-        if not i % kernel_model.params['print_freq']:
+        if i and not i % kernel_model.params['print_freq']:
             print(f'At step {i}: fit_loss = {round(float(loss_dict["fit"]),4)},'
                   f' reg_loss = {round(float(loss_dict["reg"]),4)}')
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
@@ -138,7 +138,7 @@ def dict_to_np(dict):
     return dict
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
-                   plt_range = None, t_iter = 500, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
+                   plt_range = None, t_iter = 300, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -171,30 +171,9 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     W_resample, thetas, resample_thetas = diff_map(torch.tensor(Y, device=device),
                                                    torch.tensor(Y_resample, device=device))
     W_resample = W_resample.cpu().numpy()
-    alpha_resample_inv = one_normalize(smoothing(alpha_inv, W_resample, l=smoothing_l))
+    alpha_resample = one_normalize(smoothing(alpha, W_resample, l=smoothing_l))
+    alpha_resample_inv = one_normalize(alpha_resample**-1)
     Y_resample_inv = resample(Y_resample, alpha_resample_inv, N).reshape(Y.shape)
-
-    #thetas = thetas.cpu().numpy().reshape(len(thetas))
-    #resample_thetas = resample_thetas.cpu().numpy().reshape(len(resample_thetas))
-
-    #sort_idx = np.argsort(thetas)
-    #resample_sort_idx = np.argsort(resample_thetas)
-
-    #thetas_sorted = thetas[sort_idx]
-    #resample_thetas_sorted = resample_thetas[resample_sort_idx].reshape(len(resample_thetas))
-
-    #plt.plot(thetas_sorted, alpha_inv[sort_idx].reshape(len(thetas)))
-    #plt.savefig('theta_v_alpha_inv.png')
-    #clear_plt()
-
-    #plt.plot(resample_thetas_sorted, alpha_resample_inv[resample_sort_idx].reshape(len(resample_thetas)))
-    #plt.savefig('theta_v_alpha_inv_resample.png')
-    #clear_plt()
-
-    #plt.plot(resample_thetas_sorted, alpha_resample_inv_alt[resample_sort_idx].reshape(len(resample_thetas)))
-    #plt.savefig('theta_v_alpha_inv_resample_alt.png')
-    #clear_plt()
-
     Y_tilde = resample(Y, alpha, tilde_scale)
     if X_gen == None:
         X = (Y_resample + torch.tensor(sample_normal(N, d), device=device).reshape(Y.shape)).T
@@ -215,12 +194,12 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     model_params = {'X': X, 'Y': Y_resample.T, 'fit_kernel_params': fit_kernel_params,
                     'mmd_kernel_params': mmd_kernel_params, 'normalize': False,
-                    'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 50, 'learning_rate': .1, 'nugget': 1e-3,
+                    'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 1000, 'learning_rate': .1, 'nugget': 1e-3,
                     'X_tilde': X_tilde}
 
     naive_model_params = {'X': X, 'Y': Y.T, 'fit_kernel_params': fit_kernel_params,
                           'mmd_kernel_params': mmd_kernel_params, 'normalize':  False,
-                          'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 50, 'learning_rate': .1, 'nugget': 1e-3,
+                          'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 1000, 'learning_rate': .1, 'nugget': 1e-3,
                           'X_tilde': X}
 
     kernel_model = TransportKernel(model_params)
@@ -232,14 +211,22 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_tilde = kernel_model.map(X_tilde).detach().cpu().numpy()
     sample_hmap(Y_tilde.T, f'{save_dir}/Ypred_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
+    inverse_unif_params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1,
+                            'diff_map': diff_map, 'diff_quantiles':diff_quantiles}
+    inverse_res_dict = dict_to_np(get_inverse_res_dict(Y, Y_tilde, inverse_unif_params))
+
     Y_tilde_naive = naive_kernel_model.map(X_tilde).detach().cpu().numpy()
     sample_hmap(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_scatter.png', d=d, bins=30, range=plt_range)
 
     #W_tilde = diff_map(torch.tensor(Y, device = device), torch.tensor(Y_tilde, device = device))[0].cpu().numpy()
     W_tilde = unif_diffs(torch.tensor(Y, device=device), torch.tensor(Y_tilde, device=device))[0].cpu().numpy()
+
     alpha_tilde_inv = one_normalize((smoothing(alpha_inv, W_tilde, l=smoothing_l))**1.00)
+    alpha_tilde_inv_alt = one_normalize(inverse_res_dict['alpha'])
+
     Y_tilde_resample = resample(Y_tilde, alpha_tilde_inv, N = tilde_scale)
+    Y_tilde_resample_alt = resample(Y_tilde, alpha_tilde_inv_alt, N=tilde_scale)
 
     Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
     Y_alt = (Y_alt.T[Y_alt[0] < q][:N]).T
@@ -253,49 +240,96 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
     sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
 
+    Y_pred_alt = torch.tensor(resample(Y_tilde, alpha_tilde_inv_alt, N= tilde_scale), device = device)
+    Y_pred_alt = (Y_pred_alt.T[Y_pred_alt[0] < q][:N]).T
+    sample_hmap(Y_pred_alt.T, f'{save_dir}/Y_alt_alt_unif_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
+
     mmd_naive = kernel_model.loss_fit(Y_pred_naive.T, Y_alt.T)
     mmd_unif = kernel_model.loss_fit(Y_pred.T, Y_alt.T)
+    mmd_unif_alt = kernel_model.loss_fit(Y_pred_alt.T, Y_alt.T)
+
+    print(f'Naive mmd was {mmd_naive}')
+    print(f'Unif mmd was {mmd_unif}')
+    print(f'Alt Unif mmd was {mmd_unif_alt}')
 
     sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     sample_scatter(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_scatter.png', d=d, bins=30, range=plt_range)
-    return mmd_naive, mmd_unif
+
+    sample_hmap(Y_tilde_resample_alt.T, f'{save_dir}/Ypred_resampled_alt_hmap.png', d=d, bins=30, range=plt_range, vmax=vmax)
+    sample_scatter(Y_tilde_resample_alt.T, f'{save_dir}/Ypred_resampled_alt_scatter.png', d=d, bins=30, range=plt_range)
+    return mmd_naive, mmd_unif,mmd_unif_alt
 
 
 def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
-    Ns = [100, 200, 300, 400, 500, 700, 900, 1100, 1300]
-    MMD_naives = []
-    MMD_unifs = []
+    Ns = [500,700,1000,1250,1500,1750, 2000]
+
+    MMD_naive_meds = []
+    MMD_unif_meds = []
+    MMD_unif_alt_meds = []
+
+    MMD_naive_means = []
+    MMD_unif_means = []
+    MMD_unif_alt_means = []
+
     Y_gen = normal_theta_circle
     X_gen = None
     diff_map = circle_diffs
-    exp_name = 'sample_test_p7'
-    n_trials = 10
-    q = .7
+    exp_name = 'test'
+    n_trials = 20
+    q = 1.01
     for N in Ns:
-        MMD_naive = 0
-        MMD_unif = 0
+
+        MMD_naive_vals = []
+        MMD_unif_vals = []
+        MMD_unif_alt_vals = []
+
         for n in range(n_trials):
-            mmd_naive, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
+            mmd_naive, mmd_unif,mmd_unif_alt = unif_boost_exp(Y_gen, X_gen, exp_name = exp_name,
                                                  diff_map = diff_map, N  = N, q = q,
                                                  plt_range = plt_range, vmax = vmax)
-            MMD_naive += float(mmd_naive.detach().cpu())
-            MMD_unif += float(mmd_unif.detach().cpu())
-        MMD_naives.append(MMD_naive/n_trials)
-        MMD_unifs.append(MMD_unif/n_trials)
+            MMD_naive_vals.append(float(mmd_naive.detach().cpu()))
+            MMD_unif_vals.append(float(mmd_unif.detach().cpu()))
+            MMD_unif_alt_vals.append(float(mmd_unif_alt.detach().cpu()))
 
-    plt.plot(Ns, MMD_naives, label='naive')
-    plt.plot(Ns, MMD_unifs, label='unif')
+        MMD_naive_meds.append(np.median(np.asarray(MMD_naive_vals)))
+        MMD_unif_meds.append(np.median(np.asarray(MMD_unif_vals)))
+        MMD_unif_alt_meds.append(np.median(np.asarray(MMD_unif_alt_vals)))
+
+        MMD_naive_means.append(np.mean(np.asarray(MMD_naive_vals)))
+        MMD_unif_means.append(np.mean(np.asarray(MMD_unif_vals)))
+        MMD_unif_alt_means.append(np.mean(np.asarray(MMD_unif_alt_vals)))
+
+    print(f'MMD naive medians: {MMD_naive_meds}')
+    print(f'MMD_unif medians: {MMD_unif_meds}')
+    print(f'MMD_unif alt medians: {MMD_unif_alt_meds}')
+
+    print('\n')
+
+    print(f'MMD naive means: {MMD_naive_means}')
+    print(f'MMD_unif means: {MMD_unif_means}')
+    print(f'MMD_unif alt means: {MMD_unif_alt_means}')
+
+
+    plt.plot(Ns, np.log(np.asarray(MMD_naive_meds)), label='naive')
+    plt.plot(Ns, np.log(np.asarray(MMD_unif_meds)), label='unif')
+    plt.plot(Ns, np.log(np.asarray(MMD_unif_alt_meds)), label='unif_alt')
     plt.xlabel('Sample size')
-    plt.ylabel('MMD')
+    plt.ylabel('Median MMD')
     plt.ylim(bottom = 0)
     plt.legend()
-    plt.savefig(f'../../data/kernel_transport/{exp_name}/mmd_v_sample_size.png')
+    plt.savefig(f'../../data/kernel_transport/{exp_name}/mmd_med_v_sample_size.png')
+    clear_plt()
 
-
-
-
+    plt.plot(Ns, np.log(np.asarray(MMD_naive_means)), label='naive')
+    plt.plot(Ns, np.log(np.asarray(MMD_unif_means)), label='unif')
+    plt.plot(Ns, np.log(np.asarray(MMD_unif_alt_means)), label='unif_alt')
+    plt.xlabel('Sample size')
+    plt.ylabel('Mean MMD')
+    plt.ylim(bottom=0)
+    plt.legend()
+    plt.savefig(f'../../data/kernel_transport/{exp_name}/mmd_mean_v_sample_size.png')
 
 
 if __name__=='__main__':

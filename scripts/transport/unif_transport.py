@@ -169,17 +169,25 @@ class UnifKernel(nn.Module):
         base_params['device'] = self.device
         self.params = base_params
         self.diff_map = self.params['diff_map']
-
+        a, b = self.params['diff_quantiles']
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
 
         self.W = torch.tensor(self.diff_map(self.Y)[0])
         self.thetas = torch.tensor(self.diff_map(self.Y)[1])
 
         a,b = self.params['diff_quantiles']
-        a = torch.quantile(self.W[self.W > 0], q = a)
-        b = torch.quantile(self.W, q = b)
-        self.W_rank = W_inf_range(self.W, a, b)
+        self.a_qval = torch.quantile(self.W[self.W > 0], q = a)
+        self.b_qval = torch.quantile(self.W, q = b)
+        self.W_rank = W_inf_range(self.W, self.a_qval, self.b_qval)
         self.N = len(self.W)
+
+        if len(self.params['Y_tilde']):
+            self.Y_tilde = torch.tensor(base_params['Y_tilde'], device=self.device, dtype=self.dtype)
+            self.W_tilde = torch.tensor(self.diff_map( self.Y_tilde, self.Y)[0])
+
+            self.a_qval = torch.max(torch.min(self.W_tilde, dim=1)[0])
+            self.b_qval = torch.quantile(self.W_tilde[:1500, :10000], q=.3)
+            self.W_tilde_rank = W_inf_range(self.W_tilde, self.a_qval, self.b_qval)
 
         self.iters = 0
         if 'target' in self.params.keys():
@@ -243,53 +251,51 @@ def one_normalize_trunc(vec, q = .4):
     vec[vec < thresh] = 0
     return one_normalize(vec)
 
-def get_res_dict_kern(Y,params):
+
+def get_inverse_res_dict(Y,Y_tilde, params):
+    params['Y_tilde'] = Y_tilde
     Y_model = UnifKernel(params)
-    N = len(Y.T)
 
-    nugget = params['nugget']
-
+    W_tilde = np.asarray(Y_model.W_tilde.cpu())
     W = np.asarray(Y_model.W.cpu())
+
     W_rank = np.asarray(Y_model.W_rank.cpu())
-    W_rank_inv = np.linalg.inv(W_rank + nugget * np.eye(N))
+    W_tilde_rank = np.asarray(Y_model.W_tilde_rank.cpu())
+    W_rank_2 = W_tilde_rank.T @ W_tilde_rank
 
-    w,v = np.linalg.eig(W_rank_inv)
-    plt.plot(w)
-    plt.savefig('W_inv_eigs.png')
-    clear_plt()
+    Y_target =  np.asarray(Y_model.target_vec.cpu())
+    target = W_rank @ Y_target
+    target = one_normalize(smoothing(target,  W, l = .05))
 
-    target = np.asarray(Y_model.target_vec.cpu())
-    lamdba = params['lambda_reg']
+    W_rank_t = W_tilde_rank.T @ target
 
     def f(alpha):
-        z = W_rank @ alpha
-        fit_loss =  np.dot(z-target, z-target)
-        reg_loss = lamdba * (alpha.T @ W_rank @ alpha.T)
-        return fit_loss + reg_loss
+        y = np.dot(W_tilde_rank, alpha) - target
+        return np.dot(y, y)
 
-    x_0 = np.zeros(N)
+    def grad_f(alpha):
+        return 2 * (W_rank_2 @ alpha - W_rank_t)
+
+    n = len(Y.T)
+    N = len(Y_tilde.T)
+    x_0 = np.full(N, 1 / N)
+
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
-    result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds,
-                      options={'disp':True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
+    result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds, jac=grad_f,
+                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
 
-    alpha =  result['x']
-    thetas = Y_model.thetas
-
-    sort_idx = np.argsort(thetas)
-    alpha_sorted = alpha[sort_idx]
+    alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
 
-    plt.plot(thetas[sort_idx].reshape(N), alpha_sorted.reshape(N))
-    plt.savefig('alpha_v_theta.png')
-    clear_plt()
-
     alpha_inv = one_normalize(1 / alpha).reshape(len(alpha))
-    res_dict = {'alpha': alpha, 'alpha_inv': alpha_inv,
+
+    inverse_res_dict = {'alpha': alpha, 'alpha_inv': alpha_inv,
                 'W': W, 'W_rank': W_rank, 'model' : Y_model}
-    return res_dict
+    return inverse_res_dict
 
 
 def get_res_dict(Y,params):
+    params['Y_tilde'] = []
     Y_model = UnifKernel(params)
 
     W = np.asarray(Y_model.W.cpu())
@@ -330,7 +336,7 @@ def run():
     diff_quantiles = [0,.4]
     Y = normal_theta_circle(1000)
     diff_map = circle_diffs
-    params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1, 'lambda_reg': 1e-1,
+    params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1, 'lambda_reg': 1e-1, 'Y_tilde': [],
                    'nugget': 1e-3, 'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
     res_dict = get_res_dict_kern(Y, params)
     alpha = res_dict['alpha']
