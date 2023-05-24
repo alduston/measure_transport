@@ -264,6 +264,7 @@ def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
     Ns = [500,700,1000,1250,1500,1750, 2000]
+    Ns = [50,100]
 
     MMD_naive_meds = []
     MMD_unif_meds = []
@@ -277,7 +278,7 @@ def run():
     X_gen = None
     diff_map = circle_diffs
     exp_name = 'test'
-    n_trials = 20
+    n_trials = 1
     q = 1.01
     for N in Ns:
 
@@ -312,19 +313,20 @@ def run():
     print(f'MMD_unif alt means: {MMD_unif_alt_means}')
 
 
-    plt.plot(Ns, np.log(np.asarray(MMD_naive_meds)), label='naive')
-    plt.plot(Ns, np.log(np.asarray(MMD_unif_meds)), label='unif')
-    plt.plot(Ns, np.log(np.asarray(MMD_unif_alt_meds)), label='unif_alt')
+    plt.plot(Ns,MMD_naive_meds, label='naive')
+    plt.plot(Ns, MMD_unif_meds, label='unif')
+    plt.plot(Ns, MMD_unif_alt_meds, label='unif_alt')
     plt.xlabel('Sample size')
     plt.ylabel('Median MMD')
     plt.ylim(bottom = 0)
     plt.legend()
     plt.savefig(f'../../data/kernel_transport/{exp_name}/mmd_med_v_sample_size.png')
+
     clear_plt()
 
-    plt.plot(Ns, np.log(np.asarray(MMD_naive_means)), label='naive')
-    plt.plot(Ns, np.log(np.asarray(MMD_unif_means)), label='unif')
-    plt.plot(Ns, np.log(np.asarray(MMD_unif_alt_means)), label='unif_alt')
+    plt.plot(Ns, MMD_naive_means, label='naive')
+    plt.plot(Ns,MMD_unif_means, label='unif')
+    plt.plot(Ns, MMD_unif_alt_means, label='unif_alt')
     plt.xlabel('Sample size')
     plt.ylabel('Mean MMD')
     plt.ylim(bottom=0)
