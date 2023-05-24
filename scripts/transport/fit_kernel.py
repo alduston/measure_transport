@@ -264,7 +264,6 @@ def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
     Ns = [500,700,1000,1250,1500,1750, 2000]
-    Ns = [50,100]
 
     MMD_naive_meds = []
     MMD_unif_meds = []
@@ -278,7 +277,7 @@ def run():
     X_gen = None
     diff_map = circle_diffs
     exp_name = 'test'
-    n_trials = 1
+    n_trials = 15
     q = 1.01
     for N in Ns:
 
