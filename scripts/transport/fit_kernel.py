@@ -207,7 +207,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 1e-5,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
+                         'reg_lambda': 1e-7,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
@@ -260,7 +260,7 @@ def swiss_roll_exp():
 
 
 def elden_exp():
-    N = 10000
+    N = 20000
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 5
     Y_gen = sample_elden_ring
@@ -268,13 +268,13 @@ def elden_exp():
     diff_map = unif_diffs
     exp_name = 'elden_test'
     mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1000, n_bins=70)
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1300, n_bins=70)
     print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
     print(f'Uniform ELDEN mmd was {mmd_unif}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
-    os.sys(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
     return True
 
 
