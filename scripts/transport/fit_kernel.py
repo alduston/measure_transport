@@ -77,8 +77,8 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     x, y = sample.T
     x = np.asarray(x)
     y = np.asarray(y)
-    size = 5
-    s = [5 for x in x]
+    size = 10
+    s = [size for x in x]
     plt.scatter(x,y, s=s)
     
     if range != None:
@@ -140,7 +140,7 @@ def dict_to_np(dict):
 
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500, n_bins = 30,
-                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.3], vmax = None, q = 0):
+                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None, q = 0):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -209,11 +209,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 1e-7,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
+                         'reg_lambda': 1e-8,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
-    train_kernel(regression_kernel, n_iter= 15 * t_iter)
+    train_kernel(regression_kernel, n_iter= 30 * t_iter)
 
     alpha_inv1 = regression_kernel.map(Y_unif1.T)
     Y_pred_unif = resample(Y_unif1, alpha_inv1, N=tilde_scale)
@@ -323,10 +323,12 @@ def circle_comparison_exp(q = 0):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    trials = 10
+    #Ns = [500, 1000]
+    #trials = 4
+    trials = 20
 
     Y_gen = normal_theta_circle
-    X_gen = sample_normal
+    X_gen = None
     diff_map = circle_diffs
     exp_name = 'mmd_regression_test'
     if q:
@@ -341,7 +343,7 @@ def circle_comparison_exp(q = 0):
         mmds = []
         for i in range(trials):
             mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                                   N=N, plt_range=plt_range, vmax=vmax)
+                                                   N=N, plt_range=plt_range, vmax=vmax, q = q)
             unif_mmds.append(float(mmd_unif.detach().cpu()))
             mmds.append(float(mmd_vanilla.detach().cpu()))
 
