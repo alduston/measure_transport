@@ -14,7 +14,7 @@ def clear_plt():
     return True
 
 def l_scale(X):
-    return torch.quantile(k_matrix(X,X), q = .25)
+    return torch.quantile(k_matrix(X[:3300],X[:3300]), q = .25)
 
 
 def k_matrix(X,X_tilde):

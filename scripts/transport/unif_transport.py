@@ -176,8 +176,9 @@ class UnifKernel(nn.Module):
         self.thetas = torch.tensor(self.diff_map(self.Y)[1])
 
         a,b = self.params['diff_quantiles']
-        self.a_qval = torch.quantile(self.W[self.W > 0], q = a)
-        self.b_qval = torch.quantile(self.W, q = b)
+        W_s = self.W[:3300, :3300]
+        self.a_qval = torch.quantile(W_s[ W_s > 0], q = a)
+        self.b_qval = torch.quantile(W_s, q = b)
         self.W_rank = W_inf_range(self.W, self.a_qval, self.b_qval)
         self.N = len(self.W)
 

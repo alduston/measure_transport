@@ -138,7 +138,7 @@ def dict_to_np(dict):
 
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500, n_bins = 30,
-                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.3], vmax = None):
+                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -207,7 +207,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 1e-7,'mmd_kernel_params': r_mmd_params, 'print_freq': np.infty,
+                         'reg_lambda': 1e-5,'mmd_kernel_params': r_mmd_params, 'print_freq': np.infty,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
@@ -233,7 +233,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
 
 def elden_exp():
-    N = 3000
+    N = 10000
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 5
     Y_gen = sample_elden_ring
