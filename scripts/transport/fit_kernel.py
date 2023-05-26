@@ -256,6 +256,9 @@ def circle_comparison_exp():
             unif_mmds.append(mmd_unif)
             mmds.append(mmd_vanilla)
 
+            print(f'N = {N}, trial {i+1}, mmd_vanilla = {round(float((mmd_vanilla)),6)},'
+                  f' mmd_unif = {round(float((mmd_unif)),6)}')
+
         mean_mmds.append(np.mean(mmds))
         mean_unif_mmds.append(np.mean(unif_mmds))
 
