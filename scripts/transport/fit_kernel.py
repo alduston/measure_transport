@@ -233,7 +233,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
 
 def elden_exp():
-    N = 10000
+    N = 3000
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 5
     Y_gen = sample_elden_ring

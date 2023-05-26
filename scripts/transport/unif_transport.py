@@ -186,7 +186,7 @@ class UnifKernel(nn.Module):
             self.W_tilde = torch.tensor(self.diff_map( self.Y_tilde, self.Y)[0])
 
             self.a_qval = torch.max(torch.min(self.W_tilde, dim=1)[0])
-            self.b_qval = torch.quantile(self.W_tilde[:1500, :10000], q=.3)
+            self.b_qval = torch.quantile(self.W_tilde[:10000, :10000], q=.3)
             self.W_tilde_rank = W_inf_range(self.W_tilde, self.a_qval, self.b_qval)
 
         self.iters = 0
