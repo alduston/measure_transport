@@ -65,8 +65,8 @@ class RegressionKernel(nn.Module):
 
     def loss_mmd(self):
         alpha = 1/self.N * torch.exp(self.Z)
-        c = torch.linalg.norm(alpha,1)
-        Ek_XX = alpha.T @ self.mmd_XX @ alpha
+        c = torch.linalg.norm(alpha,1) **-1
+        Ek_XX = (c**2) * alpha.T @ self.mmd_XX @ alpha
         Ek_XY = c * alpha.T @ self.mmd_XY @  self.alpha_Y
         Ek_YY =  self.E_mmd_YY
         return Ek_XX - 2 * Ek_XY + Ek_YY

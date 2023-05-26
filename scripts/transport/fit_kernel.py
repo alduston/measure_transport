@@ -201,7 +201,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     r_fit_params = {'name': 'radial', 'l': l , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
-    regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 1,
+    regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
                          'reg_lambda': 0,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
@@ -266,7 +266,7 @@ def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
 
-    N  = 1000
+    N  = 100
     Y_gen = normal_theta_circle
     X_gen = sample_normal
     diff_map = circle_diffs
