@@ -7,6 +7,7 @@ import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
     sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana
+from picture_to_dist import sample_elden_ring
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -48,7 +49,7 @@ def train_step(kernel_model, optimizer):
     return loss, loss_dict
 
 
-def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
+def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cmap = None):
     try:
         sample = sample.detach().cpu()
     except AttributeError:
@@ -57,7 +58,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
         x, y = sample.T
         x = np.asarray(x)
         y = np.asarray(y)
-        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax)
+        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax, cmap = cmap)
         plt.colorbar()
     elif d == 1:
         x =  sample
@@ -136,8 +137,8 @@ def dict_to_np(dict):
     return dict
 
 
-def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500,
-                   plt_range = None, t_iter = 501, diff_quantiles = [0.0, 0.4], q = 1, vmax = None):
+def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500, n_bins = 30,
+                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.3], vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -150,14 +151,14 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     else:
         device = 'cpu'
     d = 2
-    tilde_scale = 4 * N
+    tilde_scale = 2 * N
 
     Y = torch.tensor(Y_gen(N),  device = device)
     if Y.shape[0] > Y.shape[1]:
         Y = Y.T
 
-    sample_hmap(Y.T, f'{save_dir}/Y_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-    sample_scatter(Y.T, f'{save_dir}/Y_scatter.png', d=d, bins=30, range=plt_range)
+    sample_hmap(Y.T, f'{save_dir}/Y_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
+    sample_scatter(Y.T, f'{save_dir}/Y_scatter.png', d=d, bins= n_bins, range=plt_range)
 
     unif_params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1,
                    'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
@@ -177,8 +178,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
         X2 = torch.tensor(X_gen(tilde_scale), device=device)
 
     l = l_scale(X)
-    sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins=30)
-    sample_hmap(Y_resample.T, f'{save_dir}/Y_resample_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
+    sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins= n_bins)
+    sample_hmap(Y_resample.T, f'{save_dir}/Y_resample_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
     fit_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
     mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
@@ -201,7 +202,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     Y_unif = unif_transport_kernel.map(X1).detach().cpu().numpy()
     Y_unif1 = unif_transport_kernel.map(X2).detach().cpu().numpy()
-    sample_hmap(Y_unif.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins=30, range=plt_range, vmax=vmax)
+    sample_hmap(Y_unif.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
@@ -215,11 +216,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha_inv1 = regression_kernel.map(Y_unif1.T)
     Y_pred_unif = resample(Y_unif1, alpha_inv1, N=tilde_scale)
 
-    sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins=30, range=plt_range, vmax=vmax)
-    sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins=30, range=plt_range, vmax=vmax)
+    sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
+    sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
-    sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter.png', d=d, bins=30, range=plt_range)
-    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter.png', d=d, bins=30, range=plt_range)
+    sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter.png', d=d, bins= n_bins, range=plt_range)
+    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter.png', d=d, bins= n_bins, range=plt_range)
 
     Y = torch.tensor(Y, device=device)
     Y_pred = torch.tensor(Y_pred, device=device)
@@ -231,11 +232,25 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     return mmd_vanilla, mmd_unif
 
 
+def elden_exp():
+    N = 10000
+    plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
+    vmax = 5
+    Y_gen = sample_elden_ring
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'elden_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1000, n_bins=50)
+    print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
+    print(f'Uniform ELDEN mmd was {mmd_unif}')
+
+
 def circle_comparison_exp():
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    trials = 4
+    trials = 10
 
     Y_gen = normal_theta_circle
     X_gen = sample_normal
@@ -272,7 +287,7 @@ def circle_comparison_exp():
 
 
 def run():
-    circle_comparison_exp()
+    elden_exp()
 
 
 
