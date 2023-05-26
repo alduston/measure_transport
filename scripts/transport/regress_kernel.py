@@ -63,22 +63,31 @@ class RegressionKernel(nn.Module):
         alpha_y = one_normalize(torch.exp(Z_y).detach().cpu().numpy())
         return alpha_y
 
+
+    def mmd(self, alpha, X, Y):
+        alpha = torch.tensor(alpha, device=self.device, dtype=self.dtype)
+        X = torch.tensor(X, device=self.device, dtype=self.dtype)
+        Y = torch.tensor(Y, device=self.device, dtype=self.dtype)
+
+        mmd_XX = self.mmd_kernel(X, X)
+        mmd_XY = self.mmd_kernel(X, Y)
+        mmd_YY = self.mmd_kernel(Y, Y)
+        n_y = len(Y)
+        alpha_Y = (1 / n_y) * torch.ones(n_y, device=self.device, dtype=self.dtype)
+
+        Ek_XX = alpha.T @ mmd_XX @ alpha
+        Ek_XY = alpha.T @ mmd_XY @ alpha_Y
+        Ek_YY = alpha_Y.T @ mmd_YY @ alpha_Y
+        return Ek_XX - 2 * Ek_XY + Ek_YY
+
+
     def loss_mmd(self):
         alpha = 1/self.N * torch.exp(self.Z)
-        c = torch.linalg.norm(alpha,1) **-1
+        c = torch.linalg.norm(alpha,1) ** -1
         Ek_XX = (c**2) * alpha.T @ self.mmd_XX @ alpha
         Ek_XY = c * alpha.T @ self.mmd_XY @  self.alpha_Y
         Ek_YY =  self.E_mmd_YY
         return Ek_XX - 2 * Ek_XY + Ek_YY
-
-
-    def loss_fit(self, Y = []):
-        if not len(Y):
-            Y = self.Y
-        W_inf = self.W_inf
-        target =  self.target
-        Z = self.Z
-        return torch.linalg.norm(W_inf @ torch.exp(Z) - target)**2
 
 
     def loss_reg(self):

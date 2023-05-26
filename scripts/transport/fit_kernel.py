@@ -149,7 +149,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     else:
         device = 'cpu'
     d = 2
-    tilde_scale = 2000
+    tilde_scale = 3000
 
     Y = torch.tensor(Y_gen(N),  device = device)
     if Y.shape[0] > Y.shape[1]:
@@ -191,82 +191,49 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
                           'mmd_kernel_params': mmd_params, 'normalize':  False,
                           'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-3,
                           'X_tilde': X}
+
     transport_kernel = TransportKernel(transport_params)
     train_kernel(transport_kernel, n_iter=t_iter)
 
-    #Y_tilde_unif = transport_kernel.map(X_tilde).detach().cpu().numpy()
-    #sample_hmap( Y_tilde_unif.T, f'{save_dir}/Y_tilde_unif_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
     Y_unif = unif_transport_kernel.map(X_tilde).detach().cpu().numpy()
     sample_hmap(Y_unif.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins=30, range=plt_range, vmax=vmax)
 
-    r_fit_params = {'name': 'radial', 'l': l , 'sigma': 1}
+    r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 0,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
+                         'reg_lambda': 1e-8,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
-    train_kernel(regression_kernel, n_iter= 30 * t_iter)
+
+    train_kernel(regression_kernel, n_iter= 20 * t_iter)
     alpha_inv = one_normalize(1/N * torch.exp(regression_kernel.Z).detach().cpu().numpy())
 
-    Y_pred_unif = resample(Y_unif,  alpha_inv, N = N)
-    Y_pred = transport_kernel.map(X).detach().cpu().numpy()
+    Y_pred_unif = resample(Y_unif,  alpha_inv, N = tilde_scale)
+    Y_pred = transport_kernel.map(X_tilde).detach().cpu().numpy()
 
     sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap.png', d=d, bins=30, range=plt_range, vmax=vmax)
     sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap.png', d=d, bins=30, range=plt_range, vmax=vmax)
 
+    sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter.png', d=d, bins=30, range=plt_range)
+    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter.png', d=d, bins=30, range=plt_range)
 
     Y = torch.tensor(Y, device=device)
     Y_pred = torch.tensor(Y_pred, device=device)
     Y_pred_unif = torch.tensor(Y_pred_unif, device=device)
 
-    mmd_vanilla = transport_kernel.loss_fit(map_vec = Y_pred.T, target = Y.T)
-    mmd_unif = transport_kernel.loss_fit(Y_pred_unif.T, target = Y.T)
+    mmd_vanilla = transport_kernel.mmd(map_vec = Y_pred.T, target = Y.T)
+    mmd_unif = transport_kernel.mmd(map_vec =Y_pred_unif.T, target = Y.T)
 
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Unif mmd was {mmd_unif}')
-
-    #inverse_unif_params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1,
-                            #'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
-    #inverse_res_dict = dict_to_np(get_inverse_res_dict(Y, Y_tilde, inverse_unif_params))
-    #alpha_tilde_inv = one_normalize(inverse_res_dict['alpha'])
-
-    #Y_tilde_naive = naive_transport_kernel.map(X_tilde).detach().cpu().numpy()
-    #sample_hmap(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-    #sample_scatter(Y_tilde_naive.T, f'{save_dir}/Ypred_naive_scatter.png', d=d, bins=30, range=plt_range)
-    #alpha_tilde_inv = one_normalize(np.exp(regression_kernel.map(Y_tilde.T).detach().cpu().numpy()))
-    #Y_tilde_resample = resample(Y_tilde, alpha_tilde_inv, N = tilde_scale)
-
-    #Y_alt = torch.tensor(Y_gen(tilde_scale), device=device)
-    #if Y_alt.shape[0] > Y_alt.shape[1]:
-        #Y_alt = Y_alt.T
-
-    #Y_alt = (Y_alt.T[Y_alt[0] < q][:N]).T
-    #sample_hmap(Y_alt.T, f'{save_dir}/Y_alt_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-
-    #Y_pred_naive = torch.tensor(resample(Y_tilde_naive, N = tilde_scale), device = device)
-    #Y_pred_naive = (Y_pred_naive.T[Y_pred_naive[0] < q][:N]).T
-    #sample_hmap(Y_pred_naive.T, f'{save_dir}/Y_alt_naive_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-
-    #Y_pred = torch.tensor(resample(Y_tilde, alpha_tilde_inv, N= tilde_scale), device = device)
-    #Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
-    #sample_hmap(Y_pred.T, f'{save_dir}/Y_alt_unif_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-    #mmd_naive = transport_kernel.loss_fit(Y_pred_naive.T, Y_alt.T)
-    #mmd_unif = transport_kernel.loss_fit(Y_pred.T, Y_alt.T)
-
-    #print(f'Naive mmd was {mmd_naive}')
-    #print(f'Unif mmd was {mmd_unif}')
-
-    #sample_hmap(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_hmap.png', d=d, bins=30, range=plt_range, vmax = vmax)
-    #sample_scatter(Y_tilde_resample.T, f'{save_dir}/Ypred_resampled_scatter.png', d=d, bins=30, range=plt_range)
-    #return mmd_naive, mmd_unif
 
 
 def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
 
-    N  = 100
+    N  = 1000
     Y_gen = normal_theta_circle
     X_gen = sample_normal
     diff_map = circle_diffs

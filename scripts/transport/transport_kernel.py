@@ -145,22 +145,27 @@ class TransportKernel(nn.Module):
         return res
 
 
-    def loss_fit(self, map_vec = [], target = []):
-        if not len(map_vec):
-            map_vec = self.Z + self.X
-        if not len(target):
-            Y = self.Y
-            k_YY_mean = self.mmd_YY_mean
-        else:
-            Y = target
-            k_YY_mean = torch.mean(self.mmd_kernel(Y,Y))
+    def loss_mmd(self):
+        map_vec = self.Z + self.X
+        Y = self.Y
+        normalization = self.N / (self.N - 1)
 
+        k_YY_mean = self.mmd_YY_mean
         k_ZZ = self.mmd_kernel(map_vec, map_vec)
-        #k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
+        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
+        k_ZY = self.mmd_kernel(map_vec, Y)
+        return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
+
+
+    def mmd(self, map_vec, target):
+        Y = target
+        normalization = self.N/(self.N-1)
+
+        k_YY_mean = torch.mean(self.mmd_kernel(Y,Y))
+        k_ZZ = self.mmd_kernel(map_vec, map_vec)
+        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
         k_ZY =  self.mmd_kernel(Y, map_vec)
-        #normal_factor = self.N/(self.N-1)
-        normal_factor = 1
-        return normal_factor * (torch.mean(k_ZZ)) - 2*torch.mean(k_ZY) + k_YY_mean
+        return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
 
 
     def loss_reg(self, Z = []):
@@ -170,10 +175,10 @@ class TransportKernel(nn.Module):
 
 
     def loss(self):
-        loss_fit = self.loss_fit()
+        loss_mmd = self.loss_mmd()
         loss_reg  = self.loss_reg()
-        loss = loss_fit + loss_reg
-        loss_dict = {'fit': loss_fit.detach().cpu(),
+        loss = loss_mmd + loss_reg
+        loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
