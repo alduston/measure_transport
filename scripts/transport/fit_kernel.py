@@ -234,15 +234,13 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 def circle_comparison_exp():
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
-    #Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    Ns =  [400, 800, 1200]
+    Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
     trials = 4
-    #trials = 10
 
     Y_gen = normal_theta_circle
     X_gen = sample_normal
     diff_map = circle_diffs
-    exp_name = 'mmd_regression_test_small'
+    exp_name = 'mmd_regression_test'
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     mean_unif_mmds = []
@@ -254,8 +252,8 @@ def circle_comparison_exp():
         for i in range(trials):
             mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                                    N=N, plt_range=plt_range, vmax=vmax)
-            unif_mmds.append(mmd_unif)
-            mmds.append(mmd_vanilla)
+            unif_mmds.append(float(mmd_unif.detach().cpu()))
+            mmds.append(float(mmd_vanilla.detach().cpu()))
 
             print(f'N = {N}, trial {i+1}, mmd_vanilla = {round(float((mmd_vanilla)),6)},'
                   f' mmd_unif = {round(float((mmd_unif)),6)}')
