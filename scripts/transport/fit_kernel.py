@@ -7,7 +7,8 @@ import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
     sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana
-
+import warnings
+warnings.filterwarnings("ignore")
 
 def clear_plt():
     plt.figure().clear()
@@ -234,14 +235,14 @@ def circle_comparison_exp():
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     #Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    Ns =  [400, 800]
+    Ns =  [400, 800, 1200]
     trials = 4
     #trials = 10
 
     Y_gen = normal_theta_circle
     X_gen = sample_normal
     diff_map = circle_diffs
-    exp_name = 'mmd_regression_test'
+    exp_name = 'mmd_regression_test_small'
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     mean_unif_mmds = []
@@ -270,7 +271,6 @@ def circle_comparison_exp():
     plt.legend()
     plt.savefig(f'{save_dir}/MMD_comperison.png')
     clear_plt()
-
 
 
 def run():
