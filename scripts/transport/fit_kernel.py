@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana
+    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, normal_theta_circle_noisy
 from picture_to_dist import sample_elden_ring
 import warnings
 warnings.filterwarnings("ignore")
@@ -185,7 +185,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     unif_transport_params = {'X': X, 'Y': Y_resample.T, 'fit_kernel_params': fit_params,
                     'mmd_kernel_params': mmd_params, 'normalize': False,
-                    'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': np.infty, 'learning_rate': .1, 'nugget': 1e-3,
+                    'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-3,
                     'X_tilde': X1}
 
     unif_transport_kernel = TransportKernel(unif_transport_params)
@@ -193,7 +193,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     transport_params = {'X': X, 'Y': Y.T,  'fit_kernel_params': fit_params,
                           'mmd_kernel_params': mmd_params, 'normalize':  False,
-                          'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': np.infty, 'learning_rate': .1, 'nugget': 1e-3,
+                          'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-3,
                           'X_tilde': X1}
 
     transport_kernel = TransportKernel(transport_params)
@@ -207,11 +207,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_unif.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 1e-5,'mmd_kernel_params': r_mmd_params, 'print_freq': np.infty,
+                         'reg_lambda': 1e-5,'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
-    train_kernel(regression_kernel, n_iter= 20 * t_iter)
+    train_kernel(regression_kernel, n_iter= 15 * t_iter)
 
     alpha_inv1 = regression_kernel.map(Y_unif1.T)
     Y_pred_unif = resample(Y_unif1, alpha_inv1, N=tilde_scale)
@@ -231,6 +231,33 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
 
     return mmd_vanilla, mmd_unif
 
+def banana_exp():
+    N = 800
+    plt_range = [[-4, 4], [-1, 10]]
+    vmax = .5
+    Y_gen = sample_banana
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'banana_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 401, n_bins=40)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform mmd was {mmd_unif}')
+
+
+def swiss_roll_exp():
+    N = 750
+    plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
+    vmax = .3
+    Y_gen = sample_swiss_roll
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'swiss_roll_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform mmd was {mmd_unif}')
+
 
 def elden_exp():
     N = 10000
@@ -241,9 +268,46 @@ def elden_exp():
     diff_map = unif_diffs
     exp_name = 'elden_test'
     mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1000, n_bins=50)
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1000, n_bins=70)
     print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
     print(f'Uniform ELDEN mmd was {mmd_unif}')
+
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+
+    os.sys(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
+    return True
+
+
+def two_circle_exp():
+    N = 1000
+    plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
+    vmax = 8
+    Y_gen = normal_theta_two_circle
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'two_circle_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
+    print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
+    print(f'Uniform ELDEN mmd was {mmd_unif}')
+
+
+def circle_exp():
+    N = 1000
+    plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
+    vmax = 8
+    Y_gen = normal_theta_circle_noisy
+    X_gen = None
+    diff_map = circle_diffs
+    exp_name = 'circle_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform  mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
+    return True
 
 
 def circle_comparison_exp():
@@ -287,7 +351,7 @@ def circle_comparison_exp():
 
 
 def run():
-    elden_exp()
+    circle_exp()
 
 
 

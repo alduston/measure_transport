@@ -213,6 +213,20 @@ def normal_theta_circle(N = 500):
     return sample.T
 
 
+def normal_theta_circle_noisy(N = 500, scale = 5e-2):
+    thetas = np.linspace(-np.pi, np.pi, N)
+    theta_probs = one_normalize(np.exp(-2 * np.abs(thetas)) + .01)
+    thetas = thetas.reshape((1,len(thetas)))
+    thetas = resample(thetas, theta_probs, N).reshape(thetas.shape[1])
+    X = np.cos(thetas)
+    X +=  np.random.randn(*X.shape) * scale
+    Y = np.sin(thetas)
+    Y += np.random.randn(*Y.shape) * scale
+    sample = np.asarray([[x, y] for x, y in zip(X, Y)])
+    X, Y = sample.T[0], sample.T[1]
+    return sample.T
+
+
 def normal_theta_two_circle(N = 500):
     thetas = np.linspace(-np.pi, np.pi, N)
     theta_probs = one_normalize(np.exp(-2 * np.abs(thetas)) + .01)
@@ -249,7 +263,7 @@ def sample_uniform(N = 100,  d = 2, l = -1.5, h = 1.5):
 
 def sample_banana(N):
     xx = np.random.randn(1, N)
-    zz = 0.1 * np.random.randn(1, N)
+    zz = np.random.randn(1, N)
     Y = np.concatenate((xx, np.power(xx, 2) + 0.3 * zz), 1).reshape(2, N)
     return Y
 
