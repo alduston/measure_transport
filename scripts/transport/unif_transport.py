@@ -226,7 +226,6 @@ def normalize_rows(W):
     for i,row in enumerate(W):
         W[i] *= 1/np.linalg.norm(W[i], ord = 1)
     return W
-    #return (np.diag(np.diag(W @ W.T)**-1) @ W.T).T
 
 
 def inverse_smoothing(alpha, W, l = .08):
@@ -256,17 +255,15 @@ def get_inverse_res_dict(Y,Y_tilde, params):
     params['Y_tilde'] = Y_tilde
     Y_model = UnifKernel(params)
 
-    W_tilde = np.asarray(Y_model.W_tilde.cpu())
     W = np.asarray(Y_model.W.cpu())
-
     W_rank = np.asarray(Y_model.W_rank.cpu())
+
     W_tilde_rank = np.asarray(Y_model.W_tilde_rank.cpu())
     W_rank_2 = W_tilde_rank.T @ W_tilde_rank
 
     Y_target =  np.asarray(Y_model.target_vec.cpu())
     target = W_rank @ Y_target
     target = one_normalize(smoothing(target,  W, l = .05))
-
     W_rank_t = W_tilde_rank.T @ target
 
     def f(alpha):
@@ -276,17 +273,15 @@ def get_inverse_res_dict(Y,Y_tilde, params):
     def grad_f(alpha):
         return 2 * (W_rank_2 @ alpha - W_rank_t)
 
-    n = len(Y.T)
     N = len(Y_tilde.T)
     x_0 = np.full(N, 1 / N)
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds, jac=grad_f,
-                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
+                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
-
     alpha_inv = one_normalize(1 / alpha).reshape(len(alpha))
 
     inverse_res_dict = {'alpha': alpha, 'alpha_inv': alpha_inv,
@@ -316,7 +311,7 @@ def get_res_dict(Y,params):
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', jac=grad_f, bounds=bnds,
-                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-8, 'ftol': 1e-10})
+                      options={'disp':False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
@@ -338,7 +333,7 @@ def run():
     diff_map = circle_diffs
     params = {'Y': Y, 'print_freq': 1000, 'learning_rate': 1, 'lambda_reg': 1e-1, 'Y_tilde': [],
                    'nugget': 1e-3, 'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
-    res_dict = get_res_dict_kern(Y, params)
+    res_dict = get_res_dict(Y, params)
     alpha = res_dict['alpha']
     Y_resample = resample(Y, alpha , N)
     sample_hmap(Y_resample, 'Y_hmmm.png')
