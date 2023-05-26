@@ -77,7 +77,9 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     x, y = sample.T
     x = np.asarray(x)
     y = np.asarray(y)
-    plt.scatter(x,y)
+    size = 5
+    s = [5 for x in x]
+    plt.scatter(x,y, s=s)
     
     if range != None:
         x_left, x_right = range[0]
@@ -138,7 +140,7 @@ def dict_to_np(dict):
 
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs,  N = 500, n_bins = 30,
-                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None):
+                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.3], vmax = None, q = 0):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -216,6 +218,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     alpha_inv1 = regression_kernel.map(Y_unif1.T)
     Y_pred_unif = resample(Y_unif1, alpha_inv1, N=tilde_scale)
 
+    if q:
+        Y = (Y.T[Y[0] < q][:N]).T
+        Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
+        Y_pred_unif = (Y_pred_unif.T[Y_pred_unif[0] < q][:N]).T
+
     sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
     sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
@@ -226,8 +233,10 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     Y_pred = torch.tensor(Y_pred, device=device)
     Y_pred_unif = torch.tensor(Y_pred_unif, device=device)
 
+
     mmd_vanilla = transport_kernel.mmd(map_vec = Y_pred.T, target = Y.T)
     mmd_unif = transport_kernel.mmd(map_vec =Y_pred_unif.T, target = Y.T)
+
 
     return mmd_vanilla, mmd_unif
 
@@ -310,7 +319,7 @@ def circle_exp():
     return True
 
 
-def circle_comparison_exp():
+def circle_comparison_exp(q = 0):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
@@ -320,6 +329,8 @@ def circle_comparison_exp():
     X_gen = sample_normal
     diff_map = circle_diffs
     exp_name = 'mmd_regression_test'
+    if q:
+        exp_name = f'{exp_name}{q}'
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     mean_unif_mmds = []
@@ -351,7 +362,7 @@ def circle_comparison_exp():
 
 
 def run():
-    circle_exp()
+    circle_comparison_exp(q = .8)
 
 
 
