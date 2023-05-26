@@ -266,7 +266,7 @@ def run():
     plt_range = [[-1.5,1.5],[-1.5,1.5]]
     vmax = 8
 
-    N  = 100
+    N  = 1000
     Y_gen = normal_theta_circle
     X_gen = sample_normal
     diff_map = circle_diffs

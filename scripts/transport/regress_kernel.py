@@ -68,7 +68,7 @@ class RegressionKernel(nn.Module):
         c = torch.linalg.norm(alpha,1)
         Ek_XX = alpha.T @ self.mmd_XX @ alpha
         Ek_XY = c * alpha.T @ self.mmd_XY @  self.alpha_Y
-        Ek_YY = c**2 * self.E_mmd_YY
+        Ek_YY =  self.E_mmd_YY
         return Ek_XX - 2 * Ek_XY + Ek_YY
 
 
