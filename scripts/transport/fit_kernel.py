@@ -246,7 +246,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     return mmd_vanilla, mmd_unif, mmd_opt
 
 
-def banana_exp(N = 2000):
+def banana_exp(N = 1500):
     plt_range = [[-4, 4], [-1, 10]]
     vmax = .5
     Y_gen = sample_banana
@@ -255,11 +255,11 @@ def banana_exp(N = 2000):
     exp_name = 'banana_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 401, n_bins=40)
-    print(f'Vanilla mmd was {mmd_vanilla}')
-    print(f'Uniform mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def moons_exp(N = 2000):
+def moons_exp(N = 1500):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = sample_moons
@@ -268,10 +268,11 @@ def moons_exp(N = 2000):
     exp_name = 'moons_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
-    print(f'Vanilla mmd was {mmd_vanilla}')
-    print(f'Uniform mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
-def swiss_roll_exp(N = 1000):
+
+def swiss_roll_exp(N = 1500):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = sample_swiss_roll
@@ -280,11 +281,11 @@ def swiss_roll_exp(N = 1000):
     exp_name = 'swiss_roll_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
-    print(f'Vanilla mmd was {mmd_vanilla}')
-    print(f'Uniform mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def spiral_exp(N= 2000):
+def spiral_exp(N= 1500):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = sample_spirals
@@ -293,8 +294,8 @@ def spiral_exp(N= 2000):
     exp_name = 'spiral_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
-    print(f'Vanilla mmd was {mmd_vanilla}')
-    print(f'Uniform mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
 def elden_exp(N = 15000):
@@ -306,13 +307,9 @@ def elden_exp(N = 15000):
     exp_name = 'elden_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 1300, n_bins=70)
-    print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
-    print(f'Uniform ELDEN mmd was {mmd_unif}')
-
     save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
-    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
-    return True
 
 def two_circle_exp(N = 1000):
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
@@ -323,8 +320,8 @@ def two_circle_exp(N = 1000):
     exp_name = 'two_circle_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
-    print(f'Vanilla ELDEN mmd was {mmd_vanilla}')
-    print(f'Uniform ELDEN mmd was {mmd_unif}')
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
 def bambdad_exp(N = 5000):
@@ -336,12 +333,8 @@ def bambdad_exp(N = 5000):
     exp_name = 'bambdad_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 800, n_bins=60)
-    print(f'Vanilla mmd was {mmd_vanilla}')
-    print(f'Uniform  mmd was {mmd_unif}')
     save_dir = f'../../data/kernel_transport/{exp_name}'
-
-    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
-    return True
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 def circle_exp(N = 1000):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
@@ -355,18 +348,14 @@ def circle_exp(N = 1000):
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     save_dir = f'../../data/kernel_transport/{exp_name}'
-
-    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
-    return True
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
 def circle_comparison_exp(q = 0):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
-    #Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    Ns = [500,1000]
-    trials = 4
-    #trials = 20
+    Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
+    trials = 20
 
     Y_gen = normal_theta_circle
     X_gen = None
@@ -410,7 +399,13 @@ def circle_comparison_exp(q = 0):
 
 
 def run():
-    elden_exp()
+    spiral_exp()
+    banana_exp()
+    swiss_roll_exp()
+    moons_exp()
+    circle_comparison_exp(q=1.01)
+    circle_comparison_exp(q=.75)
+
 
 
 if __name__=='__main__':
