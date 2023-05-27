@@ -344,6 +344,10 @@ def sample_circles(N):
     return inf_train_gen("circles", batch_size=N)
 
 
+def sample_spirals(N):
+    return inf_train_gen("2spirals", batch_size=N)
+
+
 
 def run():
     data = inf_train_gen("swissroll")

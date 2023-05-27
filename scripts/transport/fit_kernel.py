@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, normal_theta_circle_noisy
+    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals
 from picture_to_dist import sample_elden_ring,sample_bambdad
 import warnings
 warnings.filterwarnings("ignore")
@@ -130,6 +130,7 @@ def transport_exp(X_gen, Y_gen, exp_name, N=1000, plt_range=None, t_iter = 400):
     sample_scatter(Y_tilde.T, f'{save_dir}/Ypred_scatter.png', d=2, bins=30, range=plt_range)
     return True
 
+
 def dict_to_np(dict):
     for key,val in dict.items():
         try:
@@ -153,7 +154,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     else:
         device = 'cpu'
     d = 2
-    tilde_scale = 2 * N
+    tilde_scale = 5 * N
 
     Y = torch.tensor(Y_gen(N),  device = device)
     if Y.shape[0] > Y.shape[1]:
@@ -213,10 +214,10 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
                          'alpha': alpha, 'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
 
     regression_kernel =  RegressionKernel(regression_params)
-    train_kernel(regression_kernel, n_iter= 30 * t_iter)
+    train_kernel(regression_kernel, n_iter= 20 * t_iter)
 
     alpha_inv = regression_kernel.map(Y_unif.T)
-    Y_pred_unif = resample(Y_unif1, alpha_inv, N=tilde_scale)
+    Y_pred_unif = resample(Y_unif, alpha_inv, N=tilde_scale)
 
     alpha_inv1 = regression_kernel.map(Y_unif1.T)
     Y_pred_unif1 = resample(Y_unif1, alpha_inv1, N=tilde_scale)
@@ -229,22 +230,21 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map = unif_diffs, 
     sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
     sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
-    sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter.png', d=d, bins= n_bins, range=plt_range)
-    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter.png', d=d, bins= n_bins, range=plt_range)
+    sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter_{N}.png', d=d, bins= n_bins, range=plt_range)
+    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter_{N}.png', d=d, bins= n_bins, range=plt_range)
 
     Y = torch.tensor(Y, device=device)
     Y_pred = torch.tensor(Y_pred, device=device)
     Y_pred_unif = torch.tensor(Y_pred_unif, device=device)
 
-
     mmd_vanilla = transport_kernel.mmd(map_vec = Y_pred.T, target = Y.T)
     mmd_unif = transport_kernel.mmd(map_vec =Y_pred_unif.T, target = Y.T)
 
-
     return mmd_vanilla, mmd_unif
 
+
 def banana_exp():
-    N = 800
+    N = 2000
     plt_range = [[-4, 4], [-1, 10]]
     vmax = .5
     Y_gen = sample_banana
@@ -257,10 +257,23 @@ def banana_exp():
     print(f'Uniform mmd was {mmd_unif}')
 
 
-def swiss_roll_exp():
-    N = 750
+def moons_exp():
+    N = 2000
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
-    vmax = .3
+    vmax = None
+    Y_gen = sample_moons
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'moons_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform mmd was {mmd_unif}')
+
+def swiss_roll_exp():
+    N = 2000
+    plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
+    vmax = None
     Y_gen = sample_swiss_roll
     X_gen = None
     diff_map = unif_diffs
@@ -271,9 +284,23 @@ def swiss_roll_exp():
     print(f'Uniform mmd was {mmd_unif}')
 
 
+def spiral_exp():
+    N = 2000
+    plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
+    vmax = None
+    Y_gen = sample_spirals
+    X_gen = None
+    diff_map = unif_diffs
+    exp_name = 'spiral_test'
+    mmd_vanilla, mmd_unif = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 400, n_bins=40)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform mmd was {mmd_unif}')
+
+
 def elden_exp():
-    N = 20000
-    plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
+    N = 2000
+    plt_range = [[-.7, .7], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
     X_gen = None
@@ -289,9 +316,8 @@ def elden_exp():
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}" > {save_dir}/mmd_results.txt ')
     return True
 
-
 def two_circle_exp():
-    N = 1000
+    N = 2000
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
     vmax = 8
     Y_gen = normal_theta_two_circle
@@ -325,7 +351,7 @@ def circle_exp():
     N = 1000
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
-    Y_gen = normal_theta_circle_noisy
+    Y_gen = normal_theta_circle
     X_gen = None
     diff_map = circle_diffs
     exp_name = 'circle_test'
@@ -382,7 +408,11 @@ def circle_comparison_exp(q = 0):
 
 
 def run():
-    bambdad_exp()
+    moons_exp()
+    spiral_exp()
+    banana_exp()
+    swiss_roll_exp()
+    circle_comparison_exp(q=.75)
 
 
 if __name__=='__main__':
