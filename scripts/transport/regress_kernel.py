@@ -58,21 +58,27 @@ class RegressionKernel(nn.Module):
         self.N_Y = len(self.Y)
 
         self.diff_map = self.params['diff_map']
-
-        #self.WXX,self.WXY,self.WYY =  self.diff_map(self.X.T.detach().cpu().numpy(),
-                                                    #self.Y.T.detach().cpu().numpy())
-
-        #self.WXX = torch.tensor(self.WXX, device=self.device, dtype=self.dtype)
-        #self.WXY = torch.tensor(self.WXY, device=self.device, dtype=self.dtype)
-        #self.WYY = torch.tensor(self.WYY, device=self.device, dtype=self.dtype)
-
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
-        self.fit_kXX = self.fit_kernel(self.X, self.X)
+        if self.params['use_geo']:
+            self.WXX,self.WXY,self.WYY =  self.diff_map(self.X.T.detach().cpu().numpy(),self.Y.T.detach().cpu().numpy())
 
-        self.mmd_XX = self.mmd_kernel(self.X, self.X)
-        self.mmd_XY = self.mmd_kernel(self.X, self.Y)
-        self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
+
+            self.WXX = torch.tensor(self.WXX, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXX)
+            self.WXY = torch.tensor(self.WXY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXY)
+            self.WYY = torch.tensor(self.WYY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WYY)
+
+            self.fit_kXX = self.fit_kernel(self.WXX)
+            self.mmd_XX = self.mmd_kernel(self.WXX)
+            self.mmd_XY = self.mmd_kernel(self.WXY)
+            self.mmd_YY = self.mmd_kernel(self.WYY)
+
+        else:
+            self.fit_kXX = self.fit_kernel(self.X, self.X)
+
+            self.mmd_XX = self.mmd_kernel(self.X, self.X)
+            self.mmd_XY = self.mmd_kernel(self.X, self.Y)
+            self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
         self.alpha_Y = torch.ones(len(self.Y), device = self.device, dtype = self.dtype)/len(self.Y)
         self.E_mmd_YY = self.alpha_Y.T @ self.mmd_YY @ self.alpha_Y
@@ -108,14 +114,15 @@ class RegressionKernel(nn.Module):
         X = torch.tensor(X, device=self.device, dtype=self.dtype)
         Y = torch.tensor(Y, device=self.device, dtype=self.dtype)
 
-        mmd_XX = self.mmd_kernel(X,X)
-        mmd_XY = self.mmd_kernel(X,Y)
-        mmd_YY = self.mmd_kernel(Y,Y)
-
-        #WXX, WXY, WYY = self.diff_map(X, Y)
-        #mmd_XX = self.mmd_kernel(WXX)
-        #mmd_XY = self.mmd_kernel(WXY)
-        #mmd_YY = self.mmd_kernel(WYY)
+        if self.params['use_geo']:
+            WXX, WXY, WYY = self.diff_map(Y,X)
+            mmd_XX = self.mmd_kernel(WXX)
+            mmd_XY = self.mmd_kernel(WXY)
+            mmd_YY = self.mmd_kernel(WYY)
+        else:
+            mmd_XX = self.mmd_kernel(X,X)
+            mmd_XY = self.mmd_kernel(X,Y)
+            mmd_YY = self.mmd_kernel(Y,Y)
 
         n_y = len(Y)
         alpha_Y = (1 / n_y) * torch.ones(n_y, device=self.device, dtype=self.dtype)

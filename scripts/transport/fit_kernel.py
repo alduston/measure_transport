@@ -8,7 +8,7 @@ from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, c
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
     sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals
 from picture_to_dist import sample_elden_ring,sample_bambdad
-from kernel_geodesics import geo_diffs
+from kernel_geodesics import geo_diffs, boosted_geo_diffs
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -143,7 +143,7 @@ def dict_to_np(dict):
     return dict
 
 
-def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  unif_diffs,  N = 500, n_bins = 30,
+def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,  N = 500, n_bins = 30,
                    plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None, q = 0, s = .75):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
@@ -157,7 +157,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  unif_diffs,
     else:
         device = 'cpu'
     d = 2
-    tilde_scale = 5 * N
+    tilde_scale = 3 * N
 
     Y = torch.tensor(Y_gen(N),  device = device)
     Y_test = torch.tensor(Y_gen(N), device=device)
@@ -206,22 +206,27 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  unif_diffs,
     Y_ulatent_pred = unif_transport_kernel.map(X1).detach().cpu().numpy()
     sample_hmap(Y_ulatent_pred.T, f'{save_dir}/Y_ulatent_pred.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
+    #l_W = l_scale(torch.tensor(Y_res['W'], device=device))
+    #r_fit_params = {'name': 'geo', 'l': l_W / 7 , 'sigma': 1}
+    #r_mmd_params = {'name': 'geo', 'l': l_W / 7, 'sigma': 1}
+
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
-    r_mmd_params = {'name': 'radial', 'l': l  / 7, 'sigma': 1}
+    r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_ulatent_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 2e-8,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': unif_diffs,
-                          'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank']}
+                         'reg_lambda': 0,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': unif_diffs,
+                          'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': False}
 
     regression_kernel =  RegressionKernel(regression_params)
     train_kernel(regression_kernel, n_iter= 20 * t_iter)
 
-    alpha_inv = regression_kernel.map(Y_ulatent_pred.T)
+    alpha_inv = regression_kernel.map(Y_ulatent_pred.T, Z_y  = regression_kernel.Z)
     Y_pred_unif = resample(Y_ulatent_pred, alpha_inv, N=tilde_scale)
 
     if q:
         Y = (Y.T[Y[0] < q][:N]).T
         Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
         Y_pred_unif = (Y_pred_unif.T[Y_pred_unif[0] < q][:N]).T
+        Y_test = (Y_test.T[Y_test[0] < q][:N]).T
 
     sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
     sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
@@ -239,12 +244,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  unif_diffs,
     return mmd_vanilla, mmd_unif, mmd_opt
 
 
-def banana_exp(N = 1500):
+def banana_exp(N = 1500, diff_map = boosted_geo_diffs):
     plt_range = [[-4, 4], [-1, 10]]
     vmax = .5
     Y_gen = sample_banana
     X_gen = None
-    diff_map = unif_diffs
     exp_name = 'banana_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 401, n_bins=40)
@@ -256,12 +260,27 @@ def banana_exp(N = 1500):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def moons_exp(N = 1500):
+def ring_exp(N = 1500, diff_map = boosted_geo_diffs):
+    plt_range = [[-4.2, 4.2], [-4.2, 4.2]]
+    vmax = .5
+    Y_gen = sample_rings
+    X_gen = None
+    exp_name = 'ring_test'
+    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 601, n_bins=40)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Optimal mmd was {mmd_opt}')
+
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+
+
+def moons_exp(N = 1500, diff_map = boosted_geo_diffs):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
-    vmax = None
+    vmax = .33
     Y_gen = sample_moons
     X_gen = None
-    diff_map = unif_diffs
     exp_name = 'moons_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=40)
@@ -273,12 +292,11 @@ def moons_exp(N = 1500):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def swiss_roll_exp(N = 1500):
+def swiss_roll_exp(N = 1500, diff_map = boosted_geo_diffs):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .35
     Y_gen = sample_swiss_roll
     X_gen = None
-    diff_map = unif_diffs
     exp_name = 'swiss_roll_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=40)
@@ -290,12 +308,11 @@ def swiss_roll_exp(N = 1500):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def spiral_exp(N= 1500):
+def spiral_exp(N= 1500, diff_map = boosted_geo_diffs):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = sample_spirals
     X_gen = None
-    diff_map = unif_diffs
     exp_name = 'spiral_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=40)
@@ -307,13 +324,12 @@ def spiral_exp(N= 1500):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 15000):
-    plt_range = [[-.7, .7], [-1.2, 1.2]]
+def elden_exp(N = 8000, diff_map = boosted_geo_diffs):
+    plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
     X_gen = None
-    diff_map = unif_diffs
-    exp_name = 'elden_test'
+    exp_name = 'elden'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 1300, n_bins=70)
     print(f'Vanilla mmd was {mmd_vanilla}')
@@ -324,12 +340,11 @@ def elden_exp(N = 15000):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def two_circle_exp(N = 1000):
+def two_circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
     vmax = 8
     Y_gen = normal_theta_two_circle
     X_gen = None
-    diff_map = unif_diffs
     exp_name = 'two_circle_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
@@ -341,13 +356,12 @@ def two_circle_exp(N = 1000):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def bambdad_exp(N = 5000):
+def bambdad_exp(N = 8000, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = None
     Y_gen = sample_bambdad
     X_gen = None
-    diff_map = unif_diffs
-    exp_name = 'bambdad_test'
+    exp_name = 'bambdad'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 800, n_bins=60)
     print(f'Vanilla mmd was {mmd_vanilla}')
@@ -358,12 +372,11 @@ def bambdad_exp(N = 5000):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def circle_exp(N = 1000):
+def circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Y_gen = normal_theta_circle
     X_gen = None
-    diff_map = circle_diffs
     exp_name = 'circle_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
@@ -375,7 +388,7 @@ def circle_exp(N = 1000):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def circle_comparison_exp(q = 0):
+def circle_comparison_exp(q = 0, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
@@ -383,7 +396,6 @@ def circle_comparison_exp(q = 0):
 
     Y_gen = normal_theta_circle
     X_gen = None
-    diff_map = circle_diffs
     exp_name = 'mmd_regression_test'
     if q:
         exp_name = f'{exp_name}{q}'
@@ -423,14 +435,8 @@ def circle_comparison_exp(q = 0):
 
 
 def run():
-    circle_comparison_exp()
-    circle_comparison_exp(q = .75)
-    two_circle_exp()
-    spiral_exp()
-    swiss_roll_exp()
-    moons_exp()
-    banana_exp()
-
+   elden_exp()
+   bambdad_exp()
 
 if __name__=='__main__':
     run()
