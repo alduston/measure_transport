@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs, geo_circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals
+    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals,normal_theta_circle_noisy
 from picture_to_dist import sample_elden_ring,sample_bambdad
 from kernel_geodesics import geo_diffs, boosted_geo_diffs
 
@@ -380,12 +380,12 @@ def bambdad_exp(N = 8000, diff_map = boosted_geo_diffs):
 def circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
-    Y_gen = normal_theta_circle
+    Y_gen = normal_theta_circle_noisy
     X_gen = None
     exp_name = 'circle_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30,
-                                           r_diff_map = unif_diffs, use_geo = False)
+                                           r_diff_map = unif_diffs, use_geo = False, s = 1)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     print(f'Optimal mmd was {mmd_opt}')
@@ -394,15 +394,14 @@ def circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def circle_comparison_exp(q = 0, diff_map = boosted_geo_diffs):
+def comparison_exp(Y_gen, name = '', q = 0, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
     trials = 20
 
-    Y_gen = normal_theta_circle
     X_gen = None
-    exp_name = 'mmd_regression_test'
+    exp_name = f'mmd_regression_test_{name}'
     if q:
         exp_name = f'{exp_name}{q}'
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -439,10 +438,16 @@ def circle_comparison_exp(q = 0, diff_map = boosted_geo_diffs):
     plt.savefig(f'{save_dir}/MMD_comperison.png')
     clear_plt()
 
+#Vanilla mmd was 0.005984625700442087
+#Uniform  mmd was 0.001884475802966551
+#Optimal mmd was 0.001267047919284614
 
 def run():
-    elden_exp(N= 8000)
-    ring_exp(N = 2000)
+    ring_exp(N=2000, diff_map=boosted_geo_diffs)
+    elden_exp(N = 8000, diff_map=geo_diffs)
+    bambdad_exp(N = 8000, diff_map=geo_diffs)
+
+
 
 if __name__=='__main__':
     run()

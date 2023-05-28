@@ -60,6 +60,11 @@ def get_W_geo(W_t0, W_knn, max_d = 50):
 def geo_diffs(X, Y = [], k = 25):
     N_x = max(list(X.shape))
     N_y = 0
+    try:
+        X = X.detach().cpu().numpy()
+        Y = Y.detach().cpu().numpy()
+    except BaseException:
+        pass
     if len(Y):
         N_y = max(list(Y.shape))
         XY = np.concatenate((X,Y), axis = 1)

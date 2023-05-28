@@ -67,8 +67,6 @@ def get_kernel(kernel_params, device, dtype = torch.float32):
         return lambda W: radial_kernel(X = [], X_tilde = [],
                                        kern_params = kernel_params, diff_matrix= W)
 
-
-
 def normalize(tensor, revar = False):
     m_dim = int(torch.argmax(torch.tensor(tensor.shape)))
     normal_tensor = tensor
@@ -139,31 +137,19 @@ class TransportKernel(nn.Module):
         return res
 
 
-    def loss_mmd_alt(self):
+    def loss_mmd(self):
         map_vec = self.Z + self.X
         Y = self.Y
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
         mmd_ZY = self.mmd_kernel(map_vec, Y)
 
-        alpha_Y = self.alpha_y
+        alpha_y = self.alpha_y
         alpha_u = self.alpha_u
 
         Ek_ZZ = alpha_u @ mmd_ZZ @ alpha_u
-        Ek_ZY = alpha_u @ mmd_ZY @ alpha_Y
+        Ek_ZY = alpha_u @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
         return Ek_ZZ - 2 * Ek_ZY + Ek_YY
-
-
-    def loss_mmd(self):
-        map_vec = self.Z + self.X
-        Y = self.Y
-        normalization = self.N / (self.N - 1)
-
-        k_YY_mean = self.E_mmd_YY
-        k_ZZ = self.mmd_kernel(map_vec, map_vec)
-        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
-        k_ZY = self.mmd_kernel(map_vec, Y)
-        return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
 
 
     def mmd(self, map_vec, target):
@@ -184,8 +170,7 @@ class TransportKernel(nn.Module):
 
 
     def loss(self):
-        #loss_mmd = self.loss_mmd()
-        loss_mmd = self.loss_mmd_alt()
+        loss_mmd = self.loss_mmd()
         loss_reg  = self.loss_reg()
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
