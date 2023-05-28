@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, normalize
 from regress_kernel import RegressionKernel
 import matplotlib.pyplot as plt
 import os
-from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs
+from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs, geo_circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
     sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals
 from picture_to_dist import sample_elden_ring,sample_bambdad
@@ -143,8 +143,9 @@ def dict_to_np(dict):
     return dict
 
 
-def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo_diffs,  N = 500, n_bins = 30,
-                   plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None, q = 0, s = .75):
+def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo_diffs,
+                   N = 500, n_bins = 30,plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4],
+                   vmax = None, q = 0, s = .75, r_diff_map = unif_diffs, use_geo = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     try:
@@ -206,11 +207,19 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo
     Y_ulatent_pred = unif_transport_kernel.map(X1).detach().cpu().numpy()
     sample_hmap(Y_ulatent_pred.T, f'{save_dir}/Y_ulatent_pred.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
-    r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
-    r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
+    if use_geo:
+        Y_geo_diffs = r_diff_map(Y_ulatent_pred)
+        lr = torch.quantile(torch.tensor(Y_geo_diffs), q = .25)
+        r_fit_params = {'name': 'geo', 'l': lr / 7 , 'sigma': 1}
+        r_mmd_params = {'name': 'geo', 'l': lr / 7, 'sigma': 1}
+    else:
+        lr = l_scale(torch.tensor(Y_ulatent_pred.T))
+        r_fit_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
+        r_mmd_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
+
     regression_params = {'Y': Y.T, 'Y_unif': Y_ulatent_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 0,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': unif_diffs,
-                          'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': False}
+                         'reg_lambda': 1e-8,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
+                          'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
     regression_kernel =  RegressionKernel(regression_params)
     train_kernel(regression_kernel, n_iter= 20 * t_iter)
@@ -320,7 +329,7 @@ def spiral_exp(N= 1500, diff_map = boosted_geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 10000, diff_map = geo_diffs):
+def elden_exp(N = 10000, diff_map = boosted_geo_diffs):
     plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
@@ -338,7 +347,7 @@ def elden_exp(N = 10000, diff_map = geo_diffs):
 
 def two_circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
-    vmax = 8
+    vmax = None
     Y_gen = normal_theta_two_circle
     X_gen = None
     exp_name = 'two_circle_test'
@@ -375,7 +384,8 @@ def circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     X_gen = None
     exp_name = 'circle_test'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
+                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30,
+                                           r_diff_map = unif_diffs, use_geo = False)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     print(f'Optimal mmd was {mmd_opt}')
@@ -431,7 +441,8 @@ def circle_comparison_exp(q = 0, diff_map = boosted_geo_diffs):
 
 
 def run():
-    elden_exp()
+    elden_exp(N= 8000)
+    ring_exp(N = 2000)
 
 if __name__=='__main__':
     run()

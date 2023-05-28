@@ -104,9 +104,35 @@ def circle_diffs(sample, sample_alt = []):
     thetas_alt = thetas_alt.reshape(len(thetas_alt), 1)
 
     diffs = k_matrix(thetas_alt, thetas)
-    diffs_2pi = 2*np.pi - diffs
-    diffs = torch.min(diffs,  diffs_2pi)
+    diffs = k_matrix(thetas, thetas)
+    diffs = diffs % np.pi
     return diffs, thetas, thetas_alt
+
+
+def geo_circle_diffs(sample, sample_alt = []):
+    sample = torch.tensor(sample)
+    d = int(torch.argmax(torch.tensor(sample.shape)))
+    N_x = sample.shape[d]
+    N_y = 0
+    if not len(sample_alt):
+        sample_alt = sample
+    else:
+        sample_alt = torch.tensor(sample_alt)
+        N_y = sample_alt.shape[d]
+        sample = torch.concat((sample, sample_alt), dim = d)
+
+    X,Y = sample[0], sample[1]
+    thetas =  get_theta(X,Y)
+    thetas = thetas.reshape(len(thetas), 1)
+
+    diffs = k_matrix(thetas, thetas)
+    diffs = diffs % np.pi
+    if N_y:
+        diffs_XX = diffs[:N_x, :N_x]
+        diffs_XY = diffs[:N_x, N_x:]
+        diffs_YY = diffs[N_x:, N_x:]
+        return diffs_XX, diffs_XY, diffs_YY
+    return diffs
 
 
 def sort_rank(sorted_vec,  val):

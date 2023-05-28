@@ -63,7 +63,6 @@ class RegressionKernel(nn.Module):
         if self.params['use_geo']:
             self.WXX,self.WXY,self.WYY =  self.diff_map(self.X.T.detach().cpu().numpy(),self.Y.T.detach().cpu().numpy())
 
-
             self.WXX = torch.tensor(self.WXX, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXX)
             self.WXY = torch.tensor(self.WXY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXY)
             self.WYY = torch.tensor(self.WYY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WYY)
