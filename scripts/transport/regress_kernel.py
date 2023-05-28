@@ -9,6 +9,35 @@ from unif_transport import one_normalize
 
 
 
+def clear_plt():
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    return True
+
+
+def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cmap = None):
+    try:
+        sample = sample.detach().cpu()
+    except AttributeError:
+        pass
+    if d == 2:
+        x, y = sample.T
+        x = np.asarray(x)
+        y = np.asarray(y)
+        plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax, cmap = cmap)
+        plt.colorbar()
+    elif d == 1:
+        x =  sample
+        x = np.asarray(x)
+        plt.hist(x, bins = bins, range = range)
+    plt.savefig(save_loc)
+    clear_plt()
+    return True
+
+
+
 class RegressionKernel(nn.Module):
     def __init__(self, base_params, device=None):
         super().__init__()
@@ -25,9 +54,17 @@ class RegressionKernel(nn.Module):
 
         self.Y = torch.tensor(base_params['Y'], device=self.device, dtype=self.dtype)
         self.X = torch.tensor(base_params['Y_unif'], device=self.device, dtype=self.dtype)
-        self.alpha = torch.tensor(base_params['alpha'], device = self.device, dtype = self.dtype)
         self.N = len(self.X)
         self.N_Y = len(self.Y)
+
+        self.diff_map = self.params['diff_map']
+
+        #self.WXX,self.WXY,self.WYY =  self.diff_map(self.X.T.detach().cpu().numpy(),
+                                                    #self.Y.T.detach().cpu().numpy())
+
+        #self.WXX = torch.tensor(self.WXX, device=self.device, dtype=self.dtype)
+        #self.WXY = torch.tensor(self.WXY, device=self.device, dtype=self.dtype)
+        #self.WYY = torch.tensor(self.WYY, device=self.device, dtype=self.dtype)
 
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
@@ -36,6 +73,7 @@ class RegressionKernel(nn.Module):
         self.mmd_XX = self.mmd_kernel(self.X, self.X)
         self.mmd_XY = self.mmd_kernel(self.X, self.Y)
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
+
         self.alpha_Y = torch.ones(len(self.Y), device = self.device, dtype = self.dtype)/len(self.Y)
         self.E_mmd_YY = self.alpha_Y.T @ self.mmd_YY @ self.alpha_Y
 
@@ -56,12 +94,13 @@ class RegressionKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
-    def map(self, y):
-        y = torch.tensor(y, device=self.device, dtype=self.dtype)
-        Lambda = self.get_Lambda()
-        Z_y =  (Lambda.T @ self.fit_kernel(self.X, y))
-        alpha_y = one_normalize(torch.exp(Z_y).detach().cpu().numpy())
-        return alpha_y
+    def map(self, y, Z_y = []):
+        if not len(Z_y):
+            y = torch.tensor(y, device=self.device, dtype=self.dtype)
+            Lambda = self.get_Lambda()
+            Z_y =  (Lambda.T @ self.fit_kernel(self.X, y))
+        alpha_y_inv = one_normalize(torch.exp(Z_y).detach().cpu().numpy())
+        return alpha_y_inv
 
 
     def mmd(self, alpha, X, Y):
@@ -69,9 +108,15 @@ class RegressionKernel(nn.Module):
         X = torch.tensor(X, device=self.device, dtype=self.dtype)
         Y = torch.tensor(Y, device=self.device, dtype=self.dtype)
 
-        mmd_XX = self.mmd_kernel(X, X)
-        mmd_XY = self.mmd_kernel(X, Y)
-        mmd_YY = self.mmd_kernel(Y, Y)
+        mmd_XX = self.mmd_kernel(X,X)
+        mmd_XY = self.mmd_kernel(X,Y)
+        mmd_YY = self.mmd_kernel(Y,Y)
+
+        #WXX, WXY, WYY = self.diff_map(X, Y)
+        #mmd_XX = self.mmd_kernel(WXX)
+        #mmd_XY = self.mmd_kernel(WXY)
+        #mmd_YY = self.mmd_kernel(WYY)
+
         n_y = len(Y)
         alpha_Y = (1 / n_y) * torch.ones(n_y, device=self.device, dtype=self.dtype)
 

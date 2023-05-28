@@ -17,15 +17,20 @@ def l_scale(X):
     return torch.quantile(k_matrix(X[:3300],X[:3300]), q = .25)
 
 
-def k_matrix(X,X_tilde):
-    return  torch.norm(X.unsqueeze(1)-X_tilde, dim=2, p=2)
+def k_matrix(X,X_tilde,  D_inv = []):
+    diff_tensor = X.unsqueeze(1) - X_tilde
+    if len(D_inv):
+        return torch.sqrt(diff_tensor.T @ D_inv @ diff_tensor)
+    return torch.norm( diff_tensor, dim=2, p=2)
 
 
-def radial_kernel(X, X_tilde, kern_params):
-    norm_diffs = k_matrix(X, X_tilde)
+
+def radial_kernel(X, X_tilde, kern_params, diff_matrix = []):
+    if not len(diff_matrix):
+        diff_matrix = k_matrix(X, X_tilde)
     sigma = kern_params['sigma']
     l = kern_params['l']
-    res =  sigma * torch.exp(-((norm_diffs ** 2) / (2 * (l ** 2))))
+    res =  sigma * torch.exp(-((diff_matrix ** 2) / (2 * (l ** 2))))
     return res
 
 
@@ -41,14 +46,6 @@ def poly_kernel(X, X_tilde, kern_params):
     alpha = kern_params['alpha']
     return (c + torch.matmul(X, X_tilde.T))**alpha
 
-
-def geo_kernel(X, X_tilde, kern_params):
-    Y = kern_params['Y']
-    S_yy = kern_params['S_yy']
-    mmd_kernel = kern_params['mmd_kernel']
-    P_xy = mmd_kernel(X, Y.T)
-    P_x_tilde_y = mmd_kernel(X_tilde, Y.T)
-    return  P_xy.T @ S_yy @ P_x_tilde_y
 
 
 def get_kernel(kernel_params, device, dtype = torch.float32):
@@ -67,10 +64,8 @@ def get_kernel(kernel_params, device, dtype = torch.float32):
         return lambda x, x_tilde: linear_kernel(x, x_tilde, kernel_params)
 
     elif kernel_name == 'geo':
-        Y = kernel_params['Y']
-        kernel_params['S_yy']= torch.exp(-1 * kernel_params['diff_map'](Y,Y)[0])
-        kernel_params['mmd_kernel'] = lambda x,x_tilde: radial_kernel(x,x_tilde, kernel_params)
-        return  lambda x, x_tilde: geo_kernel(x, x_tilde, kernel_params)
+        return lambda W: radial_kernel(X = [], X_tilde = [],
+                                       kern_params = kernel_params, diff_matrix= W)
 
 
 
@@ -105,6 +100,7 @@ class TransportKernel(nn.Module):
         self.X = torch.tensor(base_params['X'], device=self.device, dtype=self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
         self.N = len(self.X)
+        self.n = len(self.Y)
 
         if self.params['normalize']:
             self.X = normalize(self.X)
@@ -118,19 +114,17 @@ class TransportKernel(nn.Module):
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
         self.iters = 0
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
-        self.ones = torch.ones(self.X.shape)
-        self.mmd_YY_mean = torch.mean(self.mmd_kernel(self.Y, self.Y))
+        self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
-
-    def init_alpha(self):
-        return torch.tensor([0], device = self.device, dtype = self.dtype)
+        self.alpha_u = (1/self.N) * torch.ones(self.N, device = self.device, dtype = self.dtype)
+        if not len(self.params['alpha_y']):
+            self.alpha_y = (1/self.n) * torch.ones(self.n, device = self.device, dtype = self.dtype)
+        else:
+            self.alpha_y = torch.tensor(self.params['alpha_y'], device = self.device, dtype = self.dtype)
+        self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
 
     def init_Z(self):
-        return torch.zeros(self.X.shape, device = self.device, dtype = self.dtype)
-
-
-    def init_Lambda(self):
         return torch.zeros(self.X.shape, device = self.device, dtype = self.dtype)
 
 
@@ -145,12 +139,27 @@ class TransportKernel(nn.Module):
         return res
 
 
+    def loss_mmd_alt(self):
+        map_vec = self.Z + self.X
+        Y = self.Y
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, Y)
+
+        alpha_Y = self.alpha_y
+        alpha_u = self.alpha_u
+
+        Ek_ZZ = alpha_u @ mmd_ZZ @ alpha_u
+        Ek_ZY = alpha_u @ mmd_ZY @ alpha_Y
+        Ek_YY = self.E_mmd_YY
+        return Ek_ZZ - 2 * Ek_ZY + Ek_YY
+
+
     def loss_mmd(self):
         map_vec = self.Z + self.X
         Y = self.Y
         normalization = self.N / (self.N - 1)
 
-        k_YY_mean = self.mmd_YY_mean
+        k_YY_mean = self.E_mmd_YY
         k_ZZ = self.mmd_kernel(map_vec, map_vec)
         k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
         k_ZY = self.mmd_kernel(map_vec, Y)
@@ -175,7 +184,8 @@ class TransportKernel(nn.Module):
 
 
     def loss(self):
-        loss_mmd = self.loss_mmd()
+        #loss_mmd = self.loss_mmd()
+        loss_mmd = self.loss_mmd_alt()
         loss_reg  = self.loss_reg()
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),

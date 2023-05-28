@@ -12,13 +12,13 @@ from ellipse import rand_ellipse
 import pandas as pd
 from get_data import normal_theta_circle
 
+
 def clear_plt():
     plt.figure().clear()
     plt.close()
     plt.cla()
     plt.clf()
     return True
-
 
 def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
     try:
@@ -38,7 +38,6 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None):
     plt.savefig(save_loc)
     clear_plt()
     return True
-
 
 
 def hull_sample(X,Y = [], n_samples = 1000):
@@ -84,10 +83,12 @@ def get_theta(X,Y):
     return thetas + 3.14159265359
 
 
-def unif_diffs(sample, sample_alt =[]):
+def unif_diffs(sample, sample_alt =[], D_inv = []):
     if not len(sample_alt):
         sample_alt = sample
-    diffs = k_matrix(torch.tensor(sample_alt.T), torch.tensor(sample.T))
+    if len(D_inv):
+        D_inv = torch.tensor(D_inv)
+    diffs = k_matrix(torch.tensor(sample_alt.T), torch.tensor(sample.T), D_inv = D_inv)
     return diffs, sample
 
 
@@ -171,9 +172,11 @@ class UnifKernel(nn.Module):
         self.diff_map = self.params['diff_map']
         a, b = self.params['diff_quantiles']
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+        try:
+            self.W = torch.tensor(self.diff_map(self.Y))
+        except ValueError:
+            self.W = torch.tensor(self.diff_map(self.Y)[0])
 
-        self.W = torch.tensor(self.diff_map(self.Y)[0])
-        self.thetas = torch.tensor(self.diff_map(self.Y)[1])
 
         a,b = self.params['diff_quantiles']
         W_s = self.W[:3300, :3300]
@@ -181,14 +184,6 @@ class UnifKernel(nn.Module):
         self.b_qval = torch.quantile(W_s, q = b)
         self.W_rank = W_inf_range(self.W, self.a_qval, self.b_qval)
         self.N = len(self.W)
-
-        if len(self.params['Y_tilde']):
-            self.Y_tilde = torch.tensor(base_params['Y_tilde'], device=self.device, dtype=self.dtype)
-            self.W_tilde = torch.tensor(self.diff_map( self.Y_tilde, self.Y)[0])
-
-            self.a_qval = torch.max(torch.min(self.W_tilde, dim=1)[0])
-            self.b_qval = torch.quantile(self.W_tilde[:10000, :10000], q=.3)
-            self.W_tilde_rank = W_inf_range(self.W_tilde, self.a_qval, self.b_qval)
 
         self.iters = 0
         if 'target' in self.params.keys():
@@ -279,7 +274,7 @@ def get_inverse_res_dict(Y,Y_tilde, params):
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds, jac=grad_f,
-                      options={'disp': False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
+                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
