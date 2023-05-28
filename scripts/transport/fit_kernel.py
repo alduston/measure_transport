@@ -206,10 +206,6 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs, 
     Y_ulatent_pred = unif_transport_kernel.map(X1).detach().cpu().numpy()
     sample_hmap(Y_ulatent_pred.T, f'{save_dir}/Y_ulatent_pred.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
-    #l_W = l_scale(torch.tensor(Y_res['W'], device=device))
-    #r_fit_params = {'name': 'geo', 'l': l_W / 7 , 'sigma': 1}
-    #r_mmd_params = {'name': 'geo', 'l': l_W / 7, 'sigma': 1}
-
     r_fit_params = {'name': 'radial', 'l': l / 7 , 'sigma': 1}
     r_mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
     regression_params = {'Y': Y.T, 'Y_unif': Y_ulatent_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,

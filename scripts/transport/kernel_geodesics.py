@@ -81,7 +81,7 @@ def geo_diffs(X, Y = [], k = 25):
 
 
 
-def boosted_geo_diffs(X, Y = [], k = 25, m = 3):
+def boosted_geo_diffs(X, Y = [], k = 25, m = 2):
     N_x = max(list(X.shape))
     unif_params = {'Y': X, 'print_freq': 100, 'learning_rate': 1,
                    'diff_map': unif_diffs, 'diff_quantiles': [0, .4]}
