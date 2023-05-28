@@ -143,7 +143,7 @@ def dict_to_np(dict):
     return dict
 
 
-def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,  N = 500, n_bins = 30,
+def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo_diffs,  N = 500, n_bins = 30,
                    plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4], vmax = None, q = 0, s = .75):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
@@ -320,7 +320,7 @@ def spiral_exp(N= 1500, diff_map = boosted_geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 8000, diff_map = boosted_geo_diffs):
+def elden_exp(N = 10000, diff_map = geo_diffs):
     plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
@@ -431,8 +431,7 @@ def circle_comparison_exp(q = 0, diff_map = boosted_geo_diffs):
 
 
 def run():
-   elden_exp()
-   bambdad_exp()
+    elden_exp()
 
 if __name__=='__main__':
     run()
