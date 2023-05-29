@@ -2,6 +2,7 @@ import numpy as np
 import sklearn
 import sklearn.datasets
 from sklearn.utils import shuffle as util_shuffle
+from ellipse import rand_ellipse
 
 
 # Dataset iterator
@@ -169,7 +170,7 @@ def unif_circle(N = 200):
     return sample
 
 
-def unif_elipse(N = 1000, a = .5, b = 2):
+def unif_elipse(N = 1000, a = .4, b = 3):
     X, Y = rand_ellipse(a = a, b = b, size=N)
     sample = np.asarray([[x, y] for x, y in zip(X, Y)])
     return sample

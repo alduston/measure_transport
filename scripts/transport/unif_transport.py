@@ -300,7 +300,7 @@ def get_inverse_res_dict(Y,Y_tilde, params):
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', bounds=bnds, jac=grad_f,
-                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
+                      options={'disp': True, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-12, 'ftol': 1e-12})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))
@@ -333,7 +333,7 @@ def get_res_dict(Y,params):
 
     bnds = [(1 / N ** 2, np.inf) for i in range(N)]
     result = minimize(f, x_0, method='L-BFGS-B', jac=grad_f, bounds=bnds,
-                      options={'disp':False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-11, 'ftol': 1e-11})
+                      options={'disp':False, 'maxiter': 10000, 'maxfun': 500000, 'gtol': 1e-12, 'ftol': 1e-12})
 
     alpha = result['x']
     alpha = one_normalize(alpha).reshape(len(alpha))

@@ -144,7 +144,7 @@ def dict_to_np(dict):
 
 
 def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo_diffs,
-                   N = 500, n_bins = 30,plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.4],
+                   N = 500, n_bins = 30,plt_range = None, t_iter = 401, diff_quantiles = [0.0, 0.075],
                    vmax = None, q = 0, s = .75, r_diff_map = unif_diffs, use_geo = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
@@ -186,6 +186,9 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo
     l = l_scale(X)
     sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins= n_bins)
     sample_hmap(Y_unif_1.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
+    sample_scatter(Y_unif_1.T, f'{save_dir}/Y_unif_scatter.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
+    if True:
+        return True
     fit_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
     mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
@@ -329,14 +332,15 @@ def spiral_exp(N= 1500, diff_map = boosted_geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 10000, diff_map = boosted_geo_diffs):
+def elden_exp(N = 10000, diff_map = geo_diffs):
     plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
     X_gen = None
-    exp_name = 'elden'
+    exp_name = 'elden2'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 1300, n_bins=70)
+                                                    diff_quantiles = [0, 0.025], N=N, plt_range=plt_range,
+                                                    vmax=vmax, t_iter = 1300, n_bins=70)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     print(f'Optimal mmd was {mmd_opt}')
@@ -361,14 +365,15 @@ def two_circle_exp(N = 1000, diff_map = boosted_geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def bambdad_exp(N = 8000, diff_map = boosted_geo_diffs):
+def bambdad_exp(N = 8000, diff_map = geo_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = None
     Y_gen = sample_bambdad
     X_gen = None
-    exp_name = 'bambdad'
+    exp_name = 'bambdad2'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 800, n_bins=60)
+                                                    diff_quantiles = [0, 0.04], N=N, plt_range=plt_range,
+                                                    vmax=vmax, t_iter = 800, n_bins=60)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     print(f'Optimal mmd was {mmd_opt}')
@@ -438,16 +443,13 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map = boosted_geo_diffs):
     plt.savefig(f'{save_dir}/MMD_comperison.png')
     clear_plt()
 
-#Vanilla mmd was 0.005984625700442087
-#Uniform  mmd was 0.001884475802966551
-#Optimal mmd was 0.001267047919284614
 
 def run():
-    ring_exp(N=2000, diff_map=boosted_geo_diffs)
-    elden_exp(N = 8000, diff_map=geo_diffs)
-    bambdad_exp(N = 8000, diff_map=geo_diffs)
+    elden_exp(N = 9000, diff_map=geo_diffs)
+    bambdad_exp(N = 9000, diff_map=geo_diffs)
 
-
+#vanilla: 0.0027244096076478735 ,unif: 0.00025181454211568866, opt: 7.550396695869821e-05
+#vanilla: 0.0029546000491021546 ,unif: 0.0001721285832224223, opt: -2.8104940032608328e-06
 
 if __name__=='__main__':
     run()
