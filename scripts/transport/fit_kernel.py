@@ -186,9 +186,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  boosted_geo
     l = l_scale(X)
     sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins= n_bins)
     sample_hmap(Y_unif_1.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
-    sample_scatter(Y_unif_1.T, f'{save_dir}/Y_unif_scatter.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
-    if True:
-        return True
+    sample_scatter(Y_unif_1.T, f'{save_dir}/Y_unif_scatter.png', d=d, bins=n_bins, range=plt_range)
+
     fit_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
     mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
@@ -445,8 +444,8 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map = boosted_geo_diffs):
 
 
 def run():
-    elden_exp(N = 9000, diff_map=geo_diffs)
-    bambdad_exp(N = 9000, diff_map=geo_diffs)
+    elden_exp(N = 100, diff_map=geo_diffs)
+    bambdad_exp(N =100, diff_map=geo_diffs)
 
 #vanilla: 0.0027244096076478735 ,unif: 0.00025181454211568866, opt: 7.550396695869821e-05
 #vanilla: 0.0029546000491021546 ,unif: 0.0001721285832224223, opt: -2.8104940032608328e-06
