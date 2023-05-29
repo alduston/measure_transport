@@ -444,8 +444,8 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map = boosted_geo_diffs):
 
 
 def run():
-    elden_exp(N = 100, diff_map=geo_diffs)
-    bambdad_exp(N =100, diff_map=geo_diffs)
+    elden_exp(N = 9000, diff_map=geo_diffs)
+    bambdad_exp(N =9000, diff_map=geo_diffs)
 
 #vanilla: 0.0027244096076478735 ,unif: 0.00025181454211568866, opt: 7.550396695869821e-05
 #vanilla: 0.0029546000491021546 ,unif: 0.0001721285832224223, opt: -2.8104940032608328e-06
