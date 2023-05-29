@@ -84,7 +84,7 @@ def get_W_geo(W_t0, W_knn, max_d = 100):
     return W_geo
 
 
-def geo_diffs(X, Y = [], k = 12):
+def geo_diffs(X, Y = [], k = 15):
     N_x = max(list(X.shape))
     N_y = 0
     try:
