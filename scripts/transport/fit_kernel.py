@@ -456,8 +456,9 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map = geo_diffs):
 
 
 def run():
-    elden_exp(N=9000)
-    bambdad_exp(N=9000)
+    Y_gen = normal_theta_circle
+    comparison_exp(Y_gen, diff_map = geo_diffs, name = '1')
+    comparison_exp(Y_gen, diff_map = geo_diffs, name='p7', q = .7)
 
 
 if __name__=='__main__':
