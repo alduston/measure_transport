@@ -426,8 +426,8 @@ def elden_exp(N = 10000, diff_map = geo_diffs, q = 1.01):
     mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
                                                                          diff_map=diff_map,
                                                                          N=N, plt_range=plt_range, vmax=vmax,
-                                                                         t_iter=501, n_bins=30,
-                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
+                                                                         t_iter=1501, n_bins=70,
+                                                                         r_diff_map=geo_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
@@ -467,15 +467,18 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 1.01):
     Y_gen = sample_bambdad
     X_gen = None
     exp_name = 'bambdad4'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                                     diff_quantiles = [0, 0.1], N=N, plt_range=plt_range,
                                                     vmax=vmax, t_iter = 1201, n_bins=60)[:3]
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
 def circle_exp(N = 1000, diff_map = circle_diffs, q = 1.01):
@@ -557,11 +560,8 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
 
 
 def run():
-    Y_gen1 = normal_theta_circle
-    Y_gen2 = sample_swiss_roll
-
-    comparison_exp(Y_gen1, name = '5_way_circ', diff_map=circle_diffs)
-    comparison_exp(Y_gen2, name='5_way_roll', diff_map=unif_diffs)
+    elden_exp(N = 9000)
+    bambdad_exp(N = 9000)
 
 
 if __name__=='__main__':
