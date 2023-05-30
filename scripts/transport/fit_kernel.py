@@ -212,8 +212,8 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
 
     dual_transport_params = deepcopy(basic_transport_params)
     dual_transport_params['alpha_x'] = True
-    dual_transport_params['reg_lambda'] = 5e-6
-    dual_transport_params['reg_lambda_alpha'] =  5e-6
+    dual_transport_params['reg_lambda'] = 1e-5
+    dual_transport_params['reg_lambda_alpha'] =  1e-7
     dual_transport_params['learning_rate'] = .01
 
     dual_transport_kernel = TransportKernel(dual_transport_params)
@@ -232,11 +232,11 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
     r_mmd_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
 
     regression_params = {'Y': Y.T, 'Y_unif': Y_ulatent_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 5e-6,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
+                         'reg_lambda': 1e-7,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
                           'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
     naive_regression_params = {'Y': Y.T, 'Y_unif': Y_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                            'reg_lambda': 5e-6, 'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
+                            'reg_lambda': 1e-7, 'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                             'diff_map': r_diff_map,'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
     regression_kernel =  RegressionKernel(regression_params)
@@ -285,7 +285,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
     return mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive
 
 
-def banana_exp(N = 1500, diff_map = geo_diffs):
+def banana_exp(N = 1500, diff_map = geo_diffs, q = q):
     plt_range = [[-4, 4], [-1, 10]]
     vmax = .5
     Y_gen = sample_banana
@@ -307,7 +307,7 @@ def banana_exp(N = 1500, diff_map = geo_diffs):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def ring_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
+def ring_exp(N = 1500, diff_map = geo_diffs, q = 0):
     plt_range = [[-4.2, 4.2], [-4.2, 4.2]]
     vmax = .5
     Y_gen = sample_rings
@@ -329,7 +329,7 @@ def ring_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def moons_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
+def moons_exp(N = 1500, diff_map = geo_diffs, q = 0):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .33
     Y_gen = sample_moons
@@ -351,7 +351,7 @@ def moons_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def pinweel_exp(N = 1500, diff_map = unif_diffs, q = 1.01):
+def pinweel_exp(N = 1500, diff_map = unif_diffs, q = 0):
     plt_range = [[-3.3, 3.3], [-3.3, 3.3]]
     vmax = .5
     Y_gen = sample_pinweel
@@ -373,7 +373,7 @@ def pinweel_exp(N = 1500, diff_map = unif_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def swiss_roll_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
+def swiss_roll_exp(N = 1500, diff_map = geo_diffs, q = 0):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .35
     Y_gen = sample_swiss_roll
@@ -395,7 +395,7 @@ def swiss_roll_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def spiral_exp(N= 1500, diff_map = geo_diffs, q = 1.01):
+def spiral_exp(N= 1500, diff_map = geo_diffs, q = 0):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .3
     Y_gen = sample_spirals
@@ -417,7 +417,7 @@ def spiral_exp(N= 1500, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 10000, diff_map = geo_diffs, q = 1.01):
+def elden_exp(N = 10000, diff_map = geo_diffs, q = 0):
     plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
@@ -439,7 +439,7 @@ def elden_exp(N = 10000, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def two_circle_exp(N = 1000, diff_map = geo_diffs, q = 1.01):
+def two_circle_exp(N = 1000, diff_map = geo_diffs, q = 0):
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = normal_theta_two_circle
@@ -461,7 +461,7 @@ def two_circle_exp(N = 1000, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 1.01):
+def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 0):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = None
     Y_gen = sample_bambdad
@@ -469,7 +469,7 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 1.01):
     exp_name = 'bambdad4'
     mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                                     diff_quantiles = [0, 0.1], N=N, plt_range=plt_range,
-                                                    vmax=vmax, t_iter = 1201, n_bins=60)[:3]
+                                                    vmax=vmax, t_iter = 1201, n_bins=60, q = q)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
@@ -481,7 +481,7 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 1.01):
     os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def circle_exp(N = 1000, diff_map = circle_diffs, q = 1.01):
+def circle_exp(N = 1000, diff_map = circle_diffs, q = 0):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Y_gen = normal_theta_circle
@@ -505,13 +505,12 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
-    trials = 20
-    #trials = 2
+    trials = 50
 
     X_gen = None
     exp_name = f'mmd_regression_test_{name}'
-    if q:
-        exp_name = f'{exp_name}{q}'
+    #if q:
+        #exp_name = f'{exp_name}{q}'
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     mean_unif_mmds = []
@@ -529,7 +528,7 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
 
         for i in range(trials):
             mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                                   N=N, plt_range=plt_range, vmax=vmax, q = q, s = .8)
+                                                   N=N, plt_range=plt_range, vmax=vmax, q = q, s = 1)
             unif_mmds.append(float(mmd_unif.detach().cpu()))
             vanilla_mmds.append(float(mmd_vanilla.detach().cpu()))
             opt_mmds.append(float(mmd_opt.detach().cpu()))
@@ -546,13 +545,13 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
         mean_naive_mmds.append(np.mean(naive_mmds))
         mean_opt_mmds.append(np.mean(opt_mmds))
 
-    plt.plot(Ns, np.log10(mean_unif_mmds), label = 'Unif transport')
-    plt.plot(Ns, np.log10(mean_vanilla_mmds),  label = 'Vanilla transport')
-    plt.plot(Ns, np.log10(mean_dual_mmds), label='Dual transport')
-    plt.plot(Ns, np.log10(mean_naive_mmds), label='Naive transport')
-    plt.plot(Ns, np.log10(mean_opt_mmds), label='Optimal mmd')
+    plt.plot(Ns, np.log(mean_unif_mmds), label = 'Unif transport')
+    plt.plot(Ns, np.log(mean_vanilla_mmds),  label = 'Vanilla transport')
+    plt.plot(Ns, np.log(mean_dual_mmds), label='Dual transport')
+    plt.plot(Ns, np.log(mean_naive_mmds), label='Naive transport')
+    plt.plot(Ns, np.log(mean_opt_mmds), label='Optimal mmd')
     plt.xlabel('Sample size')
-    plt.ylabel('Log10 MMD')
+    plt.ylabel('Log MMD')
     plt.title('Test MMD for Unif v Vanilla Transport Maps')
     plt.legend()
     plt.savefig(f'{save_dir}/MMD_comparison.png')
@@ -560,8 +559,14 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
 
 
 def run():
-    elden_exp(N = 9000)
-    bambdad_exp(N = 9000)
+    Y_gen1 = normal_theta_circle
+    Y_gen2 = sample_swiss_roll
+    #Y_gen1 = sample_elden_ring
+    #Y_gen2 = sample_bambdad
+
+    comparison_exp(Y_gen1, '5_way_circ')
+    comparison_exp(Y_gen2, '5_way_roll')
+
 
 
 if __name__=='__main__':
