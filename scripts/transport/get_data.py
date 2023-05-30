@@ -348,6 +348,9 @@ def sample_circles(N):
 def sample_spirals(N):
     return inf_train_gen("2spirals", batch_size=N)
 
+def sample_pinweel(N):
+    return inf_train_gen("pinwheel", batch_size=N)
+
 
 
 def run():

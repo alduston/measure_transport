@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs, geo_circle_diffs
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals,normal_theta_circle_noisy
+    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals, \
+    normal_theta_circle_noisy,sample_pinweel
+
 from picture_to_dist import sample_elden_ring,sample_bambdad
 from kernel_geodesics import geo_diffs, boosted_geo_diffs
 from copy import deepcopy
@@ -194,72 +196,93 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
     fit_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
     mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
-    unif_transport_params = {'X': X, 'Y': Y.T, 'fit_kernel_params': fit_params,
-                    'mmd_kernel_params': mmd_params, 'normalize': False,
-                    'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-3,
-                    'X_tilde': X1, 'alpha_y': alpha_y, 'alpha_x': False}
+    basic_transport_params = {'X': X, 'Y': Y.T, 'fit_kernel_params': fit_params,
+                        'mmd_kernel_params': mmd_params, 'normalize': False,'one_lambda': 5,
+                        'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1,
+                        'nugget': 1e-3, 'X_tilde': X1, 'alpha_y': [], 'alpha_x': False}
 
+    basic_transport_kernel = TransportKernel(basic_transport_params)
+    train_kernel(basic_transport_kernel, n_iter= t_iter)
+    Y_pred = basic_transport_kernel.map(X1).detach().cpu().numpy()
+
+    unif_transport_params = deepcopy(basic_transport_params)
+    unif_transport_params['alpha_y'] = alpha_y
     unif_transport_kernel = TransportKernel(unif_transport_params)
     train_kernel(unif_transport_kernel, n_iter=t_iter)
 
-    transport_params = deepcopy(unif_transport_params)
-    transport_params['alpha_y'] = []
-    transport_params['alpha_x'] = True
-    transport_params['one_lambda'] = 5
-    transport_params['reg_lambda_alpha'] = 1e-8
-    transport_params['learning_rate'] = .01
+    dual_transport_params = deepcopy(basic_transport_params)
+    dual_transport_params['alpha_x'] = True
+    dual_transport_params['reg_lambda'] = 5e-6
+    dual_transport_params['reg_lambda_alpha'] =  5e-6
+    dual_transport_params['learning_rate'] = .01
 
+    dual_transport_kernel = TransportKernel(dual_transport_params)
+    train_kernel(dual_transport_kernel, n_iter= 5 * t_iter)
+    Y_pred_dual = dual_transport_kernel.map(X1).detach().cpu().numpy()
 
-    transport_kernel = TransportKernel(transport_params)
-    train_kernel(transport_kernel, n_iter= 10 * t_iter)
-    Y_pred = transport_kernel.map(X1).detach().cpu().numpy()
-
-    Y_ulatent_pred_2 = transport_kernel.Z.reshape(Y_pred.shape)
-    sample_hmap(Y_ulatent_pred_2.T, f'{save_dir}/Y_ulatent_pred_2.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
+    Y_ulatent_pred_dual = dual_transport_kernel.Z.reshape(Y_pred_dual.shape) + X1.reshape(Y_pred_dual.shape)
+    sample_hmap(Y_ulatent_pred_dual.T, f'{save_dir}/Y_ulatent_pred_dual.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
 
     Y_ulatent_pred = unif_transport_kernel.map(X1).detach().cpu().numpy()
     sample_hmap(Y_ulatent_pred.T, f'{save_dir}/Y_ulatent_pred.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
-    if use_geo:
-        Y_geo_diffs = r_diff_map(Y_ulatent_pred)
-        lr = torch.quantile(torch.tensor(Y_geo_diffs), q = .25)
-        r_fit_params = {'name': 'geo', 'l': lr / 7 , 'sigma': 1}
-        r_mmd_params = {'name': 'geo', 'l': lr / 7, 'sigma': 1}
-    else:
-        lr = l_scale(torch.tensor(Y_ulatent_pred.T))
-        r_fit_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
-        r_mmd_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
+
+    lr = l_scale(torch.tensor(Y_ulatent_pred.T))
+    r_fit_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
+    r_mmd_params = {'name': 'radial', 'l': lr / 7, 'sigma': 1}
 
     regression_params = {'Y': Y.T, 'Y_unif': Y_ulatent_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
-                         'reg_lambda': 1e-8,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
+                         'reg_lambda': 5e-6,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
                           'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
-    regression_kernel =  RegressionKernel(regression_params)
-    train_kernel(regression_kernel, n_iter= 10 * t_iter)
+    naive_regression_params = {'Y': Y.T, 'Y_unif': Y_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
+                            'reg_lambda': 5e-6, 'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
+                            'diff_map': r_diff_map,'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
+    regression_kernel =  RegressionKernel(regression_params)
+    train_kernel(regression_kernel, n_iter= 5 * t_iter)
     alpha_inv = regression_kernel.map(Y_ulatent_pred.T, Z_y  = regression_kernel.Z)
     Y_pred_unif = resample(Y_ulatent_pred, alpha_inv, N=tilde_scale)
+
+    naive_regression_kernel = RegressionKernel(naive_regression_params)
+    train_kernel(naive_regression_kernel, n_iter=5 * t_iter)
+    alpha_inv_naive = naive_regression_kernel.map(Y_pred.T, Z_y=naive_regression_kernel.Z)
+    Y_pred_naive = resample(Y_pred, alpha_inv_naive, N=tilde_scale)
+
 
     if q:
         Y = (Y.T[Y[0] < q][:N]).T
         Y_pred = (Y_pred.T[Y_pred[0] < q][:N]).T
+        Y_pred_dual = (Y_pred_dual.T[Y_pred_dual[0] < q][:N]).T
         Y_pred_unif = (Y_pred_unif.T[Y_pred_unif[0] < q][:N]).T
+        Y_pred_naive = (Y_pred_naive.T[Y_pred_naive[0] < q][:N]).T
         Y_test = (Y_test.T[Y_test[0] < q][:N]).T
 
-    sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
-    sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
+    sample_hmap(Y_pred.T, f'{save_dir}/Y_pred_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
+    sample_hmap(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
+    sample_hmap(Y_pred_naive.T, f'{save_dir}/Y_pred_naive_hmap_{N}.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
+    sample_hmap(Y_pred_dual.T, f'{save_dir}/Y_pred_dual_hmap_{N}.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
+
+    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter_{N}.png', d=d, bins=n_bins, range=plt_range)
     sample_scatter(Y_pred_unif.T, f'{save_dir}/Y_pred_unif_scatter_{N}.png', d=d, bins= n_bins, range=plt_range)
-    sample_scatter(Y_pred.T, f'{save_dir}/Y_pred_scatter_{N}.png', d=d, bins= n_bins, range=plt_range)
+    sample_scatter(Y_pred_naive.T, f'{save_dir}/Y_pred_naive_scatter_{N}.png', d=d, bins=n_bins, range=plt_range)
+    sample_scatter(Y_pred_dual.T, f'{save_dir}/Y_pred_dual_scatter_{N}.png', d=d, bins= n_bins, range=plt_range)
 
     Y = torch.tensor(Y, device=device)
     Y_pred = torch.tensor(Y_pred, device=device)
+    Y_pred_dual = torch.tensor(Y_pred_dual, device=device)
+    Y_pred_naive = torch.tensor(Y_pred_naive, device=device)
     Y_pred_unif = torch.tensor(Y_pred_unif, device=device)
 
-    mmd_vanilla = transport_kernel.mmd(map_vec = Y_pred.T, target = Y_test.T)
-    mmd_unif = transport_kernel.mmd(map_vec = Y_pred_unif.T, target = Y_test.T)
-    mmd_opt = transport_kernel.mmd(map_vec = Y.T, target = Y_test.T)
-    return mmd_vanilla, mmd_unif, mmd_opt
+
+    mmd_vanilla =  basic_transport_kernel.mmd(map_vec = Y_pred.T, target = Y_test.T)
+    mmd_dual = basic_transport_kernel.mmd(map_vec = Y_pred_dual.T, target = Y_test.T)
+    mmd_naive = basic_transport_kernel.mmd(map_vec=Y_pred_naive.T, target=Y_test.T)
+    mmd_unif = basic_transport_kernel.mmd(map_vec = Y_pred_unif.T, target = Y_test.T)
+    mmd_opt = basic_transport_kernel.mmd(map_vec = Y.T, target = Y_test.T)
+
+    return mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive
 
 
 def banana_exp(N = 1500, diff_map = geo_diffs):
@@ -268,115 +291,177 @@ def banana_exp(N = 1500, diff_map = geo_diffs):
     Y_gen = sample_banana
     X_gen = None
     exp_name = 'banana_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 401, n_bins=40)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def ring_exp(N = 1500, diff_map = geo_diffs):
+def ring_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-4.2, 4.2], [-4.2, 4.2]]
     vmax = .5
     Y_gen = sample_rings
     X_gen = None
     exp_name = 'ring_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 601, n_bins=40)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def moons_exp(N = 1500, diff_map = geo_diffs):
+def moons_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .33
     Y_gen = sample_moons
     X_gen = None
     exp_name = 'moons_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=40)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def swiss_roll_exp(N = 1500, diff_map = geo_diffs):
+def pinweel_exp(N = 1500, diff_map = unif_diffs, q = 1.01):
+    plt_range = [[-3.3, 3.3], [-3.3, 3.3]]
+    vmax = .5
+    Y_gen = sample_pinweel
+    X_gen = None
+    exp_name = 'pinweel_test'
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
+    print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
+    print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
+    print(f'Optimal mmd was {mmd_opt}')
+
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
+
+
+def swiss_roll_exp(N = 1500, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .35
     Y_gen = sample_swiss_roll
     X_gen = None
     exp_name = 'swiss_roll_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=40)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def spiral_exp(N= 1500, diff_map = geo_diffs):
+def spiral_exp(N= 1500, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-3.5, 3.5], [-3.5, 3.5]]
     vmax = .3
     Y_gen = sample_spirals
     X_gen = None
     exp_name = 'spiral_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                                    diff_quantiles = [0, 0.4], N=N, plt_range=plt_range,
-                                                    vmax=vmax, t_iter = 700, n_bins=40)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def elden_exp(N = 10000, diff_map = geo_diffs):
+def elden_exp(N = 10000, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-1, 1], [-1.2, 1.2]]
     vmax = 5
     Y_gen = sample_elden_ring
     X_gen = None
     exp_name = 'elden4'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                                    diff_quantiles = [0, 0.025], N=N, plt_range=plt_range,
-                                                    vmax=vmax, t_iter = 1301, n_bins=70)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def two_circle_exp(N = 1000, diff_map = boosted_geo_diffs):
+def two_circle_exp(N = 1000, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-1.5, 1.5], [-3.5, 3.5]]
     vmax = None
     Y_gen = normal_theta_two_circle
     X_gen = None
     exp_name = 'two_circle_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                           N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30)
+    mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name,
+                                                                         diff_map=diff_map,
+                                                                         N=N, plt_range=plt_range, vmax=vmax,
+                                                                         t_iter=501, n_bins=30,
+                                                                         r_diff_map=unif_diffs, use_geo=False, s=1, q=q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def bambdad_exp(N = 8000, diff_map = geo_diffs):
+def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 1.01):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = None
     Y_gen = sample_bambdad
@@ -384,7 +469,7 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs):
     exp_name = 'bambdad4'
     mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                                     diff_quantiles = [0, 0.1], N=N, plt_range=plt_range,
-                                                    vmax=vmax, t_iter = 1201, n_bins=60)
+                                                    vmax=vmax, t_iter = 1201, n_bins=60)[:3]
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Uniform  mmd was {mmd_unif}')
     print(f'Optimal mmd was {mmd_opt}')
@@ -393,28 +478,32 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs):
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
 
 
-def circle_exp(N = 1000, diff_map = boosted_geo_diffs):
+def circle_exp(N = 1000, diff_map = circle_diffs, q = 1.01):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Y_gen = normal_theta_circle
     X_gen = None
     exp_name = 'circle_test'
-    mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+    mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                            N=N, plt_range=plt_range, vmax=vmax, t_iter = 501, n_bins=30,
-                                           r_diff_map = unif_diffs, use_geo = False, s = 1)
+                                           r_diff_map = unif_diffs, use_geo = False, s = 1,  q = q)
     print(f'Vanilla mmd was {mmd_vanilla}')
+    print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
+    print(f'Naive mmd was {mmd_naive}')
     print(f'Optimal mmd was {mmd_opt}')
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
     os.system(f'echo "vanilla: {mmd_vanilla} ,unif: {mmd_unif}, opt: {mmd_opt}" > {save_dir}/mmd_results.txt ')
+    os.system(f'echo "dual: {mmd_dual} ,naive: {mmd_naive}" >> {save_dir}/mmd_results.txt ')
 
 
-def comparison_exp(Y_gen, name = '', q = 0, diff_map = geo_diffs):
+def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
     plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
     trials = 20
+    #trials = 2
 
     X_gen = None
     exp_name = f'mmd_regression_test_{name}'
@@ -423,42 +512,53 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map = geo_diffs):
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     mean_unif_mmds = []
-    mean_mmds = []
+    mean_dual_mmds = []
+    mean_vanilla_mmds = []
+    mean_naive_mmds = []
     mean_opt_mmds = []
 
     for N in Ns:
+        vanilla_mmds = []
         unif_mmds = []
-        mmds = []
+        dual_mmds = []
+        naive_mmds = []
         opt_mmds = []
+
         for i in range(trials):
-            mmd_vanilla, mmd_unif, mmd_opt = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
-                                                   N=N, plt_range=plt_range, vmax=vmax, q = q)
+            mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
+                                                   N=N, plt_range=plt_range, vmax=vmax, q = q, s = .8)
             unif_mmds.append(float(mmd_unif.detach().cpu()))
-            mmds.append(float(mmd_vanilla.detach().cpu()))
+            vanilla_mmds.append(float(mmd_vanilla.detach().cpu()))
             opt_mmds.append(float(mmd_opt.detach().cpu()))
+            naive_mmds.append(float(mmd_naive.detach().cpu()))
+            dual_mmds.append(float(mmd_dual.detach().cpu()))
 
             print(f'N = {N}, trial {i+1}, mmd_vanilla = {round(float((mmd_vanilla)),6)},'
-                  f' mmd_unif = {round(float((mmd_unif)),6)}, mmd_opt =  {round(float((mmd_opt)),6)}')
+                  f' mmd_unif = {round(float((mmd_unif)),6)}, mmd_opt =  {round(float((mmd_opt)),6)}'
+                  f' mmd_dual = {round(float((mmd_dual)),6)}, mmd_naive = {round(float((mmd_naive)),6)}')
 
-        mean_mmds.append(np.mean(mmds))
+        mean_dual_mmds.append(np.mean(dual_mmds))
         mean_unif_mmds.append(np.mean(unif_mmds))
+        mean_vanilla_mmds.append(np.mean(vanilla_mmds))
+        mean_naive_mmds.append(np.mean(naive_mmds))
         mean_opt_mmds.append(np.mean(opt_mmds))
 
     plt.plot(Ns, np.log10(mean_unif_mmds), label = 'Unif transport')
-    plt.plot(Ns, np.log10(mean_mmds),  label = 'Vanilla transport')
+    plt.plot(Ns, np.log10(mean_vanilla_mmds),  label = 'Vanilla transport')
+    plt.plot(Ns, np.log10(mean_dual_mmds), label='Dual transport')
+    plt.plot(Ns, np.log10(mean_naive_mmds), label='Naive transport')
     plt.plot(Ns, np.log10(mean_opt_mmds), label='Optimal mmd')
     plt.xlabel('Sample size')
     plt.ylabel('Log10 MMD')
     plt.title('Test MMD for Unif v Vanilla Transport Maps')
     plt.legend()
-    plt.savefig(f'{save_dir}/MMD_comperison.png')
+    plt.savefig(f'{save_dir}/MMD_comparison.png')
     clear_plt()
 
 
 def run():
     Y_gen = normal_theta_circle
-    comparison_exp(Y_gen, diff_map = geo_diffs, name = '1')
-    comparison_exp(Y_gen, diff_map = geo_diffs, name='p7', q = .7)
+    comparison_exp(Y_gen, name = '5_way', diff_map=circle_diffs)
 
 
 if __name__=='__main__':
