@@ -557,8 +557,11 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
 
 
 def run():
-    Y_gen = normal_theta_circle
-    comparison_exp(Y_gen, name = '5_way', diff_map=circle_diffs)
+    Y_gen1 = normal_theta_circle
+    Y_gen2 = sample_swiss_roll
+
+    comparison_exp(Y_gen1, name = '5_way_circ', diff_map=circle_diffs)
+    comparison_exp(Y_gen2, name='5_way_roll', diff_map=unif_diffs)
 
 
 if __name__=='__main__':
