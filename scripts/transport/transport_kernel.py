@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from copy import copy, deepcopy
 import time
 
+
 def t_one_normalize(vec):
     return vec/torch.linalg.norm(vec, ord = 1)
 
@@ -136,25 +137,21 @@ class TransportKernel(nn.Module):
 
         self.alpha_u = (1/self.N) * torch.ones(self.N, device = self.device, dtype = self.dtype)
 
-        #if self.params['alpha_y_inv']:
-            #self.alpha_y_inv = nn.Parameter(self.init_alpha_y_inv(), requires_grad=True)
-
-        #self.alpha_x = (1/self.n) * torch.ones(self.N, device = self.device, dtype = self.dtype)
-
         if self.params['alpha_x']:
             self.alpha_x = nn.Parameter(self.init_alpha_x(), requires_grad=True)
+        else:
+            self.alpha_x = self.alpha_u
 
         if not len(self.params['alpha_y']):
-            self.alpha_y = (1/self.n) * torch.ones(self.n, device = self.device, dtype = self.dtype)
-
+            self.alpha_y = (1 / self.n) * torch.ones(self.n, device=self.device, dtype=self.dtype)
         else:
-            self.alpha_y = torch.tensor(self.params['alpha_y'], device = self.device, dtype = self.dtype)
+            self.alpha_y = torch.tensor(self.params['alpha_y'], device=self.device, dtype=self.dtype)
+
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
 
     def init_Z(self):
         return torch.zeros(self.X.shape, device = self.device, dtype = self.dtype)
-
 
     def init_alpha_x(self):
         return torch.zeros(self.alpha_u.shape , device=self.device, dtype=self.dtype)
@@ -168,6 +165,7 @@ class TransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
+
     def map(self, x):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
@@ -175,11 +173,8 @@ class TransportKernel(nn.Module):
         if self.params['alpha_x']:
             alpha_x_p = t_one_normalize((1 / self.N) * torch.exp(-self.alpha_x))
             res = t_resample(res, alpha_x_p)
-        #if self.params['alpha_y_inv']:
-            #alpha_y_inv = t_one_normalize((1 / self.N) * torch.exp(-self.alpha_y_inv))
-            #alpha_x = t_one_normalize(1/alpha_y_inv)
-            #res = t_resample(res, alpha_x_p)
         return res
+
 
     def loss_mmd_resample(self):
         alpha_x = self.alpha_x
@@ -190,14 +185,6 @@ class TransportKernel(nn.Module):
         Y = self.Y
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
         mmd_ZY = self.mmd_kernel(map_vec, Y)
-
-        #mmd_YY = self.mmd_kernel(Y, Y)
-        # alpha_y_inv  =  self.alpha_y_inv
-        # alpha_y_inv_p = 1/self.n * torch.exp(-alpha_y_inv)
-        # c = torch.linalg.norm(alpha_y_inv_p, ord=1) ** -1
-        #Ek_ZZ =  alpha_x @ mmd_ZZ @ alpha_x
-        #Ek_ZY = c * alpha_x @ mmd_ZY @ alpha_y_inv_p
-        #Ek_YY = (c**2) * alpha_y_inv_p @ mmd_YY @ alpha_y_inv_p
 
         alpha_y = self.alpha_y
         Ek_ZZ = (c**2) * alpha_x_p @ mmd_ZZ @ alpha_x_p
@@ -236,9 +223,6 @@ class TransportKernel(nn.Module):
         alpha_x = self.alpha_x
         alpha_x_p = 1 / self.N * torch.exp(-alpha_x)
         return self.params['one_lambda'] * torch.exp(1 + (1 - torch.linalg.norm(alpha_x_p, ord=1)) ** 2)
-        #alpha_y_inv = self.alpha_y_inv
-        #alpha_y_inv_p = 1 / self.n * torch.exp(-alpha_y_inv)
-        #return self.params['one_lambda'] * torch.exp(1 + (1 - torch.linalg.norm(alpha_y_inv_p, ord = 1))**2)
 
 
     def loss_reg(self, Z = []):
@@ -249,9 +233,7 @@ class TransportKernel(nn.Module):
 
     def loss_reg_alpha(self, alpha=[]):
         if not len(alpha):
-            #alpha_y_inv = self.alpha_y_inv
             alpha_x = self.alpha_x
-        #return self.params['reg_lambda_alpha'] * alpha_y_inv.T @ self.fit_kYY_inv @ alpha_y_inv
         return self.params['reg_lambda_alpha'] * alpha_x.T @ self.fit_kXX_inv @ alpha_x
 
 

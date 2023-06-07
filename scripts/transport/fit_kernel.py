@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from transport_kernel import  TransportKernel, l_scale, normalize
-from regress_kernel import RegressionKernel
+from transport_kernel import  TransportKernel, l_scale, normalize,get_kernel
+from regress_kernel import RegressionKernel, UnifKernel2
 import matplotlib.pyplot as plt
 import os
 from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs, geo_circle_diffs
@@ -12,6 +12,7 @@ from get_data import resample, normal_theta_circle, normal_theta_two_circle, sam
 from picture_to_dist import sample_elden_ring,sample_bambdad
 from kernel_geodesics import geo_diffs, boosted_geo_diffs
 from copy import deepcopy
+import random
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -29,6 +30,12 @@ def update_list_dict(Dict, update):
     for key, val in update.items():
         Dict[key].append(val)
     return Dict
+
+
+def prob_normalization(alpha):
+    N = len(alpha)
+    c_norm = torch.log(N / torch.sum(torch.exp(alpha)))
+    return alpha - c_norm
 
 
 def train_kernel(kernel_model, n_iter = 100):
@@ -96,47 +103,6 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     clear_plt()
     return True
 
-
-def transport_exp(X_gen, Y_gen, exp_name, N=1000, plt_range=None, t_iter = 400):
-    save_dir = f'../../data/kernel_transport/{exp_name}'
-    try:
-        os.mkdir(save_dir)
-    except OSError:
-        pass
-    d = 2
-
-    if torch.cuda.is_available():
-        device = 'cuda'
-    else:
-        device = 'cpu'
-
-    X = normalize(torch.tensor(X_gen(N), device = device))
-    Y = torch.tensor(Y_gen(N),  device = device).reshape(X.shape)
-
-    sample_hmap(Y, f'{save_dir}/Y_hmap.png', d=d, bins=30, range=plt_range)
-    sample_scatter(Y, f'{save_dir}/Y_scatter.png', d=d, bins=30, range=plt_range)
-    sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins=30, range=plt_range)
-
-    X_tilde = normalize(torch.tensor(X_gen(N),  device = device))
-    l = l_scale(X) / 5
-
-    fit_kernel_params = {'name': 'radial', 'l': l, 'sigma': 1}
-    mmd_kernel_params = {'name': 'radial', 'l': l, 'sigma': 1}
-
-    model_params = {'X': X, 'Y': Y, 'fit_kernel_params': fit_kernel_params,
-                    'mmd_kernel_params': mmd_kernel_params,'reg_lambda': 1e-5,
-                    'unif_lambda': 0, 'print_freq': 1, 'learning_rate': .1,
-                    'nugget': 1e-3, 'X_tilde': X_tilde, 'normalize': False}
-
-    kernel_model = TransportKernel(model_params)
-    train_kernel(kernel_model, n_iter=t_iter)
-
-    Y_tilde = kernel_model.map(X_tilde).detach().cpu().numpy()
-    sample_hmap(Y_tilde.T, f'{save_dir}/Ypred_hmap.png', d=2, bins=30, range=plt_range)
-    sample_scatter(Y_tilde.T, f'{save_dir}/Ypred_scatter.png', d=2, bins=30, range=plt_range)
-    return True
-
-
 def dict_to_np(dict):
     for key,val in dict.items():
         try:
@@ -172,38 +138,53 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
     sample_hmap(Y.T, f'{save_dir}/Y_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
     sample_scatter(Y.T, f'{save_dir}/Y_scatter.png', d=d, bins= n_bins, range=plt_range)
 
-    unif_params = {'Y': Y, 'print_freq': 100, 'learning_rate': 1,
-                   'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
-    Y_res =  dict_to_np(get_res_dict(Y, unif_params))
+    l_y = l_scale(Y.T)
+    fit_params = {'name': 'radial', 'l': l_y/7, 'sigma': 1}
+    mmd_params = {'name': 'radial', 'l': l_y/7, 'sigma': 1}
 
-    alpha_y = one_normalize(Y_res['alpha'] ** s)
+    unif_params = {'Y': Y.T, 'fit_kernel_params': fit_params,
+     'mmd_kernel_params': mmd_params, 'normalize': False, 'one_lambda': 20,
+     'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1,
+     'nugget': 1e-3}
+
+
+    old_unif_params = {'Y': Y, 'print_freq': 100, 'learning_rate': 1,
+                   'diff_map': diff_map, 'diff_quantiles': diff_quantiles}
+    Y_res =  dict_to_np(get_res_dict(Y, old_unif_params))
+
+    unif_kernel = UnifKernel2(unif_params)
+    train_kernel(unif_kernel, n_iter=t_iter)
+    alpha_y = one_normalize(unif_kernel.get_alpha_p().detach().cpu().numpy() ** s)
+    #alpha_y = one_normalize(Y_res['alpha'] ** s)
+
     Y_unif = resample(Y, alpha_y, N).reshape(Y.shape)
-    Y_unif_1 = resample(Y, alpha_y, tilde_scale).reshape(Y.shape[0], tilde_scale)
+    Y_unif_1 = resample(Y, alpha_y, N).reshape(Y.shape)
+
     if X_gen == None:
         X = (Y_unif + torch.tensor(sample_normal(N, d), device=device).reshape(Y.shape)).T
-        #X1 = (Y_unif_1 + torch.tensor(sample_normal(tilde_scale, d), device=device).reshape(Y_unif_1.shape)).T
-        X1 = X
+        X1 = (Y_unif_1 + torch.tensor(sample_normal(N, d), device=device).reshape(Y_unif_1.shape)).T
     else:
         X = torch.tensor(X_gen(N), device=device)
-        X1 = X
-        #X1 = torch.tensor(X_gen(tilde_scale), device=device)
+        X1 = torch.tensor(X_gen(tilde_scale), device=device)
 
     l = l_scale(X)
+    fit_params['l'] = l
+    mmd_params['l'] = l
+
     sample_hmap(X, f'{save_dir}/X_hmap.png', d=d, bins= n_bins)
     sample_hmap(Y_unif_1.T, f'{save_dir}/Y_unif_hmap.png', d=d, bins= n_bins, range=plt_range, vmax = vmax)
     sample_scatter(Y_unif_1.T, f'{save_dir}/Y_unif_scatter.png', d=d, bins=n_bins, range=plt_range)
 
-    fit_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
-    mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
     basic_transport_params = {'X': X, 'Y': Y.T, 'fit_kernel_params': fit_params,
-                        'mmd_kernel_params': mmd_params, 'normalize': False,'one_lambda': 5,
+                        'mmd_kernel_params': mmd_params, 'normalize': False,'one_lambda': 20,
                         'reg_lambda': 1e-5, 'unif_lambda': 0, 'print_freq': 100, 'learning_rate': .1,
                         'nugget': 1e-3, 'X_tilde': X1, 'alpha_y': [], 'alpha_x': False}
 
     basic_transport_kernel = TransportKernel(basic_transport_params)
     train_kernel(basic_transport_kernel, n_iter= t_iter)
     Y_pred = basic_transport_kernel.map(X1).detach().cpu().numpy()
+    Y_pred1 = basic_transport_kernel.map(X).detach().cpu().numpy()
 
     unif_transport_params = deepcopy(basic_transport_params)
     unif_transport_params['alpha_y'] = alpha_y
@@ -212,18 +193,18 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
 
     dual_transport_params = deepcopy(basic_transport_params)
     dual_transport_params['alpha_x'] = True
-    dual_transport_params['reg_lambda'] = 1e-5
-    dual_transport_params['reg_lambda_alpha'] =  1e-7
+    dual_transport_params['reg_lambda'] = 5e-6
+    dual_transport_params['reg_lambda_alpha'] =  5e-6
     dual_transport_params['learning_rate'] = .01
 
     dual_transport_kernel = TransportKernel(dual_transport_params)
     train_kernel(dual_transport_kernel, n_iter= 5 * t_iter)
-    Y_pred_dual = dual_transport_kernel.map(X1).detach().cpu().numpy()
+    Y_pred_dual = dual_transport_kernel.map(X).detach().cpu().numpy()
 
-    Y_ulatent_pred_dual = dual_transport_kernel.Z.reshape(Y_pred_dual.shape) + X1.reshape(Y_pred_dual.shape)
+    Y_ulatent_pred_dual = dual_transport_kernel.Z.reshape(Y_pred_dual.shape) + X.reshape(Y_pred_dual.shape)
     sample_hmap(Y_ulatent_pred_dual.T, f'{save_dir}/Y_ulatent_pred_dual.png', d=d, bins=n_bins, range=plt_range, vmax=vmax)
 
-    Y_ulatent_pred = unif_transport_kernel.map(X1).detach().cpu().numpy()
+    Y_ulatent_pred = unif_transport_kernel.map(X).detach().cpu().numpy()
     sample_hmap(Y_ulatent_pred.T, f'{save_dir}/Y_ulatent_pred.png', d=d, bins= n_bins, range=plt_range, vmax=vmax)
 
 
@@ -235,19 +216,21 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
                          'reg_lambda': 1e-7,'mmd_kernel_params': r_mmd_params, 'print_freq': 500, 'diff_map': r_diff_map,
                           'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
 
-    naive_regression_params = {'Y': Y.T, 'Y_unif': Y_pred.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
+    naive_regression_params = {'Y': Y.T, 'Y_unif': Y_pred1.T, 'fit_kernel_params': r_fit_params, 'one_lambda': 5,
                             'reg_lambda': 1e-7, 'mmd_kernel_params': r_mmd_params, 'print_freq': 500,
                             'diff_map': r_diff_map,'learning_rate': .01, 'nugget': 1e-3, 'W_inf': Y_res['W_rank'], 'use_geo': use_geo}
+
 
     regression_kernel =  RegressionKernel(regression_params)
     train_kernel(regression_kernel, n_iter= 5 * t_iter)
     alpha_inv = regression_kernel.map(Y_ulatent_pred.T, Z_y  = regression_kernel.Z)
     Y_pred_unif = resample(Y_ulatent_pred, alpha_inv, N=tilde_scale)
 
+
     naive_regression_kernel = RegressionKernel(naive_regression_params)
-    train_kernel(naive_regression_kernel, n_iter=5 * t_iter)
-    alpha_inv_naive = naive_regression_kernel.map(Y_pred.T, Z_y=naive_regression_kernel.Z)
-    Y_pred_naive = resample(Y_pred, alpha_inv_naive, N=tilde_scale)
+    train_kernel(naive_regression_kernel, n_iter= 5 * t_iter)
+    alpha_inv_naive = naive_regression_kernel.map(Y_pred1.T, Z_y=naive_regression_kernel.Z)
+    Y_pred_naive = resample(Y_pred1, alpha_inv_naive, N=tilde_scale)
 
 
     if q:
@@ -285,7 +268,7 @@ def unif_boost_exp(Y_gen, X_gen = None, exp_name= 'exp', diff_map =  geo_diffs,
     return mmd_vanilla,mmd_dual, mmd_unif, mmd_opt,mmd_naive
 
 
-def banana_exp(N = 1500, diff_map = geo_diffs, q = q):
+def banana_exp(N = 1500, diff_map = geo_diffs, q = 0):
     plt_range = [[-4, 4], [-1, 10]]
     vmax = .5
     Y_gen = sample_banana
@@ -469,7 +452,7 @@ def bambdad_exp(N = 8000, diff_map = geo_diffs, q = 0):
     exp_name = 'bambdad4'
     mmd_vanilla, mmd_dual, mmd_unif, mmd_opt, mmd_naive = unif_boost_exp(Y_gen, X_gen, exp_name=exp_name, diff_map=diff_map,
                                                     diff_quantiles = [0, 0.1], N=N, plt_range=plt_range,
-                                                    vmax=vmax, t_iter = 1201, n_bins=60, q = q)
+                                                    vmax=vmax, t_iter = 1001, n_bins=60, q = q)
     print(f'Vanilla mmd was {mmd_vanilla}')
     print(f'Dual mmd was {mmd_dual}')
     print(f'Uniform  mmd was {mmd_unif}')
@@ -502,7 +485,7 @@ def circle_exp(N = 1000, diff_map = circle_diffs, q = 0):
 
 
 def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
-    plt_range = [[-1.5, 1.5], [-1.5, 1.5]]
+    plt_range =  None #[[-1.5, 1.5], [-1.5, 1.5]]
     vmax = 8
     Ns =  [200, 400, 600, 800, 1000, 1200, 1600, 2000]
     trials = 50
@@ -559,13 +542,7 @@ def comparison_exp(Y_gen, name = '', q = 0, diff_map =unif_diffs):
 
 
 def run():
-    Y_gen1 = normal_theta_circle
-    Y_gen2 = sample_swiss_roll
-    #Y_gen1 = sample_elden_ring
-    #Y_gen2 = sample_bambdad
-
-    comparison_exp(Y_gen1, '5_way_circ')
-    comparison_exp(Y_gen2, '5_way_roll')
+    elden_exp(5000, diff_map=unif_diffs)
 
 
 

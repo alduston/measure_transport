@@ -37,6 +37,75 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
     return True
 
 
+class UnifKernel2(nn.Module):
+    def __init__(self, base_params, device=None):
+        super().__init__()
+        if device:
+            self.device = device
+        else:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
+        self.dtype = torch.float32
+        base_params['device'] = self.device
+        self.params = base_params
+
+        self.Y = torch.tensor(base_params['Y'], device=self.device, dtype=self.dtype)
+        self.N = len(self.Y)
+
+        self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
+        self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
+
+        self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
+        self.fit_kYY = self.fit_kernel(self.Y, self.Y)
+
+        self.nugget_matrix = self.params['nugget'] * torch.eye(self.N, device=self.device, dtype=self.dtype)
+        self.fit_kYY_inv = torch.linalg.inv(self.fit_kYY + self.nugget_matrix)
+
+        self.iters = 0
+        self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
+
+
+    def get_alpha_p(self):
+        alpha = 1 / self.N * torch.exp(self.Z)
+        c = torch.linalg.norm(alpha, 1) ** -1
+        return c**2 * alpha
+
+
+    def init_Z(self):
+        return torch.zeros(self.N, device = self.device, dtype = self.dtype)
+
+
+    def loss_mmd(self):
+        alpha = self.get_alpha_p()
+        Ek_YY =  self.mmd_YY
+        return  alpha @ Ek_YY @ alpha
+
+
+    def loss_reg(self):
+        Z = self.Z
+        return self.params['reg_lambda'] * (Z.T @ self.fit_kYY_inv @ Z)
+
+
+    def loss_one(self):
+        Z = self.Z
+        alpha = (1/self.N)*torch.exp(Z)
+        return self.params['one_lambda'] * torch.exp(1 + (1 - torch.linalg.norm(alpha, ord = 1))**2)
+
+
+    def loss(self):
+        loss_fit = self.loss_mmd()
+        loss_reg  = self.loss_reg()
+        loss_one = self.loss_one()
+        loss = loss_fit + loss_reg + loss_one
+        loss_dict = {'fit': loss_fit.detach().cpu(),
+                     'reg': loss_reg.detach().cpu(),
+                     'total': loss.detach().cpu()}
+        return loss, loss_dict
+
+
+
 
 class RegressionKernel(nn.Module):
     def __init__(self, base_params, device=None):
@@ -60,24 +129,14 @@ class RegressionKernel(nn.Module):
         self.diff_map = self.params['diff_map']
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
-        if self.params['use_geo']:
-            self.WXX,self.WXY,self.WYY =  self.diff_map(self.X.T.detach().cpu().numpy(),self.Y.T.detach().cpu().numpy())
 
-            self.WXX = torch.tensor(self.WXX, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXX)
-            self.WXY = torch.tensor(self.WXY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WXY)
-            self.WYY = torch.tensor(self.WYY, device=self.device, dtype=self.dtype)/np.linalg.norm(self.WYY)
 
-            self.fit_kXX = self.fit_kernel(self.WXX)
-            self.mmd_XX = self.mmd_kernel(self.WXX)
-            self.mmd_XY = self.mmd_kernel(self.WXY)
-            self.mmd_YY = self.mmd_kernel(self.WYY)
 
-        else:
-            self.fit_kXX = self.fit_kernel(self.X, self.X)
+        self.fit_kXX = self.fit_kernel(self.X, self.X)
 
-            self.mmd_XX = self.mmd_kernel(self.X, self.X)
-            self.mmd_XY = self.mmd_kernel(self.X, self.Y)
-            self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
+        self.mmd_XX = self.mmd_kernel(self.X, self.X)
+        self.mmd_XY = self.mmd_kernel(self.X, self.Y)
+        self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
         self.alpha_Y = torch.ones(len(self.Y), device = self.device, dtype = self.dtype)/len(self.Y)
         self.E_mmd_YY = self.alpha_Y.T @ self.mmd_YY @ self.alpha_Y
@@ -89,7 +148,6 @@ class RegressionKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.target = torch.ones(self.Z.shape, device = self.device, dtype = self.dtype)
         self.W_inf = torch.tensor(base_params['W_inf'], device = self.device, dtype = self.dtype)
-
 
     def init_Z(self):
         return torch.zeros(self.N, device = self.device, dtype = self.dtype)
