@@ -35,6 +35,8 @@ def l_scale(X):
 
 def k_matrix(X,X_tilde,  D_inv = []):
     diff_tensor = X.unsqueeze(1) - X_tilde
+    if len(X.shape) == 1:
+        diff_tensor = diff_tensor.reshape(list(diff_tensor.shape) + [1])
     if len(D_inv):
         return torch.sqrt(diff_tensor.T @ D_inv @ diff_tensor)
     return torch.norm( diff_tensor, dim=2, p=2)
@@ -113,6 +115,7 @@ class TransportKernel(nn.Module):
 
         self.X = torch.tensor(base_params['X'], device=self.device, dtype=self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+
         self.N = len(self.X)
         self.n = len(self.Y)
 
@@ -157,13 +160,8 @@ class TransportKernel(nn.Module):
         return torch.zeros(self.alpha_u.shape , device=self.device, dtype=self.dtype)
 
 
-    #def init_alpha_y_inv(self):
-        #return torch.zeros(self.n, device = self.device, dtype = self.dtype)
-
-
     def get_Lambda(self):
         return self.fit_kXX_inv @ self.Z
-
 
 
     def map(self, x):
@@ -228,6 +226,8 @@ class TransportKernel(nn.Module):
     def loss_reg(self, Z = []):
         if not len(Z):
             Z = self.Z
+            if len(Z.shape)==1:
+                Z = Z.reshape(len(Z),1)
         return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 

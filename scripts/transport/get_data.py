@@ -188,6 +188,18 @@ def two_unif_circle(N = 200):
     return sample
 
 
+def sample_unif_dumbell(N =200):
+    n = N//2
+    s_1 = unif_square_2d(N = n, x_range = [-3,-1], y_range = [-.6,.6])
+    s_2 = unif_square_2d(N = n//8, x_range=[-1, 1], y_range=[-.015, .015])
+    s_3 = unif_square_2d(N = n, x_range=[1, 2], y_range=[-.3, .3])
+
+    dumbell_sample = np.concatenate([s_1, s_2, s_3])
+    return dumbell_sample
+
+
+
+
 
 def one_normalize(vec):
     return vec/np.linalg.norm(vec, ord = 1)
@@ -314,9 +326,10 @@ def sin_proj_circle( N = 500):
     X, Y = sample.T[0], sample.T[1]
     return sample.T
 
-def unif_square_2d(N = 200):
-    X = np.random.uniform(low = -1, high = 1, size = N)
-    Y = np.random.uniform(low = -1, high = 1, size = N)
+
+def unif_square_2d(N = 200, x_range = [-1,1], y_range = [-1,1]):
+    X = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
+    Y = np.random.uniform(low = y_range[0], high = y_range[1], size = N)
     sample = np.asarray([[x, y] for x, y in zip(X, Y)])
     return sample
 

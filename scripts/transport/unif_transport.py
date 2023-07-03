@@ -95,7 +95,11 @@ def unif_diffs(sample, sample_alt =[], D_inv = []):
 def circle_diffs(sample, sample_alt = []):
     if not len(sample_alt):
         sample_alt = sample
-    X,Y = sample[0], sample[1]
+    try:
+        X, Y = sample[0], sample[1]
+    except BaseException:
+        sample = sample.T
+        X, Y = sample[0], sample[1]
     thetas =  get_theta(X,Y)
     thetas = thetas.reshape(len(thetas), 1)
 

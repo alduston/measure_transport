@@ -130,8 +130,6 @@ class RegressionKernel(nn.Module):
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
-
-
         self.fit_kXX = self.fit_kernel(self.X, self.X)
 
         self.mmd_XX = self.mmd_kernel(self.X, self.X)
@@ -147,7 +145,7 @@ class RegressionKernel(nn.Module):
         self.iters = 0
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.target = torch.ones(self.Z.shape, device = self.device, dtype = self.dtype)
-        self.W_inf = torch.tensor(base_params['W_inf'], device = self.device, dtype = self.dtype)
+
 
     def init_Z(self):
         return torch.zeros(self.N, device = self.device, dtype = self.dtype)
@@ -162,7 +160,7 @@ class RegressionKernel(nn.Module):
             y = torch.tensor(y, device=self.device, dtype=self.dtype)
             Lambda = self.get_Lambda()
             Z_y =  (Lambda.T @ self.fit_kernel(self.X, y))
-        alpha_y_inv = one_normalize(torch.exp(Z_y).detach().cpu().numpy())
+        alpha_y_inv = one_normalize(1/self.N * torch.exp(Z_y).detach().cpu().numpy())
         return alpha_y_inv
 
 
@@ -171,15 +169,10 @@ class RegressionKernel(nn.Module):
         X = torch.tensor(X, device=self.device, dtype=self.dtype)
         Y = torch.tensor(Y, device=self.device, dtype=self.dtype)
 
-        if self.params['use_geo']:
-            WXX, WXY, WYY = self.diff_map(Y,X)
-            mmd_XX = self.mmd_kernel(WXX)
-            mmd_XY = self.mmd_kernel(WXY)
-            mmd_YY = self.mmd_kernel(WYY)
-        else:
-            mmd_XX = self.mmd_kernel(X,X)
-            mmd_XY = self.mmd_kernel(X,Y)
-            mmd_YY = self.mmd_kernel(Y,Y)
+
+        mmd_XX = self.mmd_kernel(X,X)
+        mmd_XY = self.mmd_kernel(X,Y)
+        mmd_YY = self.mmd_kernel(Y,Y)
 
         n_y = len(Y)
         alpha_Y = (1 / n_y) * torch.ones(n_y, device=self.device, dtype=self.dtype)

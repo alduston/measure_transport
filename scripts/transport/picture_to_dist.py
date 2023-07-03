@@ -69,20 +69,27 @@ def sample_elden_ring(N):
     sample = resample(img_base_sample.T, N=N)
     return sample
 
+def sample_twisted_rings(N):
+    img_array = process_img('rings')
+    img_base_sample = array_to_sample(img_array, 255)
+    sample = resample(img_base_sample.T, N=N)
+    return sample
+
 
 def sample_bambdad(N, p = 2, M = 300):
     img_array = process_img('Bambdad', q= .15)
-    img_base_sample = array_to_sample(img_array, base_val=255, p = p, M = M)
+    #base_val = np.min(img_array)
+    img_base_sample = array_to_sample(img_array, base_val=193, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
     return sample
 
 
 def run():
     N = 500000
-    bambdad_sample = sample_bambdad(N)
+    twisted_sample = sample_twisted_rings(N)
     plt_range = None
-    save_loc = '../../data/images/bambdad_sample.png'
-    sample_hmap(bambdad_sample.T, save_loc,  d=2, bins=100, range=plt_range)
+    save_loc = '../../data/images/twisted_sample.png'
+    sample_hmap(twisted_sample.T, save_loc,  d=2, bins=100, range=plt_range)
 
 if __name__=='__main__':
     run()
