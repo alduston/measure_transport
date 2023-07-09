@@ -133,8 +133,8 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     ref_sample = torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
 
-    X_ref = ref_sample[:,1] #ref_sample[:,0]
-    X_target = target_sample[:,1] #target_sample[:,0]
+    X_ref = ref_sample[:,0]
+    X_target = target_sample[:,0]
 
     l = l_scale(X_ref)
     fit_params = {'name': 'radial', 'l': l / 5, 'sigma': 1}
@@ -150,9 +150,14 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
 
     Z_ref = transport_kernel.map(X_ref).T
 
-    Y_ref = ref_sample[:,0] #ref_sample[:,1]
-    Y_target = target_sample[:,0] #target_sample[:,1]
+    #sample_hmap(Z_ref, d = 1, save_loc='Z_hist.png')
+    #sample_hmap(X_ref, d = 1, save_loc='X_hist.png')
 
+    Y_ref = ref_sample[:,1]
+    Y_target = target_sample[:,1]
+
+    #fit_params['l'] *= .15
+    #mmd_params['l'] *= .15
 
     cond_transport_params = {'Z_ref': Z_ref, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                         'fit_kernel_params': fit_params,'mmd_kernel_params': mmd_params, 'normalize': False,
@@ -165,11 +170,9 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
 
     slice_samples = []
     N = len(Z_ref)
-
     for z in Z_ref:
         z_slice = torch.full([10], float(z.detach().cpu()))
         idxs = torch.LongTensor(random.choices(list(range(N)), k= 10))
-
         slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
         slice_samples.append(slice_sample)
 
@@ -182,7 +185,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     sample_hmap(sample, 'cond_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
 
     sample_scatter(target_sample, 'target_sample.png', bins=20, d=2, range=[[-3,3],[-.5,10]])
-    sample_hmap(target_sample, 'target_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
+    #sample_hmap(target_sample, 'target_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
 
     sample_scatter(slice_sample, 'slice_sample.png', bins=20, d=2, range=[[-3,3],[-.5,10]])
     sample_hmap(slice_sample, 'slice_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
@@ -191,7 +194,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
 def run():
     ref_gen = sample_normal
     target_gen = sample_banana
-    N = 4000
+    N = 7000
     conditional_transport_exp(ref_gen, target_gen, N)
 
 
