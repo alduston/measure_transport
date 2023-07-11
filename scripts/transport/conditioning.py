@@ -127,7 +127,8 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
+def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 1001, exp_name= 'exp'):
+    save_dir = f'../../data/kernel_transport/{exp_name}'
     ref_sample = torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
     if target_sample.shape[0]!= max(target_sample.shape):
@@ -164,7 +165,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
                         'nugget': 1e-4, 'X_tilde': Z_ref, 'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
+    train_kernel(cond_transport_kernel, n_iter= 6 * t_iter)
     sample = cond_transport_kernel.map(Z_ref, Y_ref)
 
     slice_samples = []
@@ -181,10 +182,9 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     for i,csample in enumerate(slice_samples):
         csample = csample.T[1].T
         plt.hist(csample.detach().numpy(), label = f'z = {slice_vals[i]}')
-    plt.savefig('cond_hist.png')
+    plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
 
-    #slice_sample = torch.concat(slice_samples, dim = 0)
     #target_sample = torch.concat([geq_1d(X_target),geq_1d(Y_target)], dim = 1)
     target_sample = torch.concat([geq_1d(Y_target), geq_1d(X_target)], dim=1)
 
@@ -195,29 +195,25 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     Tsample[1] =  deepcopy(sample[0])
     sample = Tsample.T
 
-    #slice_sample = slice_sample.detach()
-    #slice_sample = slice_sample.T
-    #Tslice_sample = deepcopy(slice_sample)
-    #Tslice_sample[0] = deepcopy(slice_sample[1])
-    #Tslice_sample[1] = deepcopy(slice_sample[0])
-    #slice_sample = Tslice_sample.T
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
 
-    sample_scatter(sample, 'cond_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(sample, 'cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-
-    sample_scatter(target_sample, 'target_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(target_sample, 'target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-
-    #sample_scatter(slice_sample, 'slice_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-    #sample_hmap(slice_sample, 'slice_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
 
 
 def run():
     ref_gen = sample_normal
+    N = 10000
+
+    target_gen = mgan1
+    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan1')
+
     target_gen =  mgan2
-    #target_gen = sample_banana
-    N = 2000
-    conditional_transport_exp(ref_gen, target_gen, N)
+    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan2')
+
+    target_gen = mgan3
+    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan2')
 
 
 
