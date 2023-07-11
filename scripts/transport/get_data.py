@@ -334,6 +334,29 @@ def unif_square_2d(N = 200, x_range = [-1,1], y_range = [-1,1]):
     return sample
 
 
+def mgan1(N = 200, x_range = [-3,3], eps_var = .05):
+    Y = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
+    eps = np.random.normal(loc=0, scale=eps_var, size=N)
+    U = np.tanh(Y + eps)
+    sample = np.asarray([[y, u] for y, u in zip(Y, U)])
+    return sample
+
+
+def mgan2(N = 200, x_range = [-3,3], eps_var = .05):
+    Y = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
+    eps = np.random.gamma(shape = 1, scale=.3, size=N)
+    U = np.tanh(Y) + eps
+    sample = np.asarray([[y, u] for y, u in zip(Y, U)])
+    return sample
+
+def mgan3(N = 200, x_range = [-3,3], eps_var = .05):
+    Y = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
+    eps = np.random.gamma(shape = 1, scale=.3, size=N)
+    U = eps * np.tanh(Y)
+    sample = np.asarray([[y, u] for y, u in zip(Y, U)])
+    return sample
+
+
 def norm_square_2d(N = 200):
     X = np.random.uniform(low = -1, high = 1, size = N)
     X = X * np.abs(X)

@@ -3,9 +3,7 @@ import torch.nn as nn
 from transport_kernel import  TransportKernel, l_scale, normalize,get_kernel, clear_plt
 import matplotlib.pyplot as plt
 import os
-from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals, \
-    normal_theta_circle_noisy,sample_pinweel,sample_unif_dumbell, unif_circle
+from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3
 
 from copy import deepcopy
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
@@ -132,11 +130,22 @@ class CondTransportKernel(nn.Module):
 def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     ref_sample = torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
+    if target_sample.shape[0]!= max(target_sample.shape):
+        target_sample = target_sample.T
 
-    X_ref = ref_sample[:,1] #ref_sample[:,0]
-    X_target = target_sample[:,1] #target_sample[:,0]
+
+    #X_ref = ref_sample[:,0]
+    #X_target = target_sample[:,0]
+    #Y_ref = ref_sample[:, 1]
+    #Y_target = target_sample[:, 1]
+
+    X_ref = ref_sample[:,1]
+    X_target = target_sample[:,1]
+    Y_ref = ref_sample[:, 0]
+    Y_target = target_sample[:, 0]
 
     l = l_scale(X_ref)
+
     fit_params = {'name': 'radial', 'l': l / 5, 'sigma': 1}
     mmd_params = {'name': 'radial', 'l': l / 5, 'sigma': 1}
 
@@ -149,49 +158,65 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 501):
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_ref = transport_kernel.map(X_ref).T
-
-    Y_ref = ref_sample[:,0] #ref_sample[:,1]
-    Y_target = target_sample[:,0] #target_sample[:,1]
-
-
     cond_transport_params = {'Z_ref': Z_ref, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                         'fit_kernel_params': fit_params,'mmd_kernel_params': mmd_params, 'normalize': False,
-                        'reg_lambda':  1e-5, 'print_freq': 10, 'learning_rate': 7e-2,
+                        'reg_lambda':  1e-5, 'print_freq': 10, 'learning_rate': .03,
                         'nugget': 1e-4, 'X_tilde': Z_ref, 'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 12 * t_iter)
+    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
     sample = cond_transport_kernel.map(Z_ref, Y_ref)
 
     slice_samples = []
     N = len(Z_ref)
 
-    for z in Z_ref:
-        z_slice = torch.full([10], float(z.detach().cpu()))
-        idxs = torch.LongTensor(random.choices(list(range(N)), k= 10))
+    slice_vals =  [-1.1, 0, 1.1]
+    for z in slice_vals :
+        z_slice = torch.full([300], z)
+        idxs = torch.LongTensor(random.choices(list(range(N)), k= 300))
 
         slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
         slice_samples.append(slice_sample)
 
-    slice_sample = torch.concat(slice_samples, dim = 0)
+    for i,csample in enumerate(slice_samples):
+        csample = csample.T[1].T
+        plt.hist(csample.detach().numpy(), label = f'z = {slice_vals[i]}')
+    plt.savefig('cond_hist.png')
+    clear_plt()
 
-    target_sample = torch.concat([geq_1d(X_target),geq_1d(Y_target)], dim = 1)
+    #slice_sample = torch.concat(slice_samples, dim = 0)
+    #target_sample = torch.concat([geq_1d(X_target),geq_1d(Y_target)], dim = 1)
+    target_sample = torch.concat([geq_1d(Y_target), geq_1d(X_target)], dim=1)
 
-    sample = sample.detach().cpu().numpy()
-    sample_scatter(sample, 'cond_sample.png', bins=20, d=2, range=[[-3,3],[-.5,10]])
-    sample_hmap(sample, 'cond_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
+    sample = sample.detach()
+    sample = sample.T
+    Tsample = deepcopy(sample)
+    Tsample[0] = deepcopy(sample[1])
+    Tsample[1] =  deepcopy(sample[0])
+    sample = Tsample.T
 
-    sample_scatter(target_sample, 'target_sample.png', bins=20, d=2, range=[[-3,3],[-.5,10]])
-    sample_hmap(target_sample, 'target_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
+    #slice_sample = slice_sample.detach()
+    #slice_sample = slice_sample.T
+    #Tslice_sample = deepcopy(slice_sample)
+    #Tslice_sample[0] = deepcopy(slice_sample[1])
+    #Tslice_sample[1] = deepcopy(slice_sample[0])
+    #slice_sample = Tslice_sample.T
 
-    sample_scatter(slice_sample, 'slice_sample.png', bins=20, d=2, range=[[-3,3],[-.5,10]])
-    sample_hmap(slice_sample, 'slice_sample_map.png', bins=25, d=2, range=[[-3,3],[-.5,10]])
+    sample_scatter(sample, 'cond_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(sample, 'cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+
+    sample_scatter(target_sample, 'target_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(target_sample, 'target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+
+    #sample_scatter(slice_sample, 'slice_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    #sample_hmap(slice_sample, 'slice_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
 
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
-    N = 4000
+    target_gen =  mgan2
+    #target_gen = sample_banana
+    N = 2000
     conditional_transport_exp(ref_gen, target_gen, N)
 
 
