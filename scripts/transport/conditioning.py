@@ -299,8 +299,8 @@ def run():
     #alpha_vals = range(-4, 4)
     #l_log_multipliers = range(-4,4)
 
-    alpha_vals = range(-1, 1)
-    l_log_multipliers = range(-1,1)
+    alpha_vals = range(1)
+    l_log_multipliers = range(1)
 
     param_keys = ['l', 'alpha']
     param_dicts = []
