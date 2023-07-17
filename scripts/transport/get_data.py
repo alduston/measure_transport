@@ -3,6 +3,7 @@ import sklearn
 import sklearn.datasets
 from sklearn.utils import shuffle as util_shuffle
 from ellipse import rand_ellipse
+from scipy.stats import norm
 
 
 # Dataset iterator
@@ -198,9 +199,6 @@ def sample_unif_dumbell(N =200):
     return dumbell_sample
 
 
-
-
-
 def one_normalize(vec):
     return vec/np.linalg.norm(vec, ord = 1)
 
@@ -385,8 +383,20 @@ def sample_circles(N):
 def sample_spirals(N):
     return inf_train_gen("2spirals", batch_size=N)
 
+
 def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
+
+def normal_density(X):
+    return np.exp(-np.norm(X, axis = 0)**2)
+
+
+def KL(sample, ref_density = normal_density):
+    sample_densitys = np.asarray([ref_density(x) for x in sample])
+    KL_div = np.sum(np.log(1/ sample_densitys))
+    return KL_div
+
+def banana_density(X):
 
 
 

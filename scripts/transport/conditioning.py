@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 import matplotlib.pyplot as plt
 import os
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
-    sample_banana
+    sample_banana, KL, sample_uniform
 import pandas as pd
 
 from copy import deepcopy
@@ -185,7 +185,10 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_test = transport_kernel.map(X_test).T
-    mmd = transport_kernel.mmd(Z_test, transport_kernel.Y)
+    div = KL(Z_test)
+
+
+    #mmd = transport_kernel.mmd(Z_test, transport_kernel.Y)
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
@@ -198,6 +201,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
         sample = cond_transport_kernel.map(Z_test, Y_test)
 
         mmd = transport_kernel.mmd(sample, target_sample)
+        div = KL(sample)
     return mmd.detach().cpu().numpy()
 
 
@@ -310,12 +314,14 @@ def run():
     #for sigma_val in sigma_vals:
 
 
-    for alpha_val in alpha_vals:
-        for l_val in l_log_multipliers:
-            #val_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
-            fit_dict =  {'name': 'r_quadratic', 'l': l , 'alpha': 5}
-            val_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(l_val)), 'alpha': alpha_val}
-            param_dict = {'fit': fit_dict, 'mmd': val_dict}
+    for fit_alpha in alpha_vals:
+        for fit_l in l_log_multipliers:
+            for mmd_alpha in alpha_vals:
+                for mmd_l in l_log_multipliers:
+            fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
+            mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+           
+            param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
             param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys,
