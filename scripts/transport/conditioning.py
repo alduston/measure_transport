@@ -306,8 +306,8 @@ def run():
 
     #sigma_vals = [1]
 
-    alpha_vals = [0,1,2,3,4,5]
-    l_log_multipliers = [-6,-5, -4,-3,-2,-1, 0, 1, 2]
+    alpha_vals = [1,2,3,4]
+    l_log_multipliers = [-2,-1, 0, 1, 2]
 
     param_keys = ['l', 'alpha']
     param_dicts = []
@@ -318,9 +318,9 @@ def run():
         for fit_l in l_log_multipliers:
             for mmd_alpha in alpha_vals:
                 for mmd_l in l_log_multipliers:
-            fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
-            mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
-           
+                    fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
+                    mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+
             param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
             param_dicts.append(param_dict)
 
