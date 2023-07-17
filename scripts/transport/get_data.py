@@ -396,7 +396,9 @@ def KL(sample, ref_density = normal_density):
     KL_div = np.sum(np.log(1/ sample_densitys))
     return KL_div
 
+
 def banana_density(X):
+    pass
 
 
 

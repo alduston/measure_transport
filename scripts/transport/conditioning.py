@@ -151,12 +151,16 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
     if target_sample.shape[0] != max(target_sample.shape):
         target_sample = target_sample.T
 
-    Results_dict = {key:[] for key in param_keys}
+    Results_dict = {}
+    for key in param_keys:
+        Results_dict[f'fit_{key}'] = []
+        Results_dict[f'mmd_{key}'] = []
     Results_dict['mmd'] = []
 
     for param_dict in param_dicts:
         for key in param_keys:
-            Results_dict[key].append(param_dict['mmd'][key])
+            Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
+            Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
         Results_dict['mmd'].append(light_conditional_transport_exp(ref_sample, target_sample,  test_sample, N, param_dict))
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
@@ -185,7 +189,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_test = transport_kernel.map(X_test).T
-    div = KL(Z_test)
+    div = KL(Z_test.detach().cpu().numpy())
 
 
     #mmd = transport_kernel.mmd(Z_test, transport_kernel.Y)
@@ -201,8 +205,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
         sample = cond_transport_kernel.map(Z_test, Y_test)
 
         mmd = transport_kernel.mmd(sample, target_sample)
-        div = KL(sample)
-    return mmd.detach().cpu().numpy()
+        div = KL(sample.detach().cpu().numpy())
+    return div
 
 
 
@@ -294,25 +298,17 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.1, 1.1]])
 
 
-
 def run():
     ref_gen = sample_normal
     target_gen = sample_banana
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    #alpha_vals = range(-4, 4)
-    #l_log_multipliers = range(-4,4)
-
-    #sigma_vals = [1]
-
     alpha_vals = [1,2,3,4]
     l_log_multipliers = [-2,-1, 0, 1, 2]
 
     param_keys = ['l', 'alpha']
     param_dicts = []
-    #for sigma_val in sigma_vals:
-
 
     for fit_alpha in alpha_vals:
         for fit_l in l_log_multipliers:
@@ -321,11 +317,11 @@ def run():
                     fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
                     mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
 
-            param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
-            param_dicts.append(param_dict)
+                    param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
+                    param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys,
-                 exp_name='banana_search2')
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2')
+    return True
 
 
 
