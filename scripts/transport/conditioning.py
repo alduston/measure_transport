@@ -184,7 +184,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_test = transport_kernel.map(X_test).T
-    mmd = transport_kernel.mmd(Z_test, transport_kernel.X)
+    mmd = transport_kernel.mmd(Z_test, transport_kernel.Y)
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
