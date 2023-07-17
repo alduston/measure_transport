@@ -165,7 +165,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
 
 
 def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
-                                    t_iter = 500, params = {'fit': {}, 'mmd': {}}):
+                                    t_iter = 500, params = {'fit': {}, 'mmd': {}}, two_part = False):
 
     X_ref = ref_sample[:, 1]
     X_target = target_sample[:, 1]
@@ -184,17 +184,19 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_test = transport_kernel.map(X_test).T
+    mmd = transport_kernel.mmd(Z_test, X_ref)
 
-    cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
-                             'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'], 'normalize': False,
-                             'reg_lambda': 1e-5, 'print_freq': 10, 'learning_rate': .06,
-                             'nugget': 1e-4, 'X_tilde': Z_test, 'alpha_y': [], 'alpha_x': False}
+    if two_part:
+        cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
+                                 'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'], 'normalize': False,
+                                 'reg_lambda': 1e-5, 'print_freq': 10, 'learning_rate': .06,
+                                 'nugget': 1e-4, 'X_tilde': Z_test, 'alpha_y': [], 'alpha_x': False}
 
-    cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
-    sample = cond_transport_kernel.map(Z_test, Y_test)
+        cond_transport_kernel = CondTransportKernel(cond_transport_params)
+        train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
+        sample = cond_transport_kernel.map(Z_test, Y_test)
 
-    mmd = transport_kernel.mmd(sample, target_sample)
+        mmd = transport_kernel.mmd(sample, target_sample)
     return mmd.detach().cpu().numpy()
 
 
