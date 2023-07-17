@@ -305,7 +305,7 @@ def run():
     alpha_vals = [-2,-1,0,1,2]
     l_log_multipliers = [-6,-5, -4,-3,-2,-1, 0, 1, 2]
 
-    param_keys = ['l', 'sigma']
+    param_keys = ['l', 'alpha']
     param_dicts = []
     #for sigma_val in sigma_vals:
 
