@@ -165,7 +165,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
 
 
 def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
-                                    t_iter = 500, params = {'fit': {}, 'mmd': {}}, two_part = False):
+                                    t_iter = 1000, params = {'fit': {}, 'mmd': {}}, two_part = False):
 
     X_ref = ref_sample[:, 1]
     X_target = target_sample[:, 1]
@@ -296,7 +296,7 @@ def run():
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    base_param_dict = {'name': 'radial', 'l': l, 'sigma': 1}
+    base_param_dict = {'name': 'laplace', 'l': l, 'sigma': 1}
 
     #alpha_vals = range(-4, 4)
     #l_log_multipliers = range(-4,4)
@@ -308,7 +308,7 @@ def run():
     param_dicts = []
     for sigma_val in sigma_vals:
         for l_val in l_log_multipliers:
-            val_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
+            val_dict = {'name': 'laplace', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
             param_dict = {'fit': val_dict, 'mmd': val_dict}
             param_dicts.append(param_dict)
 

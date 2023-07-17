@@ -68,8 +68,9 @@ def poly_kernel(X, X_tilde, kern_params):
 def laplace_kernel(X, X_tilde, kern_params, diff_matrix = []):
     if not len(diff_matrix):
         diff_matrix = k_matrix(X, X_tilde)
+    sigma = kern_params['sigma']
     l = kern_params['l']
-    res = torch.exp(-(diff_matrix / (l ** 2)))
+    res = sigma * torch.exp(-(diff_matrix / (l ** 2)))
     return res
 
 
