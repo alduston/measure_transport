@@ -156,7 +156,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
 
     for param_dict in param_dicts:
         for key in param_keys:
-            Results_dict[key].append(param_dict['fit'][key])
+            Results_dict[key].append(param_dict['mmd'][key])
         Results_dict['mmd'].append(light_conditional_transport_exp(ref_sample, target_sample,  test_sample, N, param_dict))
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
