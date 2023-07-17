@@ -1,0 +1,5 @@
+,l,alpha,mmd
+0,"tensor(0.1686, dtype=torch.float64)",-1,64.2994391697832
+1,"tensor(0.4583, dtype=torch.float64)",-1,8.915634520935807
+2,"tensor(0.1686, dtype=torch.float64)",0,0.0
+3,"tensor(0.4583, dtype=torch.float64)",0,0.0

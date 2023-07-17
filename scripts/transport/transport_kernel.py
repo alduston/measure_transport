@@ -65,6 +65,24 @@ def poly_kernel(X, X_tilde, kern_params):
     return (c + torch.matmul(X, X_tilde.T))**alpha
 
 
+def laplace_kernel(X, X_tilde, kern_params, diff_matrix = []):
+    if not len(diff_matrix):
+        diff_matrix = k_matrix(X, X_tilde)
+    l = kern_params['l']
+    res = torch.exp(-(diff_matrix / (l ** 2)))
+    return res
+
+
+def r_quadratic_kernel(X, X_tilde, kern_params, diff_matrix = []):
+    if not len(diff_matrix):
+        diff_matrix = k_matrix(X, X_tilde)
+    alpha = kern_params['alpha']
+    l = kern_params['l']
+    denom = 2*alpha*(l**2)
+    res = (1 + (diff_matrix**2)/(denom))**(-alpha)
+    return res
+
+
 
 def get_kernel(kernel_params, device, dtype = torch.float32):
     kernel_name = kernel_params['name']
@@ -81,9 +99,13 @@ def get_kernel(kernel_params, device, dtype = torch.float32):
     elif  kernel_name == 'linear':
         return lambda x, x_tilde: linear_kernel(x, x_tilde, kernel_params)
 
-    elif kernel_name == 'geo':
-        return lambda W: radial_kernel(X = [], X_tilde = [],
-                                       kern_params = kernel_params, diff_matrix= W)
+    elif  kernel_name == 'laplace':
+        return lambda x, x_tilde: laplace_kernel(x, x_tilde, kernel_params)
+
+    elif kernel_name == 'r_quadratic':
+        return lambda x, x_tilde: r_quadratic_kernel(x, x_tilde, kernel_params)
+
+
 
 def normalize(tensor, revar = False):
     m_dim = int(torch.argmax(torch.tensor(tensor.shape)))

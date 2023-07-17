@@ -349,6 +349,7 @@ def mgan2(N = 200, x_range = [-3,3], eps_var = .05):
     sample = np.asarray([[y, u] for y, u in zip(Y, U)])
     return sample
 
+
 def mgan3(N = 200, x_range = [-3,3], eps_var = .05):
     Y = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
     eps = np.random.gamma(shape = 1, scale=.3, size=N)

@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
-from transport_kernel import  TransportKernel, l_scale, normalize,get_kernel, clear_plt
+from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 import matplotlib.pyplot as plt
 import os
-from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3
+from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
+    sample_banana
+import pandas as pd
 
 from copy import deepcopy
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
@@ -19,6 +21,13 @@ def geq_1d(tensor):
     elif len(tensor.shape) == 1:
         tensor = tensor.reshape(len(tensor), 1)
     return tensor
+
+
+def flip_2tensor(tensor):
+    Ttensor = deepcopy(tensor.T)
+    Ttensor[0] = deepcopy(tensor.T[1])
+    Ttensor[1] = deepcopy(tensor.T[0])
+    return Ttensor.T
 
 
 class CondTransportKernel(nn.Module):
@@ -127,18 +136,80 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 1001, exp_name= 'exp'):
+
+def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 1000, exp_name = 'exp'):
     save_dir = f'../../data/kernel_transport/{exp_name}'
+    try:
+        os.mkdir(save_dir)
+    except OSError:
+        pass
+
+    ref_sample = torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(N))
+    target_sample = torch.tensor(target_gen(N)).T
+
+    if target_sample.shape[0] != max(target_sample.shape):
+        target_sample = target_sample.T
+
+    Results_dict = {key:[] for key in param_keys}
+    Results_dict['mmd'] = []
+
+    for param_dict in param_dicts:
+        for key in param_keys:
+            Results_dict[key].append(param_dict['fit'][key])
+        Results_dict['mmd'].append(light_conditional_transport_exp(ref_sample, target_sample,  test_sample, N, param_dict))
+
+    Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
+    Result_df.to_csv(f'{save_dir}/param_search_res.csv')
+
+
+
+def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
+                                    t_iter = 500, params = {'fit': {}, 'mmd': {}}):
+
+    X_ref = ref_sample[:, 1]
+    X_target = target_sample[:, 1]
+    X_test = test_sample[:, 1]
+
+    Y_ref = ref_sample[:, 0]
+    Y_target = target_sample[:, 0]
+    Y_test = test_sample[:, 0]
+
+    transport_params = {'X': X_ref, 'Y': X_target, 'fit_kernel_params': params['fit'],
+                        'mmd_kernel_params': params['mmd'], 'normalize': False,
+                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
+                        'nugget': 1e-4, 'X_tilde': X_ref, 'alpha_y': [], 'alpha_x': False}
+
+    transport_kernel = TransportKernel(transport_params)
+    train_kernel(transport_kernel, n_iter=t_iter)
+
+    Z_test = transport_kernel.map(X_test).T
+
+    cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
+                             'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'], 'normalize': False,
+                             'reg_lambda': 1e-5, 'print_freq': 10, 'learning_rate': .06,
+                             'nugget': 1e-4, 'X_tilde': Z_test, 'alpha_y': [], 'alpha_x': False}
+
+    cond_transport_kernel = CondTransportKernel(cond_transport_params)
+    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
+    sample = cond_transport_kernel.map(Z_test, Y_test)
+
+    mmd = transport_kernel.mmd(sample, target_sample)
+    return mmd.detach().cpu().numpy()
+
+
+
+def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'exp',  params = {'fit': {}, 'mmd': {}}):
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    try:
+        os.mkdir(save_dir)
+    except OSError:
+        pass
+
     ref_sample = torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
     if target_sample.shape[0]!= max(target_sample.shape):
         target_sample = target_sample.T
-
-
-    #X_ref = ref_sample[:,0]
-    #X_target = target_sample[:,0]
-    #Y_ref = ref_sample[:, 1]
-    #Y_target = target_sample[:, 1]
 
     X_ref = ref_sample[:,1]
     X_target = target_sample[:,1]
@@ -147,11 +218,13 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 1001, exp_name= '
 
     l = l_scale(X_ref)
 
-    fit_params = {'name': 'radial', 'l': l / 5, 'sigma': 1}
-    mmd_params = {'name': 'radial', 'l': l / 5, 'sigma': 1}
+    if not params['fit']:
+        params['fit'] = {'name': 'radial', 'l': l / 5, 'sigma': 1}
+    if not params['mmd']:
+        params['mmd']= {'name': 'radial', 'l': l / 5, 'sigma': 1}
 
-    transport_params = {'X': X_ref, 'Y':  X_target, 'fit_kernel_params': fit_params,
-                        'mmd_kernel_params': mmd_params, 'normalize': False,
+    transport_params = {'X': X_ref, 'Y':  X_target, 'fit_kernel_params': params['fit'],
+                        'mmd_kernel_params':  params['mmd'], 'normalize': False,
                         'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
                          'nugget': 1e-4, 'X_tilde': X_ref, 'alpha_y': [], 'alpha_x': False}
 
@@ -159,13 +232,13 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 1001, exp_name= '
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_ref = transport_kernel.map(X_ref).T
-    cond_transport_params = {'Z_ref': Z_ref, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
-                        'fit_kernel_params': fit_params,'mmd_kernel_params': mmd_params, 'normalize': False,
-                        'reg_lambda':  1e-5, 'print_freq': 10, 'learning_rate': .03,
+    cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
+                        'fit_kernel_params': params['mmd'],'mmd_kernel_params': params['fit'], 'normalize': False,
+                        'reg_lambda':  1e-5, 'print_freq': 10, 'learning_rate': .06,
                         'nugget': 1e-4, 'X_tilde': Z_ref, 'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 6 * t_iter)
+    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
     sample = cond_transport_kernel.map(Z_ref, Y_ref)
 
     slice_samples = []
@@ -173,47 +246,73 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 1001, exp_name= '
 
     slice_vals =  [-1.1, 0, 1.1]
     for z in slice_vals :
-        z_slice = torch.full([300], z)
-        idxs = torch.LongTensor(random.choices(list(range(N)), k= 300))
+        z_slice = torch.full([1000], z)
+        idxs = torch.LongTensor(random.choices(list(range(N)), k=1000))
 
         slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
         slice_samples.append(slice_sample)
 
     for i,csample in enumerate(slice_samples):
         csample = csample.T[1].T
-        plt.hist(csample.detach().numpy(), label = f'z = {slice_vals[i]}')
+        plt.hist(csample.detach().numpy(), label = f'z = {slice_vals[i]}', bins = 40)
+    plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
 
-    #target_sample = torch.concat([geq_1d(X_target),geq_1d(Y_target)], dim = 1)
+    slice_vals = Z_ref.detach().cpu().numpy()
+    slice_samples = []
+    for z in slice_vals :
+        z_slice = torch.full([50], z)
+        idxs = torch.LongTensor(random.choices(list(range(N)), k=50))
+
+        slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
+        slice_samples.append(slice_sample)
+
     target_sample = torch.concat([geq_1d(Y_target), geq_1d(X_target)], dim=1)
 
     sample = sample.detach()
-    sample = sample.T
-    Tsample = deepcopy(sample)
-    Tsample[0] = deepcopy(sample[1])
-    Tsample[1] =  deepcopy(sample[0])
-    sample = Tsample.T
+    sample = flip_2tensor(sample)
 
-    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    slice_sample = torch.concat(slice_samples, dim=0)
+    slice_sample = slice_sample.detach()
+    slice_sample = flip_2tensor(slice_sample)
+
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
     sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
 
-    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=20, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+
+    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.1, 1.1]])
+    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.1, 1.1]])
+
 
 
 def run():
     ref_gen = sample_normal
-    N = 10000
+    target_gen = sample_banana
 
-    target_gen = mgan1
-    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan1')
+    l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    target_gen =  mgan2
-    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan2')
+    base_param_dict = {'name': 'r_quadratic', 'l': l, 'alpha': 1}
 
-    target_gen = mgan3
-    conditional_transport_exp(ref_gen, target_gen, N, exp_name='mgan2')
+    #alpha_vals = range(-4, 4)
+    #l_log_multipliers = range(-4,4)
+
+    alpha_vals = range(-1, 1)
+    l_log_multipliers = range(-1,1)
+
+    param_keys = ['l', 'alpha']
+    param_dicts = []
+    for alpha_val in alpha_vals:
+        for l_val in l_log_multipliers:
+            val_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(l_val)), 'alpha': alpha_val}
+            param_dict = {'fit': val_dict, 'mmd': val_dict}
+            param_dicts.append(param_dict)
+
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys,
+                 exp_name='banana_search')
+
 
 
 
