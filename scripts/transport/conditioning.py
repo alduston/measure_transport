@@ -302,8 +302,8 @@ def run():
     #alpha_vals = range(-4, 4)
     #l_log_multipliers = range(-4,4)
 
-    sigma_vals = [.1, .5 , 1, 5, 10]
-    l_log_multipliers = [-5, -4,-3,-2,-1]
+    sigma_vals = [1]
+    l_log_multipliers = [-6,-5, -4,-3,-2,-1, 0, 1, 2]
 
     param_keys = ['l', 'sigma']
     param_dicts = []
