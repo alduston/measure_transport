@@ -309,11 +309,13 @@ def run():
     param_dicts = []
     #for sigma_val in sigma_vals:
 
+
     for alpha_val in alpha_vals:
         for l_val in l_log_multipliers:
             #val_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
+            fit_dict =  {'name': 'r_quadratic', 'l': l , 'alpha': 5}
             val_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(l_val)), 'alpha': alpha_val}
-            param_dict = {'fit': val_dict, 'mmd': val_dict}
+            param_dict = {'fit_dict': val_dict, 'mmd': val_dict}
             param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys,
