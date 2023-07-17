@@ -297,24 +297,27 @@ def run():
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    base_param_dict = {'name': 'radial', 'l': l, 'sigma': 1}
-
     #alpha_vals = range(-4, 4)
     #l_log_multipliers = range(-4,4)
 
-    sigma_vals = [1]
+    #sigma_vals = [1]
+
+    alpha_vals = [-2,-1,0,1,2]
     l_log_multipliers = [-6,-5, -4,-3,-2,-1, 0, 1, 2]
 
     param_keys = ['l', 'sigma']
     param_dicts = []
-    for sigma_val in sigma_vals:
+    #for sigma_val in sigma_vals:
+
+    for alpha_val in alpha_vals:
         for l_val in l_log_multipliers:
-            val_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
+            #val_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(l_val)), 'sigma': sigma_val}
+            val_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(l_val)), 'alpha': alpha_val}
             param_dict = {'fit': val_dict, 'mmd': val_dict}
             param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys,
-                 exp_name='banana_search')
+                 exp_name='banana_search2')
 
 
 

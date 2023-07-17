@@ -1,5 +1,10 @@
-,l,alpha,mmd
-0,"tensor(0.1686, dtype=torch.float64)",-1,64.2994391697832
-1,"tensor(0.4583, dtype=torch.float64)",-1,8.915634520935807
-2,"tensor(0.1686, dtype=torch.float64)",0,0.0
-3,"tensor(0.4583, dtype=torch.float64)",0,0.0
+,l,sigma,mmd
+0,"tensor(0.0011, dtype=torch.float64)",1,0.0016551802
+1,"tensor(0.0031, dtype=torch.float64)",1,0.0025153589
+2,"tensor(0.0085, dtype=torch.float64)",1,0.0016200622
+3,"tensor(0.0231, dtype=torch.float64)",1,0.0014029033
+4,"tensor(0.0628, dtype=torch.float64)",1,0.0016373061
+5,"tensor(0.1707, dtype=torch.float64)",1,0.0023858547
+6,"tensor(0.4639, dtype=torch.float64)",1,0.0028755963
+7,"tensor(1.2611, dtype=torch.float64)",1,0.0033078194
+8,"tensor(3.4280, dtype=torch.float64)",1,0.0005413294
