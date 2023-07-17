@@ -161,6 +161,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
     Result_df.to_csv(f'{save_dir}/param_search_res.csv')
+    return Result_df
 
 
 
