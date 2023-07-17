@@ -387,8 +387,15 @@ def sample_spirals(N):
 def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
 
+def geq_1d(tensor):
+    if not len(tensor.shape):
+        tensor = tensor.reshape(1,1)
+    elif len(tensor.shape) == 1:
+        tensor = tensor.reshape(len(tensor), 1)
+    return tensor
+
 def normal_density(X):
-    return np.exp(-np.norm(X, axis = 0)**2)
+    return np.exp(-np.linalg.norm(geq_1d(X), axis = 0)**2)
 
 
 def KL(sample, ref_density = normal_density):
