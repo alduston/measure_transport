@@ -193,7 +193,6 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         Results_dict[f'mmd_{key}'] = []
     Results_dict['mmd'] = []
     Results_dict['label'] = []
-    Results_dict['KL'] = []
 
 
     for i, param_dict in enumerate(param_dicts):
@@ -203,7 +202,6 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_f= div_f,  t_iter =  t_iter,
                                                          params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
 
-        Results_dict['KL'].append(div)
         Results_dict['mmd'].append(div)
         Results_dict['label'].append(i)
 
@@ -369,24 +367,28 @@ def run():
     ref_mmd_kernel = get_kernel(mmd_params, device)
     ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
 
-    alpha_vals = [1,2,3,4]
+    #alpha_vals = [1,2,3,4]
+    alpha_vals = [1]
     l_log_multipliers = [-2,-1, 0, 1,2]
 
-    param_keys = ['l', 'alpha']
+    #param_keys = ['l', 'alpha']
+    param_keys = ['l', 'sigma']
     param_dicts = []
 
     for fit_alpha in alpha_vals:
         for fit_l in l_log_multipliers:
             for mmd_alpha in alpha_vals:
                 for mmd_l in l_log_multipliers:
-                    fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
-                    mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+                    #fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
+                    #mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+                    fit_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(fit_l)), 'sigma': fit_alpha}
+                    mmd_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(mmd_l)), 'sigma': mmd_alpha}
 
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000, div_f= ref_mmd,
-                 param_keys = param_keys, exp_name='mgan24', two_part = True)
+                 param_keys = param_keys, exp_name='mgan2', two_part = True)
     return True
 
 
