@@ -158,7 +158,6 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         Results_dict[f'fit_{key}'] = []
         Results_dict[f'mmd_{key}'] = []
     Results_dict['mmd'] = []
-    Results_dict['mmd_ratio'] = []
     Results_dict['label'] = []
 
 
@@ -169,7 +168,6 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample, test_sample, N,
                                                          params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
         Results_dict['mmd'].append(div)
-        Results_dict['mmd_ratio'].append(div_ratio)
         Results_dict['label'].append(i)
 
 
@@ -197,6 +195,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
 
     transport_kernel = TransportKernel(transport_params)
 
+
     if not two_part:
         train_kernel(transport_kernel, n_iter=t_iter)
 
@@ -204,7 +203,9 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         if not div_f:
             div_f = transport_kernel.mmd
         div = div_f(Z_test.detach().cpu().numpy(), X_target.detach().cpu().numpy())
-        div_x = div_f(X_target.detach().cpu().numpy(),  X_target.detach().cpu().numpy())
+
+        if save_loc:
+            sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[[-3.1, 3.1]])
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
@@ -225,9 +226,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         if not div_f:
             div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda()).detach().cpu().numpy()
-        div_ratio = div_f(ref_sample.cuda(), target_sample.cuda()).detach().cpu().numpy()/div
-        print(div_ratio)
-    return div, div_ratio
+    return div
 
 
 def noise_exp():
@@ -333,17 +332,6 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
 
 def run():
-    '''
-    ref_gen = sample_normal
-    target_gen = mgan2
-    l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
-
-    fit_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(-1)), 'sigma': 1}
-    mmd_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(2)), 'sigma': 1}
-
-    conditional_transport_exp(ref_gen, target_gen, N=8000, t_iter=1001, exp_name='mgan2',
-                              params={'fit': fit_dict, 'mmd': mmd_dict})
-    '''
 
     ref_gen = sample_normal
     target_gen = mgan2
@@ -366,7 +354,7 @@ def run():
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='mgan22', two_part = True)
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='mgan22', two_part = False)
     return True
 
 
