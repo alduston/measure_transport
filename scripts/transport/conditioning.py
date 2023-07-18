@@ -138,7 +138,7 @@ class CondTransportKernel(nn.Module):
 
 
 
-def param_search(ref_gen, target_gen, param_dicts = {},
+def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
                  param_keys = [], N = 1000, exp_name = 'exp', two_part = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -165,7 +165,7 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
-        div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample, test_sample, N,
+        div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter,
                                                          params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
         Results_dict['mmd'].append(div)
         Results_dict['label'].append(i)
@@ -204,6 +204,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
 
         if save_loc:
             sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[-3.1, 3.1])
+
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
@@ -352,7 +353,8 @@ def run():
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='mgan23', two_part = False)
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000,
+                 param_keys = param_keys, exp_name='mgan23', two_part = False)
     return True
 
 
