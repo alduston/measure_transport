@@ -262,15 +262,6 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_
     return div
 
 
-def noise_exp():
-    Y = sample_normal(1000)
-    eps = sample_normal(1000) ** (1/3)
-    scales = range(-6, 2)
-    for scale in scales:
-        print(KL(Y + eps * np.exp(.5 * scale)))
-
-
-
 def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'exp',  params = {'fit': {}, 'mmd': {}}):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -395,7 +386,7 @@ def run():
                     param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000, div_f= ref_mmd,
-                 param_keys = param_keys, exp_name='mgan23', two_part = False)
+                 param_keys = param_keys, exp_name='mgan24', two_part = True)
     return True
 
 
