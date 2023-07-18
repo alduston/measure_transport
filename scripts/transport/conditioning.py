@@ -347,7 +347,7 @@ def run():
         device = 'cpu'
 
     ref_gen = sample_normal
-    target_gen = mgan1
+    target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(5000)[:, 1]))
     #mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
@@ -356,7 +356,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan1_exp', params=exp_params)
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan2_exp', params=exp_params)
 
 
     '''
