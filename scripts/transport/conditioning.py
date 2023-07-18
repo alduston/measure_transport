@@ -181,8 +181,9 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = torch.tensor(ref_gen(50 * N))
+    test_sample_ref = torch.tensor(ref_gen(50 * N))
     target_sample = torch.tensor(target_gen(N)).T
+    test_sample_target = torch.tensor(target_gen(50 * N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
         target_sample = target_sample.T
@@ -199,8 +200,9 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
-        div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_f= div_f,  t_iter =  t_iter,
-                                                         params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
+        div = light_conditional_transport_exp(ref_sample, target_sample, test_sample_ref, test_sample_target,
+                                              div_f= div_f,  t_iter =  t_iter, params = param_dict,
+                                              two_part = two_part, save_loc= f'{save_dir}/{i}')
 
         Results_dict['mmd'].append(div)
         Results_dict['label'].append(i)
@@ -212,16 +214,18 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
 
 
 
-def light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_f, t_iter = 1000,
+def light_conditional_transport_exp(ref_sample, target_sample, ref_test_sample, target_test_sample, div_f, t_iter = 1000,
                                     params = {'fit': {}, 'mmd': {}}, two_part = False, save_loc =''):
 
     X_ref = ref_sample[:, 1]
     X_target = target_sample[:, 1]
-    X_test = test_sample[:, 1]
+    X_ref_test = ref_test_sample[:, 1]
+    X_target_test = target_test_sample[:, 1]
 
     Y_ref = ref_sample[:, 0]
     Y_target = target_sample[:, 0]
-    Y_test = test_sample[:, 0]
+    Y_ref_test = ref_test_sample[:, 0]
+    Y_target_test = target_test_sample[:, 0]
 
     transport_params = {'X': X_ref, 'Y': X_target, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
