@@ -213,7 +213,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         #mmd = transport_kernel.mmd(sample, target_sample)
         if not div_f:
             div_f = transport_kernel.mmd
-        div = div_f(sample, target_sample)
+        div = div_f(sample.cpu(), target_sample.cpu())
     return div
 
 
