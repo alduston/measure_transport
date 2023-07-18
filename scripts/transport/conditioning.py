@@ -368,33 +368,32 @@ def run():
     target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
-    #mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
-    mmd_params = {'name': 'radial', 'l': l*torch.exp(torch.tensor(-1)), 'sigma': 1}
+    mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
     ref_mmd_kernel = get_kernel(mmd_params, device)
     ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
 
-    #alpha_vals = [1,2,3,4]
-    alpha_vals = [1]
-    l_log_multipliers = [-2,-1, 0, 1,2]
+    alpha_vals = [1,2,3,4]
+    #alpha_vals = [1]
+    l_log_multipliers = [-1.5,-1,-.5, 0, 1]
 
-    #param_keys = ['l', 'alpha']
-    param_keys = ['l', 'sigma']
+    param_keys = ['l', 'alpha']
+    #param_keys = ['l', 'sigma']
     param_dicts = []
 
     for fit_alpha in alpha_vals:
         for fit_l in l_log_multipliers:
             for mmd_alpha in alpha_vals:
                 for mmd_l in l_log_multipliers:
-                    #fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
-                    #mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
-                    fit_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(fit_l)), 'sigma': fit_alpha}
-                    mmd_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(mmd_l)), 'sigma': mmd_alpha}
+                    fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
+                    mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+                    #fit_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(fit_l)), 'sigma': fit_alpha}
+                    #mmd_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(mmd_l)), 'sigma': mmd_alpha}
 
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000, div_f= ref_mmd,
-                 param_keys = param_keys, exp_name='mgan2', two_part = True)
+                 param_keys = param_keys, exp_name='mgan21', two_part = True)
     return True
 
 
