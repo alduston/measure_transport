@@ -366,7 +366,7 @@ def run():
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2', two_part = True)
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='mgan2', two_part = True)
     return True
 
 
