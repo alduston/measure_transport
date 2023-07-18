@@ -237,8 +237,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_
         train_kernel(transport_kernel, n_iter=t_iter)
 
         Z_test = transport_kernel.map(X_test).T
-        #div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda()).detach().cpu().numpy()
-        div = transport_kernel.mmd(Z_test, X_target).detach().cpu().numpy()
+        div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda()).detach().cpu().numpy()
+        #div = transport_kernel.mmd(Z_test, X_target).detach().cpu().numpy()
 
         if save_loc:
             sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[-3.1, 3.1])
