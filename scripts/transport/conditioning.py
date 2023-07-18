@@ -302,8 +302,8 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                         'fit_kernel_params': params['mmd'],'mmd_kernel_params': params['fit'], 'normalize': False,
-                        'reg_lambda':  1e-5, 'print_freq': 10, 'learning_rate': .06,
-                        'nugget': 1e-4, 'X_tilde': Z_ref, 'alpha_y': [], 'alpha_x': False}
+                        'reg_lambda':  1e-5, 'print_freq': 100, 'learning_rate': .06,
+                        'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
     train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)
@@ -321,38 +321,20 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
         slice_samples.append(slice_sample)
 
     for i,csample in enumerate(slice_samples):
-        csample = csample.T[1].T
+        csample = csample.T[0].T
         plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 40)
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
 
-    slice_vals = Z_ref.detach().cpu().numpy()
-    slice_samples = []
-    for z in slice_vals :
-        z_slice = torch.full([50], z)
-        idxs = torch.LongTensor(random.choices(list(range(N)), k=50))
-
-        slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
-        slice_samples.append(slice_sample)
-
     target_sample = torch.concat([geq_1d(Y_target), geq_1d(X_target)], dim=1)
-
     sample = sample.detach()
-    sample = flip_2tensor(sample)
-
-    slice_sample = torch.concat(slice_samples, dim=0)
-    slice_sample = slice_sample.detach()
-    slice_sample = flip_2tensor(slice_sample)
 
     sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
     sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
-
-    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
-    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
 
   #scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/mgan23/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
