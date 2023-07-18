@@ -277,10 +277,10 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     if target_sample.shape[0]!= max(target_sample.shape):
         target_sample = target_sample.T
 
-    X_ref = ref_sample[:,1]
-    X_target = target_sample[:,1]
-    Y_ref = ref_sample[:, 0]
-    Y_target = target_sample[:, 0]
+    X_ref = ref_sample[:,0]
+    X_target = target_sample[:,0]
+    Y_ref = ref_sample[:, 1]
+    Y_target = target_sample[:, 1]
 
     l = l_scale(X_ref)
 
@@ -314,8 +314,8 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     slice_vals =  [-1.1, 0, 1.1]
     for z in slice_vals :
-        z_slice = torch.full([1000], z)
-        idxs = torch.LongTensor(random.choices(list(range(N)), k=1000))
+        z_slice = torch.full([10000], z)
+        idxs = torch.LongTensor(random.choices(list(range(N)), k=10000))
 
         slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
         slice_samples.append(slice_sample)
@@ -327,7 +327,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
 
-    target_sample = torch.concat([geq_1d(Y_target), geq_1d(X_target)], dim=1)
+    target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
     sample = sample.detach()
 
     sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
@@ -349,14 +349,14 @@ def run():
     ref_gen = sample_normal
     target_gen = mgan2
 
-    l = l_scale(torch.tensor(ref_gen(8000)[:, 1]))
+    l = l_scale(torch.tensor(ref_gen(10000)[:, 1]))
     #mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    conditional_transport_exp(ref_gen, target_gen, N= 10000, t_iter=1201, exp_name='mgan2_exp', params=exp_params)
+    conditional_transport_exp(ref_gen, target_gen, N= 10000, t_iter=2001, exp_name='mgan21_exp', params=exp_params)
 
 
     '''
