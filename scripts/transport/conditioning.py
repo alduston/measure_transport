@@ -10,6 +10,7 @@ import pandas as pd
 from copy import deepcopy
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import random
+import numpy as np
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -161,6 +162,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
+
         Results_dict['mmd'].append(light_conditional_transport_exp(ref_sample, target_sample,  test_sample, N, param_dict))
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
@@ -169,8 +171,8 @@ def param_search(ref_gen, target_gen, param_dicts = {}, param_keys = [], N = 100
 
 
 
-def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
-                                    t_iter = 1000, params = {'fit': {}, 'mmd': {}}, two_part = False):
+def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter = 1000,
+                                    params = {'fit': {}, 'mmd': {}}, two_part = False, div_f = KL):
 
     X_ref = ref_sample[:, 1]
     X_target = target_sample[:, 1]
@@ -189,10 +191,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
     train_kernel(transport_kernel, n_iter=t_iter)
 
     Z_test = transport_kernel.map(X_test).T
-    div = KL(Z_test.detach().cpu().numpy())
-
-
-    #mmd = transport_kernel.mmd(Z_test, transport_kernel.Y)
+    div = div_f(Z_test.detach().cpu().numpy(), ref_sample = X_target.detach().cpu().numpy())
+    div_x = div_f(X_target.detach().cpu().numpy(), ref_sample = X_target.detach().cpu().numpy())
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
@@ -204,8 +204,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample,
         train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
         sample = cond_transport_kernel.map(Z_test, Y_test)
 
-        mmd = transport_kernel.mmd(sample, target_sample)
-        div = KL(sample.detach().cpu().numpy())
+        #mmd = transport_kernel.mmd(sample, target_sample)
+        div = div_f(sample.detach().cpu().numpy(), ref_sample = target_sample.detach().cpu().numpy())
     return div
 
 
@@ -228,6 +228,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     Y_target = target_sample[:, 0]
 
     l = l_scale(X_ref)
+
 
     if not params['fit']:
         params['fit'] = {'name': 'radial', 'l': l / 5, 'sigma': 1}
@@ -323,7 +324,12 @@ def run():
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2')
     return True
 
-
+def noise_exp():
+    Y = sample_normal(1000)
+    eps = sample_normal(1000) ** (1/3)
+    scales = range(-6, 2)
+    for scale in scales:
+        print(KL(Y + eps * np.exp(.5 * scale)))
 
 if __name__=='__main__':
     run()

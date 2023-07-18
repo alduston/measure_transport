@@ -398,7 +398,7 @@ def normal_density(X):
     return np.exp(-np.linalg.norm(geq_1d(X), axis = 0)**2)
 
 
-def KL(sample, ref_density = normal_density):
+def KL(sample, ref_sample = [], ref_density = normal_density):
     sample_densitys = np.asarray([ref_density(x) for x in sample])
     KL_div = np.sum(np.log(1/ sample_densitys))
     return KL_div
