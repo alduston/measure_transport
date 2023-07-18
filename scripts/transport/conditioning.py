@@ -158,14 +158,17 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         Results_dict[f'fit_{key}'] = []
         Results_dict[f'mmd_{key}'] = []
     Results_dict['mmd'] = []
+    Results_dict['mmd_ratio'] = []
 
     for param_dict in param_dicts:
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
+        div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample,
+                                                                   test_sample, N, param_dict, two_part = two_part)
+        Results_dict['mmd'].append(div)
+        Results_dict['mmd_ration'].append(div_ratio)
 
-        Results_dict['mmd'].append(light_conditional_transport_exp(ref_sample, target_sample,
-                                                                   test_sample, N, param_dict, two_part = two_part))
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
     Result_df.to_csv(f'{save_dir}/param_search_res.csv')
@@ -213,9 +216,10 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         #mmd = transport_kernel.mmd(sample, target_sample)
         if not div_f:
             div_f = transport_kernel.mmd
+        div = div_f(sample.cuda(), target_sample.cuda())
         div_ratio = div_f(ref_sample.cuda(), target_sample.cuda())/div_f(sample.cuda(), target_sample.cuda())
         print(div_ratio)
-    return div_ratio
+    return div,div_ratio
 
 
 
