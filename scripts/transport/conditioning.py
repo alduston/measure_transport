@@ -203,18 +203,19 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                                  'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'], 'normalize': False,
-                                 'reg_lambda': 1e-5, 'print_freq': 10, 'learning_rate': .06,
+                                 'reg_lambda': 1e-5, 'print_freq':100, 'learning_rate': .06,
                                  'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
 
         cond_transport_kernel = CondTransportKernel(cond_transport_params)
-        train_kernel(cond_transport_kernel, n_iter= t_iter)
+        train_kernel(cond_transport_kernel, n_iter= 2 * t_iter)
         sample = cond_transport_kernel.map(X_target, Y_test)
 
         #mmd = transport_kernel.mmd(sample, target_sample)
         if not div_f:
             div_f = transport_kernel.mmd
-        div = div_f(ref_sample.cuda(), target_sample.cuda())/div_f(sample.cuda(), target_sample.cuda())
-    return div
+        div_ratio = div_f(ref_sample.cuda(), target_sample.cuda())/div_f(sample.cuda(), target_sample.cuda())
+        print(div_ratio)
+    return div_ratio
 
 
 
