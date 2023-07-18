@@ -181,7 +181,7 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(50 * N))
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
@@ -363,7 +363,8 @@ def run():
     target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
-    mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
+    #mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
+    mmd_params = {'name': 'radial', 'l': l*torch.exp(torch.tensor(-1)), 'sigma': 1}
     ref_mmd_kernel = get_kernel(mmd_params, device)
     ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
 
