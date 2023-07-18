@@ -167,7 +167,7 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample,
                                                                    test_sample, N, param_dict, two_part = two_part)
         Results_dict['mmd'].append(div)
-        Results_dict['mmd_ration'].append(div_ratio)
+        Results_dict['mmd_ratio'].append(div_ratio)
 
 
     Result_df =  pd.DataFrame.from_dict(Results_dict, orient = 'columns')
