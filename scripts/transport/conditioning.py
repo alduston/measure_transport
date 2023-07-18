@@ -304,12 +304,13 @@ def run():
     target_gen = mgan2
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    fit_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-2)), 'alpha': 4}
-    mmd_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-2)), 'alpha': 4}
+    fit_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(-2)), 'sigma': 1}
+    mmd_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(-2)), 'sigma': 1}
 
     conditional_transport_exp(ref_gen, target_gen, N = 8000, t_iter=1001, exp_name='banana_exp',
                               params={'fit': fit_dict, 'mmd': mmd_dict})
 
+    #/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/banana_exp/ Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
 
     '''
     alpha_vals = [1,2,3,4]
