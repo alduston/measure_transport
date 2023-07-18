@@ -322,7 +322,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     for i,csample in enumerate(slice_samples):
         csample = csample.T[0].T
-        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 40)
+        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 40, range=[-1.5, 1.5])
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
@@ -330,11 +330,11 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
     sample = flip_2tensor(sample.detach())
 
-    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
-    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
 
-    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
-    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
 
 
   #scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/mgan23/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
