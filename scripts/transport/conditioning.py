@@ -187,6 +187,7 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
 
     if target_sample.shape[0] != max(target_sample.shape):
         target_sample = target_sample.T
+        test_sample_target = test_sample_target.T
 
     Results_dict = {}
     for key in param_keys:
