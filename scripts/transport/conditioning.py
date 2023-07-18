@@ -184,13 +184,14 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
     Y_target = target_sample[:, 0]
     Y_test = test_sample[:, 0]
 
-    if not two_part:
-        transport_params = {'X': X_ref, 'Y': X_target, 'fit_kernel_params': params['fit'],
-                            'mmd_kernel_params': params['mmd'], 'normalize': False,
-                            'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
-                            'nugget': 1e-4, 'X_tilde': X_ref, 'alpha_y': [], 'alpha_x': False}
+    transport_params = {'X': X_ref, 'Y': X_target, 'fit_kernel_params': params['fit'],
+                        'mmd_kernel_params': params['mmd'], 'normalize': False,
+                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
+                        'nugget': 1e-4, 'X_tilde': X_ref, 'alpha_y': [], 'alpha_x': False}
 
-        transport_kernel = TransportKernel(transport_params)
+    transport_kernel = TransportKernel(transport_params)
+
+    if not two_part:
         train_kernel(transport_kernel, n_iter=t_iter)
 
         Z_test = transport_kernel.map(X_test).T
@@ -211,7 +212,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
 
         #mmd = transport_kernel.mmd(sample, target_sample)
         if not div_f:
-            div_f = cond_transport_kernel.mmd
+            div_f = transport_kernel.mmd
         div = div_f(sample.detach().cpu().numpy(), target_sample.detach().cpu().numpy())
     return div
 
