@@ -289,14 +289,14 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     slice_sample = slice_sample.detach()
     slice_sample = flip_2tensor(slice_sample)
 
-    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
-    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
-    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
+    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
 
 def run():
