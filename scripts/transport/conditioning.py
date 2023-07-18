@@ -367,9 +367,17 @@ def run():
     ref_gen = sample_normal
     target_gen = mgan2
 
-    l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
+    l = l_scale(torch.tensor(ref_gen(8000)[:, 1]))
     #mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
-    mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.5)), 'alpha':1}
+
+    mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
+    fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
+    exp_params = {'fit': mmd_params, 'mmd': fit_params}
+
+    conditional_transport_exp(ref_gen, target_gen, N= 10000, t_iter=1201, exp_name='mgan2_exp', params=exp_params)
+
+
+    '''
     ref_mmd_kernel = get_kernel(mmd_params, device)
     ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
 
@@ -396,6 +404,7 @@ def run():
     param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000, div_f= ref_mmd,
                  param_keys = param_keys, exp_name='mgan22', two_part = True)
     return True
+    '''
 
 
 if __name__=='__main__':
