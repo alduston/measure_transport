@@ -328,7 +328,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     clear_plt()
 
     target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
-    sample = flip_2tensor(sample).detach()
+    sample = flip_2tensor(sample.detach())
 
     sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
     sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,3]])
@@ -356,7 +356,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan21_exp', params=exp_params)
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan1_exp', params=exp_params)
 
 
     '''
