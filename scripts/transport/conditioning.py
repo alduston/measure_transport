@@ -347,7 +347,7 @@ def run():
         device = 'cpu'
 
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = mgan1
 
     l = l_scale(torch.tensor(ref_gen(5000)[:, 1]))
     #mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
