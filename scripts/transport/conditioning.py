@@ -206,8 +206,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
                                  'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
 
         cond_transport_kernel = CondTransportKernel(cond_transport_params)
-        train_kernel(cond_transport_kernel, n_iter= 2 * t_iter)
-        sample = cond_transport_kernel.map(Z_test, Y_test)
+        train_kernel(cond_transport_kernel, n_iter= t_iter)
+        sample = cond_transport_kernel.map(X_target, Y_test)
 
         #mmd = transport_kernel.mmd(sample, target_sample)
         if not div_f:
