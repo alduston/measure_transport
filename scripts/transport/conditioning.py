@@ -138,6 +138,29 @@ class CondTransportKernel(nn.Module):
 
 
 
+def U_KL(sample, unif_range = [-3,3]):
+    try:
+        sample = sample.detach().cpu().numpy()
+    except BaseException:
+        pass
+
+    lb, ub = unif_range
+    l= unif_range[1] - unif_range[0]
+    sigma = 100
+    densitys = []
+    for x in sample:
+        if lb <= x <= ub:
+            densitys.append(1/l)
+        else:
+            densitys.append(np.exp(-sigma * x**2))
+    densitys = np.asarray(densitys)
+    KL_div = np.sum(np.log(1 / densitys))
+    return KL_div
+
+
+
+
+
 def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
                  param_keys = [], N = 1000, exp_name = 'exp', two_part = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -159,14 +182,17 @@ def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
         Results_dict[f'mmd_{key}'] = []
     Results_dict['mmd'] = []
     Results_dict['label'] = []
+    Results_dict['KL'] = []
 
 
     for i, param_dict in enumerate(param_dicts):
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
-        div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter,
+        div, kl_div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter,
                                                          params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
+
+        Results_dict['KL'].append(div)
         Results_dict['mmd'].append(div)
         Results_dict['label'].append(i)
 
@@ -200,7 +226,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         train_kernel(transport_kernel, n_iter=t_iter)
 
         Z_test = transport_kernel.map(X_test).T
-        div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda())
+        div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda()).detach().cpu().numpy()
+        kl_div = U_KL(Z_test)
 
         if save_loc:
             sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[-3.1, 3.1])
@@ -225,7 +252,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         if not div_f:
             div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda()).detach().cpu().numpy()
-    return div
+    return div, kl_div
 
 
 def noise_exp():
@@ -353,7 +380,7 @@ def run():
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000,
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 10,
                  param_keys = param_keys, exp_name='mgan23', two_part = False)
     return True
 
