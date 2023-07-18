@@ -98,7 +98,7 @@ class CondTransportKernel(nn.Module):
         Lambda = self.get_Lambda()
         w = self.fit_kernel(self.W_ref, zy).T @ Lambda
         res_y = w + y
-        res = torch.concat([z, res_y], dim = 1)
+        res = torch.concat([res_y, z], dim = 1)
         return res
 
 
