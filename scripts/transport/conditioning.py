@@ -203,7 +203,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda())
 
         if save_loc:
-            sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[[-3.1, 3.1]])
+            sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[-3.1, 3.1])
 
     if two_part:
         cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
