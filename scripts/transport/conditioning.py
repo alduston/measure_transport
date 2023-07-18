@@ -218,7 +218,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
             div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda())
         div_ratio = div_f(ref_sample.cuda(), target_sample.cuda())/div_f(sample.cuda(), target_sample.cuda())
-
+        print(div_ratio)
     return div,div_ratio
 
 
