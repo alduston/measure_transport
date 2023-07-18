@@ -250,7 +250,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
                         'nugget': 1e-4, 'X_tilde': Z_ref, 'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 5 * t_iter)
+    train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)
     sample = cond_transport_kernel.map(Z_ref, Y_ref)
 
     slice_samples = []
@@ -266,7 +266,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     for i,csample in enumerate(slice_samples):
         csample = csample.T[1].T
-        plt.hist(csample.detach().numpy(), label = f'z = {slice_vals[i]}', bins = 40)
+        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 40)
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
@@ -289,22 +289,29 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     slice_sample = slice_sample.detach()
     slice_sample = flip_2tensor(slice_sample)
 
-    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
 
-    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
-    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
 
-    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.1, 1.1]])
-    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.1, 1.1]])
+    sample_scatter(slice_sample, f'{save_dir}/slice_sample.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
+    sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2)#, range = [[-3.1,3.1],[-1.1,1.1]])
 
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
-
+    target_gen = mgan2
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
+    fit_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-2)), 'alpha': 4}
+    mmd_dict = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-2)), 'alpha': 4}
+
+    conditional_transport_exp(ref_gen, target_gen, N = 8000, t_iter=1001, exp_name='banana_exp',
+                              params={'fit': fit_dict, 'mmd': mmd_dict})
+
+
+    '''
     alpha_vals = [1,2,3,4]
     l_log_multipliers = [-2,-1, 0, 1, 2]
 
@@ -323,6 +330,7 @@ def run():
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2')
     return True
+    '''
 
 def noise_exp():
     Y = sample_normal(1000)
