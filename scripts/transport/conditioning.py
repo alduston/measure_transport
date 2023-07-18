@@ -164,9 +164,8 @@ def param_search(ref_gen, target_gen, param_dicts = {},
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
-        div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample,
-                                                        test_sample, N, param_dict,
-                                                        two_part = two_part, save_loc= f'{save_dir}{i}')
+        div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample, test_sample, N,
+                                                         params = param_dict, two_part = two_part, save_loc= f'{save_dir}{i}')
         Results_dict['mmd'].append(div)
         Results_dict['mmd_ratio'].append(div_ratio)
 
