@@ -265,7 +265,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
     train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)
-    sample = cond_transport_kernel.map(Z_ref, Y_ref)
+    sample = cond_transport_kernel.map(X_target, Y_ref)
 
     slice_samples = []
     N = len(Z_ref)
@@ -319,6 +319,17 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 def run():
     ref_gen = sample_normal
     target_gen = mgan2
+    l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
+
+    fit_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(-1)), 'sigma': 1}
+    mmd_dict = {'name': 'radial', 'l': l * torch.exp(torch.tensor(2)), 'sigma': 1}
+
+    conditional_transport_exp(ref_gen, target_gen, N=8000, t_iter=1001, exp_name='mgan2',
+                              params={'fit': fit_dict, 'mmd': mmd_dict})
+
+    '''
+    ref_gen = sample_normal
+    target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
@@ -340,6 +351,8 @@ def run():
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2', two_part = True)
     return True
+    '''
+
 
 def noise_exp():
     Y = sample_normal(1000)
