@@ -228,6 +228,14 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
     return div, div_ratio
 
 
+def noise_exp():
+    Y = sample_normal(1000)
+    eps = sample_normal(1000) ** (1/3)
+    scales = range(-6, 2)
+    for scale in scales:
+        print(KL(Y + eps * np.exp(.5 * scale)))
+
+
 
 def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'exp',  params = {'fit': {}, 'mmd': {}}):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -323,6 +331,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
 
 def run():
+    '''
     ref_gen = sample_normal
     target_gen = mgan2
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
@@ -332,8 +341,8 @@ def run():
 
     conditional_transport_exp(ref_gen, target_gen, N=8000, t_iter=1001, exp_name='mgan2',
                               params={'fit': fit_dict, 'mmd': mmd_dict})
-
     '''
+
     ref_gen = sample_normal
     target_gen = mgan2
 
@@ -357,15 +366,7 @@ def run():
 
     param_search(ref_gen, target_gen, param_dicts = param_dicts, param_keys = param_keys, exp_name='banana_search2', two_part = True)
     return True
-    '''
 
-
-def noise_exp():
-    Y = sample_normal(1000)
-    eps = sample_normal(1000) ** (1/3)
-    scales = range(-6, 2)
-    for scale in scales:
-        print(KL(Y + eps * np.exp(.5 * scale)))
 
 if __name__=='__main__':
     run()
