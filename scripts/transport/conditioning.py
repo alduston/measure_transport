@@ -181,9 +181,9 @@ def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample_ref = torch.tensor(ref_gen(50 * N))
+    test_sample_ref = torch.tensor(ref_gen(10 * N))
     target_sample = torch.tensor(target_gen(N)).T
-    test_sample_target = torch.tensor(target_gen(50 * N)).T
+    test_sample_target = torch.tensor(target_gen(10 * N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
         target_sample = target_sample.T
