@@ -31,6 +31,17 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
+def mmd(Z, Y, mmd_kernel):
+    N = len(Z)
+    normalization = N/(N-1)
+
+    k_YY_mean = torch.mean(mmd_kernel(Y,Y))
+    k_ZZ = mmd_kernel(Z, Z)
+    k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
+    k_ZY =  mmd_kernel(Y, Z)
+    return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
+
+
 class CondTransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
         super().__init__()
@@ -161,7 +172,7 @@ def U_KL(sample, unif_range = [-3,3]):
 
 
 
-def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
+def param_search(ref_gen, target_gen,  div_f, param_dicts = {}, t_iter = 1000,
                  param_keys = [], N = 1000, exp_name = 'exp', two_part = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -189,7 +200,7 @@ def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
-        div, kl_div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter,
+        div = light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_f= div_f,  t_iter =  t_iter,
                                                          params = param_dict, two_part = two_part, save_loc= f'{save_dir}/{i}')
 
         Results_dict['KL'].append(div)
@@ -203,8 +214,8 @@ def param_search(ref_gen, target_gen, param_dicts = {}, t_iter = 1000,
 
 
 
-def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter = 1000, save_loc ='',
-                                    params = {'fit': {}, 'mmd': {}}, two_part = False, div_f = None):
+def light_conditional_transport_exp(ref_sample, target_sample, test_sample, div_f, t_iter = 1000,
+                                    params = {'fit': {}, 'mmd': {}}, two_part = False, save_loc =''):
 
     X_ref = ref_sample[:, 1]
     X_target = target_sample[:, 1]
@@ -226,8 +237,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         train_kernel(transport_kernel, n_iter=t_iter)
 
         Z_test = transport_kernel.map(X_test).T
-        div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda()).detach().cpu().numpy()
-        kl_div = U_KL(Z_test)
+        #div = transport_kernel.mmd(Z_test.cuda(), X_target.cuda()).detach().cpu().numpy()
+        div = transport_kernel.mmd(Z_test, X_target).detach().cpu().numpy()
 
         if save_loc:
             sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[-3.1, 3.1])
@@ -247,12 +258,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
             sample_scatter(sample.detach().cpu().numpy(), f'{save_loc}slice_sample.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.2, 1.2]])
             sample_hmap(sample.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.2, 1.2]])
 
-        #mmd = transport_kernel.mmd(sample, target_sample)
-
-        if not div_f:
-            div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda()).detach().cpu().numpy()
-    return div, kl_div
+    return div
 
 
 def noise_exp():
@@ -354,15 +361,22 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     sample_hmap(slice_sample, f'{save_dir}/slice_sample_map.png', bins=25, d=2, range = [[-3.1,3.1],[-1.2,1.2]])
 
 
-  #/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/banana_exp/ Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
+  #scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/mgan23/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
 
 
 def run():
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
 
     ref_gen = sample_normal
     target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
+    mmd_params = {'name': 'radial', 'l': l / 7, 'sigma': 1}
+    ref_mmd_kernel = get_kernel(mmd_params, device)
+    ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
 
     alpha_vals = [1,2,3,4]
     l_log_multipliers = [-2,-1, 0, 1,2]
@@ -380,7 +394,7 @@ def run():
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
 
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 10,
+    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 10, div_f= ref_mmd,
                  param_keys = param_keys, exp_name='mgan23', two_part = False)
     return True
 
