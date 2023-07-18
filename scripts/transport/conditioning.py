@@ -160,12 +160,13 @@ def param_search(ref_gen, target_gen, param_dicts = {},
     Results_dict['mmd'] = []
     Results_dict['mmd_ratio'] = []
 
-    for param_dict in param_dicts:
+    for i, param_dict in enumerate(param_dicts):
         for key in param_keys:
             Results_dict[f'fit_{key}'].append(param_dict['fit'][key])
             Results_dict[f'mmd_{key}'].append(param_dict['mmd'][key])
         div, div_ratio = light_conditional_transport_exp(ref_sample, target_sample,
-                                                                   test_sample, N, param_dict, two_part = two_part)
+                                                        test_sample, N, param_dict,
+                                                        two_part = two_part, save_loc= f'{save_dir}{i}')
         Results_dict['mmd'].append(div)
         Results_dict['mmd_ratio'].append(div_ratio)
 
@@ -176,7 +177,7 @@ def param_search(ref_gen, target_gen, param_dicts = {},
 
 
 
-def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter = 1000,
+def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_iter = 1000, save_loc ='',
                                     params = {'fit': {}, 'mmd': {}}, two_part = False, div_f = None):
 
     X_ref = ref_sample[:, 1]
@@ -213,7 +214,12 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         train_kernel(cond_transport_kernel, n_iter= 2 * t_iter)
         sample = cond_transport_kernel.map(X_target, Y_test)
 
+        if save_loc:
+            sample_scatter(sample.detach().cpu().numpy(), f'{save_loc}slice_sample.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.2, 1.2]])
+            sample_hmap(sample.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=2, range=[[-3.1, 3.1], [-1.2, 1.2]])
+
         #mmd = transport_kernel.mmd(sample, target_sample)
+
         if not div_f:
             div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda()).detach().cpu().numpy()
