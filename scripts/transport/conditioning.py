@@ -200,9 +200,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
         train_kernel(transport_kernel, n_iter=t_iter)
 
         Z_test = transport_kernel.map(X_test).T
-        if not div_f:
-            div_f = transport_kernel.mmd
-        div = div_f(Z_test.detach().cpu().numpy(), X_target.detach().cpu().numpy())
+        div = transport_kernel.mmd(Z_test, X_target)
 
         if save_loc:
             sample_hmap(Z_test.detach().cpu().numpy(), f'{save_loc}slice_sample_map.png', bins=25, d=1, range=[[-3.1, 3.1]])
