@@ -218,7 +218,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, test_sample, t_it
             div_f = transport_kernel.mmd
         div = div_f(sample.cuda(), target_sample.cuda())
         div_ratio = div_f(ref_sample.cuda(), target_sample.cuda())/div_f(sample.cuda(), target_sample.cuda())
-        print(div_ratio)
+
     return div,div_ratio
 
 
@@ -322,18 +322,18 @@ def run():
 
     l = l_scale(torch.tensor(ref_gen(1000)[:, 1]))
 
-    alpha_vals = [1,2,3,4]
+    alpha_vals = [1] #[1,2,3,4]
     l_log_multipliers = [-2,-1, 0, 1, 2]
 
-    param_keys = ['l', 'alpha']
+    param_keys = ['l', 'sigma']
     param_dicts = []
 
     for fit_alpha in alpha_vals:
         for fit_l in l_log_multipliers:
             for mmd_alpha in alpha_vals:
                 for mmd_l in l_log_multipliers:
-                    fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
-                    mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
+                    fit_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(fit_l)), 'sigma': fit_alpha}
+                    mmd_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(mmd_l)), 'sigma': mmd_alpha}
 
                     param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
                     param_dicts.append(param_dict)
