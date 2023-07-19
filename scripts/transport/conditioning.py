@@ -315,15 +315,14 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     slice_vals =  [-1.1, 0, 1.1]
     for z in slice_vals :
         z_slice = torch.full([10000], z)
-        noise = 0.01 * torch.randn(z_slice.shape)
         idxs = torch.LongTensor(random.choices(list(range(N)), k=10000))
 
-        slice_sample = cond_transport_kernel.map(z_slice + noise,Y_ref[idxs])
+        slice_sample = cond_transport_kernel.map(z_slice ,Y_ref[idxs])
         slice_samples.append(slice_sample)
 
     for i,csample in enumerate(slice_samples):
         csample = csample.T[0].T
-        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 40, range=[-1.25, 1.25])
+        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 80, range=[-1.25, 1.25])
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
@@ -357,37 +356,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan2_exp_noisy', params=exp_params)
-
-
-    '''
-    ref_mmd_kernel = get_kernel(mmd_params, device)
-    ref_mmd = lambda z,y: mmd(z,y,  ref_mmd_kernel)
-
-    alpha_vals = [1,2]
-    #alpha_vals = [1]
-    l_log_multipliers = [-1.75,-1.5,-1.25, -1,-.5]
-
-    param_keys = ['l', 'alpha']
-    #param_keys = ['l', 'sigma']
-    param_dicts = []
-
-    for fit_alpha in alpha_vals:
-        for fit_l in l_log_multipliers:
-            for mmd_alpha in alpha_vals:
-                for mmd_l in l_log_multipliers:
-                    fit_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(fit_l)), 'alpha': fit_alpha}
-                    mmd_dict = {'name': 'r_quadratic', 'l': l*torch.exp(torch.tensor(mmd_l)), 'alpha': mmd_alpha}
-                    #fit_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(fit_l)), 'sigma': fit_alpha}
-                    #mmd_dict = {'name': 'radial', 'l': l*torch.exp(torch.tensor(mmd_l)), 'sigma': mmd_alpha}
-
-                    param_dict = {'fit': fit_dict, 'mmd': mmd_dict}
-                    param_dicts.append(param_dict)
-
-    param_search(ref_gen, target_gen, param_dicts = param_dicts, N = 1000, div_f= ref_mmd,
-                 param_keys = param_keys, exp_name='mgan22', two_part = True)
-    return True
-    '''
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan2_exp', params=exp_params)
 
 
 if __name__=='__main__':
