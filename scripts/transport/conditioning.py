@@ -322,7 +322,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
 
     for i,csample in enumerate(slice_samples):
         csample = csample.T[0].T
-        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 80, range=[-1.25, 1.25])
+        plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 60, range=[-1.25, 1.25])
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
