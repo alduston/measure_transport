@@ -316,10 +316,9 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     for z in slice_vals :
         z_slice = torch.full([10000], z)
         noise = 0.01 * torch.randn(z_slice.shape)
-        z_slice += noise
         idxs = torch.LongTensor(random.choices(list(range(N)), k=10000))
 
-        slice_sample = cond_transport_kernel.map(z_slice,Y_ref[idxs])
+        slice_sample = cond_transport_kernel.map(z_slice + noise,Y_ref[idxs])
         slice_samples.append(slice_sample)
 
     for i,csample in enumerate(slice_samples):
