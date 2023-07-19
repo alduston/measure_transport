@@ -340,7 +340,7 @@ def mgan1(N = 200, x_range = [-3,3], eps_var = .05):
     return sample
 
 
-def mgan2(N = 200, x_range = [-3,3], eps_var = .5):
+def mgan2(N = 200, x_range = [-3,3], eps_var = .05**.5):
     Y = np.random.uniform(low = x_range[0], high = x_range[1], size = N)
     eps = np.random.normal(loc=0, scale=eps_var, size=N)
     U = np.tanh(Y + eps)
