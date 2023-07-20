@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 import matplotlib.pyplot as plt
 import os
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
-    sample_banana, KL, sample_uniform
+    sample_banana, KL, sample_uniform, sample_swiss_roll
 import pandas as pd
 
 from copy import deepcopy
@@ -312,7 +312,8 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     slice_samples = []
     N = len(Z_ref)
 
-    slice_vals =  [-1.1, 0, 1.1]
+    #slice_vals =  [-1.1, 0, 1.1]
+    slice_vals = [0]
     for z in slice_vals :
         z_slice = torch.full([10000], z)
         idxs = torch.LongTensor(random.choices(list(range(N)), k=10000))
@@ -346,7 +347,7 @@ def run():
     else:
         device = 'cpu'
 
-    ref_gen = sample_normal
+    ref_gen = sample_swiss_roll
     target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(5000)[:, 1]))
@@ -356,7 +357,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='mgan2_exp', params=exp_params)
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='swiss_exp', params=exp_params)
 
 
 if __name__=='__main__':
