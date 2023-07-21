@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 import matplotlib.pyplot as plt
 import os
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
-    sample_banana, KL, sample_uniform, sample_swiss_roll, sample_spirals
+    sample_banana, KL, sample_uniform, sample_swiss_roll, sample_spirals, sample_rings
 import pandas as pd
 
 from copy import deepcopy
@@ -349,7 +349,7 @@ def run():
         device = 'cpu'
 
     ref_gen = sample_normal
-    target_gen = sample_spirals
+    target_gen = sample_rings
 
     l = l_scale(torch.tensor(ref_gen(5000)[:, 1]))
     #mmd_params = {'name': 'radial', 'l': l/7, 'sigma': 1}
@@ -359,8 +359,8 @@ def run():
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
     range = [[-3,3], [-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001,
-                              exp_name='spiral_exp', params=exp_params, plt_range=range)
+    conditional_transport_exp(ref_gen, target_gen, N= 3000, t_iter=2001,
+                              exp_name='ring_exp', params=exp_params, plt_range=range)
 
 
 if __name__=='__main__':
