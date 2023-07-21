@@ -265,7 +265,8 @@ def light_conditional_transport_exp(ref_sample, target_sample, ref_test_sample, 
     return div
 
 
-def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'exp',  params = {'fit': {}, 'mmd': {}}):
+def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'exp',
+                              params = {'fit': {}, 'mmd': {}}, plt_range = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -331,11 +332,11 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801, exp_name= 'e
     target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
     sample = flip_2tensor(sample.detach())
 
-    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
-    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
+    sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = plt_range)
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = plt_range)
 
-    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
-    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = [[-2.5,2.5],[-1,1]])
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = plt_range)
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = plt_range)
 
 
   #scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/mgan23/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
@@ -356,8 +357,10 @@ def run():
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001, exp_name='swiss_exp', params=exp_params)
+    range = [[-3,3], [-3,3]]
+    
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=2001,
+                              exp_name='swiss_exp', params=exp_params, plt_range=range)
 
 
 if __name__=='__main__':
