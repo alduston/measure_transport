@@ -79,7 +79,8 @@ class VAETransportKernel(nn.Module):
         sig_base = self.get_sig_base(n)
         sig_base = torch.tensor(sig_base, device = self.device, dtype = self.dtype)
 
-        sig =  torch.stack([sig_base for i in range(N)])
+        ly = l_scale(self.Y)
+        sig =  ly * self.params[torch.stack([sig_base for i in range(N)])
 
         Z = torch.concat([mu, sig], dim = 1)
         return Z
@@ -272,7 +273,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_elden_ring
+    target_gen = sample_banana
 
     l = l_scale(torch.tensor(ref_gen(2000)))
 
@@ -284,10 +285,10 @@ def run():
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
+                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
 
     transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='elden_exp', params=exp_params, plt_range=range)
+                  exp_name='banana_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
