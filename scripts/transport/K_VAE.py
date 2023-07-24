@@ -71,7 +71,6 @@ class VAETransportKernel(nn.Module):
         return sig_base
 
 
-
     def init_Z(self):
         n = len(self.X[0])
         N = len(self.X)
@@ -118,7 +117,6 @@ class VAETransportKernel(nn.Module):
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
         eps = torch.unsqueeze(self.eps,2)
-        #eps = torch.unsqueeze(self.get_eps(self.X),2)
         diffs = torch.matmul(params['sig'], eps)
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
@@ -245,7 +243,6 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
     ref_sample = torch.tensor(ref_gen(N))
     test_sample = torch.tensor(ref_gen(N))
-    #test_sample = ref_sample
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
@@ -301,20 +298,20 @@ def run():
     ref_gen = sample_normal
     target_gen = sample_banana
 
-    l = l_scale(torch.tensor(ref_gen(2000)))
+    l = l_scale(torch.tensor(ref_gen(5000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-3, 3], [-1, 8]]
+    range = [[-2.5, 2.5], [-1, 5]]
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='banana_VAE_exp2', params=exp_params, plt_range=range)
+                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
 
-    #transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  #exp_name='banana_exp', params=exp_params, plt_range=range)
+    transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+                  exp_name='banana_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
