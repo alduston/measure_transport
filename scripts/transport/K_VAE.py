@@ -67,7 +67,8 @@ class VAETransportKernel(nn.Module):
         n = len(self.X[0])
         N = len(self.X)
         #m =  int(n + (n *(n+1))//2)
-        return torch.randn([N,2 *n], device = self.device, dtype = self.dtype)
+        return torch.randn([N, n], device=self.device, dtype=self.dtype)
+        #return torch.randn([N,2 *n], device = self.device, dtype = self.dtype)
 
 
     def v_to_lt(self, V, n = 0, t_idx = []):
@@ -86,8 +87,9 @@ class VAETransportKernel(nn.Module):
         if not len(Z):
             Z = self.Z
         mu = Z[:, :n]
-        sig = Z[:, n:]**2
-        return mu, sig
+        return mu, mu
+        #sig = Z[:, n:]**2
+        #return mu, sig
 
         #sig_vs = Z[:, n:]
 
