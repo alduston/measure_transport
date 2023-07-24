@@ -69,6 +69,7 @@ class VAETransportKernel(nn.Module):
         m =  int(n + (n *(n+1))//2)
         return torch.zeros([N,m], device = self.device, dtype = self.dtype)
 
+
     def v_to_lt(self, V, n = 0, t_idx = []):
         N = len(V)
         if not n:
@@ -87,15 +88,12 @@ class VAETransportKernel(nn.Module):
         mu = Z[:, :n]
 
         sig_vs = Z[:, n:]
+
         t_idx = self.t_idx
         sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
         sig_ltms_T = torch.transpose(sig_ltms,1,2)
-        time3 = TIME.time()
 
         sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
-        time4 = TIME.time()
-        if self.iters < 3:
-            print(f'Getting sig_ms took {time4 - time3}')
         return mu, sig_ms
 
 
@@ -212,19 +210,18 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = sample_elden_ring
 
-    l = l_scale(torch.tensor(ref_gen(1000)))
+    l = l_scale(torch.tensor(ref_gen(5000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-2.5, 2.5], [-1, 1]]
+    range = [[-.8, .8], [-1, 1]]
 
-
-    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=2000,
-                              exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=5000,
+                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 2900: fit_loss = 0.000103, reg_loss = 0.002147
 #0.1363
