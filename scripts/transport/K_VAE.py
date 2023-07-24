@@ -67,7 +67,7 @@ class VAETransportKernel(nn.Module):
         n = len(self.X[0])
         N = len(self.X)
         #m =  int(n + (n *(n+1))//2)
-        return torch.randn([N, n], device=self.device, dtype=self.dtype)
+        return 0 * torch.randn([N, n], device=self.device, dtype=self.dtype)
         #return torch.randn([N,2 *n], device = self.device, dtype = self.dtype)
 
 
