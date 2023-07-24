@@ -164,9 +164,15 @@ class VAETransportKernel(nn.Module):
     def loss_reg(self, Z = []):
         if not len(Z):
             Z = self.Z
+            mu, sig = self.get_mu_sig(Z)
             if len(Z.shape)==1:
                 Z = Z.reshape(len(Z),1)
-        return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
+        if len(mu.shape) == 1:
+            mu = mu.reshape(len(mu),1)
+            sig = sig.reshape(len(sig),1)
+        mu_reg = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
+        sig_reg = torch.trace(sig.T @ self.fit_kXX_inv @ sig)
+        return self.params['reg_lambda'] * (mu_reg + sig_reg)
 
 
     def loss(self):
