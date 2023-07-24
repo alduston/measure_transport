@@ -74,6 +74,7 @@ class UnifKernel2(nn.Module):
 
 
     def init_Z(self):
+
         return torch.zeros(self.N, device = self.device, dtype = self.dtype)
 
 

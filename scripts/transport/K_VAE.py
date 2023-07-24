@@ -63,17 +63,33 @@ class VAETransportKernel(nn.Module):
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
 
+    def get_sig_base(self, n):
+        sig_base = []
+        for i in range(n):
+            sig_base += [0.0]*i
+            sig_base += [1.0]
+        return sig_base
+
+
+
     def init_Z(self):
         n = len(self.X[0])
         N = len(self.X)
-        m =  int(n + (n *(n+1))//2)
-        return torch.zeros([N, m], device = self.device, dtype = self.dtype)
+        mu = torch.zeros(self.X.shape, device = self.device, dtype = self.dtype)
+        sig_base = self.get_sig_base(n)
+        sig_base = torch.tensor(sig_base, device = self.device, dtype = self.dtype)
+
+        l = self.params['mmd_kernel_params']['l']
+        sig = l * torch.stack([sig_base for i in range(N)])
+
+        Z = torch.concat([mu, sig], dim = 1)
+        return Z
 
 
     def v_to_lt(self, V, n = 0, t_idx = []):
         N = len(V)
         if not n:
-            n = V.shape[1]
+            n = V.shape[1]-1
         if not len(t_idx):
             t_idx = torch.tril_indices(row=n, col=n, offset=0)
         m = torch.zeros((N, n, n), device = self.device, dtype = self.dtype)
@@ -162,6 +178,7 @@ class VAETransportKernel(nn.Module):
             if len(Z.shape)==1:
                 Z = Z.reshape(len(Z),1)
         return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
+
 
     def loss(self):
         loss_mmd = self.loss_mmd()
