@@ -290,10 +290,10 @@ def run():
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='pinweel_VAE_exp', params=exp_params, plt_range=range)
+                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
 
     transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='pinweel_exp', params=exp_params, plt_range=range)
+                  exp_name='banana_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
