@@ -257,23 +257,6 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     VAET_kernel = VAETransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
-    #z_1, mu_1, sig_1 = VAET_kernel.map_items(ref_sample[0])
-    #print(f'x_1 = {ref_sample[0].detach().cpu().numpy()}')
-    #print(f'z_1 = {z_1.detach().cpu().numpy()}')
-    #print(f'mu_1 = {mu_1.detach().cpu().numpy()}')
-    #print(f'sig_1 = {sig_1.detach().cpu().numpy()}')
-    #print(' ')
-
-
-    #alt_sample = ref_sample[0] + .1*torch.randn(ref_sample[0].shape)
-    #z_2, mu_2, sig_2 = VAET_kernel.map_items(ref_sample[0] + .1*torch.randn(ref_sample[0].shape))
-    #print(f'x_2 = {alt_sample.detach().cpu().numpy()}')
-    #print(f'z_2 = {z_2.detach().cpu().numpy()}')
-    #print(f'mu_2 = {mu_2.detach().cpu().numpy()}')
-    #print(f'sig_2 = {sig_2.detach().cpu().numpy()}')
-    #print(' ')
-
-
     gen_sample_mu = VAET_kernel.map(test_sample, just_mu = True)
     gen_sample = VAET_kernel.map(test_sample)
 
@@ -296,22 +279,21 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
+    target_gen = mgan2
 
     l = l_scale(torch.tensor(ref_gen(5000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-
-    range = [[-2.5, 2.5], [-1, 5]]
+    range = [[-2.5, 2.5], [-1.1, 1.1]]
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
+                              exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
 
     transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='banana_exp', params=exp_params, plt_range=range)
+                  exp_name='mgan2_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
