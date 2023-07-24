@@ -6,7 +6,7 @@ from copy import copy, deepcopy
 from transport_kernel import get_kernel, normalize, TransportKernel, l_scale, clear_plt
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import os
-from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll, mgan3, sample_rings
+from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll, mgan3, sample_rings, sample_pinweel
 from picture_to_dist import sample_elden_ring
 import time as TIME
 
@@ -279,7 +279,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_rings
+    target_gen = sample_pinweel
 
     l = l_scale(torch.tensor(ref_gen(5000)))
 
@@ -290,10 +290,10 @@ def run():
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='ring_VAE_exp', params=exp_params, plt_range=range)
+                              exp_name='pinweel_VAE_exp', params=exp_params, plt_range=range)
 
     transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='ring_exp', params=exp_params, plt_range=range)
+                  exp_name='pinweel_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806

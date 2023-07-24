@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
+from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 import os
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
