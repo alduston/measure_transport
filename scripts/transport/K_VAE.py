@@ -207,7 +207,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
-                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
+                        'reg_lambda': 1e-3, 'print_freq': 100, 'learning_rate': .1,
                         'nugget': 1e-4, 'X_tilde': test_sample }
                          #,'alpha_x': [], 'alpha_y': []}
 
@@ -244,7 +244,7 @@ def run():
 
     range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
+    VAE_transport_exp(ref_gen, target_gen, N=1000, t_iter=3000,
                               exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
