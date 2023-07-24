@@ -130,7 +130,7 @@ class VAETransportKernel(nn.Module):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x) @ Lambda
-        return z
+        return z + x
         mu, sig = self.get_mu_sig(z)
         if just_mu:
             return mu + x
