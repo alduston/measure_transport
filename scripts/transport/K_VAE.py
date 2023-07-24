@@ -53,6 +53,8 @@ class VAETransportKernel(nn.Module):
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
         self.iters = 0
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
+        nx = len(self.X[0])
+        self.t_idx = torch.tril_indices(row=nx, col=nx, offset=0)
 
         self.alpha_x = (1/self.N) * torch.ones(self.N, device = self.device, dtype = self.dtype)
 
@@ -78,40 +80,35 @@ class VAETransportKernel(nn.Module):
 
 
     def get_mu_sig(self, Z = []):
+        time1 = TIME.time()
         n = len(self.X[0])
         if not len(Z):
             Z = self.Z
         mu = Z[:, :n]
 
         sig_vs = Z[:, n:]
-        t_idx = torch.tril_indices(row=n, col=n, offset=0)
+        t_idx = self.t_idx
+        time2 = TIME.time()
         sig_ltms = [self.v_to_lt(v,n,t_idx) for v in sig_vs]
+        time3 = TIME.time()
         sig_ms = torch.stack([m @ m.T for m in sig_ltms])
-
+        time4 = TIME.time()
+        if not self.iters:
+            print(f'Getting t_idx took {time2-time1}')
+            print(f'Getting sig_ltms took {time3 - time2}')
+            print(f'Getting sig_ms took {time4 - time3}')
         return mu, sig_ms
 
 
     def get_sample(self, params = {}):
-        time1 =  TIME.time()
         if not len(params):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
-        time2 = TIME.time()
 
         eps = torch.unsqueeze(params['eps'],2)
-        time3 = TIME.time()
-
         diffs = torch.matmul(params['sig'], eps)
-        time4 = TIME.time()
 
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
-        time5 = TIME.time()
-
-        if not self.iters:
-            print(f'Getting mu, sig took {time2-time1}')
-            print(f'Getting eps, sig took {time3 - time2}')
-            print(f'Getting diffs, sig took {time4 - time3}')
-            print(f'Getting Z_sample, sig took {time5 - time4}')
         return Z_sample
 
 
