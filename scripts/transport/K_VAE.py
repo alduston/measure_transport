@@ -205,9 +205,9 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
+    target_gen = sample_elden_ring
 
-    l = l_scale(torch.tensor(ref_gen(500)))
+    l = l_scale(torch.tensor(ref_gen(3000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
@@ -219,7 +219,7 @@ def run():
    #At step 10000: fit_loss = 0.000238, reg_loss = 0.005096
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
+    VAE_transport_exp(ref_gen, target_gen, N=1500, t_iter=3000,
                               exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
 
 
