@@ -66,8 +66,8 @@ class VAETransportKernel(nn.Module):
     def init_Z(self):
         n = len(self.X[0])
         N = len(self.X)
-        m =  int(n + (n *(n+1))//2)
-        return torch.randn([N,m], device = self.device, dtype = self.dtype)
+        #m =  int(n + (n *(n+1))//2)
+        return torch.randn([N,2 *n], device = self.device, dtype = self.dtype)
 
 
     def v_to_lt(self, V, n = 0, t_idx = []):
@@ -86,15 +86,18 @@ class VAETransportKernel(nn.Module):
         if not len(Z):
             Z = self.Z
         mu = Z[:, :n]
+        sig = Z[:, n:]**2
+        return mu, sig
 
-        sig_vs = Z[:, n:]
+        #sig_vs = Z[:, n:]
 
-        t_idx = self.t_idx
-        sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
-        sig_ltms_T = torch.transpose(sig_ltms,1,2)
+        #t_idx = self.t_idx
+        #sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
+        #sig_ltms_T = torch.transpose(sig_ltms,1,2)
 
-        sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
-        return mu, sig_ms
+        #sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
+        #return mu, sig_ms
+        #return mu, sig
 
 
     def get_sample(self, params = {}):
@@ -102,10 +105,10 @@ class VAETransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
-        diffs = torch.matmul(params['sig'], eps)
-
-        Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
+        #eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
+        eps = self.get_eps(self.X)
+        #diffs = torch.matmul(params['sig'], eps)
+        Z_sample = params['mu'] + params['sig'] * eps #diffs.reshape(diffs.shape[:-1])
         return Z_sample
 
 
