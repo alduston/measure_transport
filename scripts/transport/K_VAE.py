@@ -88,6 +88,7 @@ class VAETransportKernel(nn.Module):
             Z = self.Z
         mu = Z[:, :n]
         return mu, mu
+
         #sig = Z[:, n:]**2
         #return mu, sig
 
@@ -108,7 +109,7 @@ class VAETransportKernel(nn.Module):
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
         #eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
-        eps = self.get_eps(self.X)
+        #eps = self.get_eps(self.X)
         #diffs = torch.matmul(params['sig'], eps)
         Z_sample = params['mu'] #+ params['sig'] * eps #diffs.reshape(diffs.shape[:-1])
         return Z_sample
@@ -129,6 +130,7 @@ class VAETransportKernel(nn.Module):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x) @ Lambda
+        return z
         mu, sig = self.get_mu_sig(z)
         if just_mu:
             return mu + x
@@ -173,7 +175,7 @@ class VAETransportKernel(nn.Module):
                 Z = Z.reshape(len(Z),1)
         if len(mu.shape) == 1:
             mu = mu.reshape(len(mu),1)
-            sig = sig.reshape(len(sig),1)
+            #sig = sig.reshape(len(sig),1)
         mu_reg = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
         #sig_reg = torch.trace(sig.T @ self.fit_kXX_inv @ sig)
         return self.params['reg_lambda'] * (mu_reg)
