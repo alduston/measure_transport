@@ -4,10 +4,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy, deepcopy
 import time
-from transport_kernel import get_kernel, normalize, t_one_normalize, l_scale, clear_plt
+from transport_kernel import get_kernel, normalize, TransportKernel, l_scale, clear_plt
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import os
 from get_data import sample_normal, sample_banana
+from picture_to_dist import sample_elden_ring
 
 
 
@@ -185,12 +186,16 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
                         'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
-                        'nugget': 1e-4, 'X_tilde': test_sample}
+                        'nugget': 1e-4, 'X_tilde': test_sample #}
+                         ,'alpha_x': [], 'alpha_y': []}
 
-    VAET_kernel = VAETransportKernel(transport_params)
+    #VAET_kernel = VAETransportKernel(transport_params)
+    VAET_kernel = TransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
-    gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
+    #gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
+    gen_sample = VAET_kernel.Z +  VAET_kernel.X
+
     sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
 
@@ -207,10 +212,14 @@ def run():
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-    range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=500, t_iter=1001,
-                              exp_name='VAE_banana_exp', params=exp_params, plt_range=range)
+    range = [[-.8, 8], [-1, 1]]
+
+   #At step 1000: fit_loss = 0.000242, reg_loss = 0.001107
+
+
+    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=2001,
+                              exp_name='elden_exp', params=exp_params, plt_range=range)
 
 
 if __name__=='__main__':
