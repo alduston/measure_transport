@@ -211,13 +211,13 @@ def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp',
     tranport_kernel = TransportKernel(transport_params)
     train_kernel(tranport_kernel, n_iter=t_iter)
 
-    gen_sample = tranport_kernel.map(test_sample)
+    gen_sample = tranport_kernel.map(test_sample).T
 
     sample_scatter(gen_sample, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample, f'{save_dir}/cond_sample_mean_map.png', bins=25, d=2, range=plt_range)
 
-    sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
-    sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
+    sample_scatter(target_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
+    sample_hmap(target_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
 
     device = tranport_kernel.device
     test_mmd = float(tranport_kernel.mmd(target_sample.to(device), gen_sample.to(device)).detach().cpu())
@@ -280,7 +280,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-2.5, 2.5], [-1.1, 1.1]]
+    range = [[-2.5, 2.5], [-.75, .75]]
 
 
     VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
