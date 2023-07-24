@@ -79,8 +79,7 @@ class VAETransportKernel(nn.Module):
         sig_base = self.get_sig_base(n)
         sig_base = torch.tensor(sig_base, device = self.device, dtype = self.dtype)
 
-        l = self.params['mmd_kernel_params']['l']
-        sig = l * torch.stack([sig_base for i in range(N)])
+        sig =  torch.stack([sig_base for i in range(N)])
 
         Z = torch.concat([mu, sig], dim = 1)
         return Z
