@@ -360,7 +360,7 @@ def run():
     range = [[-3,3], [-3,3]]
 
     conditional_transport_exp(ref_gen, target_gen, N= 30, t_iter=100,
-                              exp_name='ring_exp', params=exp_params, plt_range=range)
+                              exp_name='mgan_2', params=exp_params, plt_range=range)
 
 
 if __name__=='__main__':
