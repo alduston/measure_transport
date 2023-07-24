@@ -6,7 +6,7 @@ from copy import copy, deepcopy
 from transport_kernel import get_kernel, normalize, TransportKernel, l_scale, clear_plt
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import os
-from get_data import sample_normal, sample_banana, mgan2
+from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll
 from picture_to_dist import sample_elden_ring
 import time as TIME
 
@@ -109,6 +109,11 @@ class VAETransportKernel(nn.Module):
         return Z_sample
 
 
+    def get_mu(self):
+        mu, sig = self.get_mu_sig()
+        return mu
+
+
     def get_Lambda(self):
         return self.fit_kXX_inv @ self.Z
 
@@ -198,8 +203,12 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     #VAET_kernel = TransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
+    gen_sample_mu = VAET_kernel.get_mu() + VAET_kernel.X
     gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
     #gen_sample = VAET_kernel.Z +  VAET_kernel.X
+
+    sample_scatter(gen_sample_mu, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
+    sample_hmap(gen_sample_mu, f'{save_dir}/cond_sample_mean_map.png', bins=25, d=2, range=plt_range)
 
     sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
@@ -210,9 +219,9 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_elden_ring
+    target_gen = sample_swiss_roll
 
-    l = l_scale(torch.tensor(ref_gen(5000)))
+    l = l_scale(torch.tensor(ref_gen(2000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
@@ -220,12 +229,10 @@ def run():
 
     range = [[-.8, .8], [-1, 1]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=5000,
-                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=2000,
+                              exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
-#At step 2900: fit_loss = 0.000103, reg_loss = 0.002147
-#0.1363
-#.241
+#At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
 
 if __name__=='__main__':
     run()
