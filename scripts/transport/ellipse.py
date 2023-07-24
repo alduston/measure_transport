@@ -55,3 +55,5 @@ def rand_ellipse(a=2, b=0.5, size=50, presicion=1000):
     t = theta_from_arc_length(s)
     x, y = np.array([a * np.cos(t), b * np.sin(t)])
     return np.asarray([x, y]).reshape((2,len(x)))
+
+

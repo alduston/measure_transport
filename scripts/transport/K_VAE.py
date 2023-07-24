@@ -6,7 +6,7 @@ from copy import copy, deepcopy
 from transport_kernel import get_kernel, normalize, TransportKernel, l_scale, clear_plt
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import os
-from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll
+from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll, mgan3
 from picture_to_dist import sample_elden_ring
 import time as TIME
 
@@ -190,6 +190,41 @@ class VAETransportKernel(nn.Module):
         return loss, loss_dict
 
 
+def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp', plt_range = None):
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    try:
+        os.mkdir(save_dir)
+    except OSError:
+        pass
+
+    ref_sample = torch.tensor(ref_gen(N))
+    test_sample = ref_sample # torch.tensor(ref_gen(N))
+    target_sample = torch.tensor(target_gen(N)).T
+
+    if target_sample.shape[0] != max(target_sample.shape):
+        target_sample = target_sample.T
+
+    transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
+                        'mmd_kernel_params': params['mmd'], 'normalize': False,
+                        'reg_lambda': 1e-5, 'print_freq': 500, 'learning_rate': .1,
+                        'nugget': 1e-4, 'X_tilde': test_sample,'alpha_x': [], 'alpha_y': []}
+    tranport_kernel = TransportKernel(transport_params)
+    train_kernel(tranport_kernel, n_iter=t_iter)
+
+    gen_sample = tranport_kernel.map(test_sample)
+
+    sample_scatter(gen_sample, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
+    sample_hmap(gen_sample, f'{save_dir}/cond_sample_mean_map.png', bins=25, d=2, range=plt_range)
+
+    sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
+    sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
+
+    device = tranport_kernel.device
+    test_mmd = float(tranport_kernel.mmd(target_sample.to(device), gen_sample.to(device)).detach().cpu())
+    print(f'test_mmd was {test_mmd}')
+
+
+
 def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp', plt_range = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -198,7 +233,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = ref_sample + .00001 * torch.randn(ref_sample.shape) #torch.tensor(ref_gen(N))
+    test_sample = ref_sample #torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
@@ -206,9 +241,9 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
-                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
+                        'reg_lambda': 1e-5, 'print_freq': 500, 'learning_rate': .1,
                         'nugget': 1e-4, 'X_tilde': test_sample }
-                         #,'alpha_x': [], 'alpha_y': []}
+
 
     VAET_kernel = VAETransportKernel(transport_params)
     #VAET_kernel = TransportKernel(transport_params)
@@ -237,7 +272,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = mgan3
 
     l = l_scale(torch.tensor(ref_gen(2000)))
 
@@ -247,8 +282,13 @@ def run():
 
     range = [[-2.5, 2.5], [-1.1, 1.1]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
-                              exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
+
+    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
+                              exp_name='mgan3_VAE_exp', params=exp_params, plt_range=range)
+
+    transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
+                  exp_name='mgan3_exp', params=exp_params, plt_range=range)
+
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
 
