@@ -215,9 +215,6 @@ def run():
 
     range = [[-.8, 8], [-1, 1]]
 
-   #At step 1000: fit_loss = 0.000242, reg_loss = 0.001107
-   #At step 10000: fit_loss = 0.000238, reg_loss = 0.005096
-
 
     VAE_transport_exp(ref_gen, target_gen, N=1500, t_iter=3000,
                               exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
