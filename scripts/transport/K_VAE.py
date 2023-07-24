@@ -213,11 +213,11 @@ def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp',
 
     gen_sample = tranport_kernel.map(test_sample).T
 
-    sample_scatter(gen_sample, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
-    sample_hmap(gen_sample, f'{save_dir}/cond_sample_mean_map.png', bins=25, d=2, range=plt_range)
+    sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
+    sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
 
-    sample_scatter(target_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
-    sample_hmap(target_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
+    sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range=plt_range)
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range=plt_range)
 
     device = tranport_kernel.device
     test_mmd = float(tranport_kernel.mmd(target_sample.to(device), gen_sample.to(device)).detach().cpu())
@@ -272,7 +272,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan3
+    target_gen = sample_elden_ring
 
     l = l_scale(torch.tensor(ref_gen(2000)))
 
@@ -280,14 +280,14 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-2.5, 2.5], [-.75, .75]]
+    range = [[-1, 1], [-1, 1]]
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
-                              exp_name='mgan3_VAE_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
 
-    transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
-                  exp_name='mgan3_exp', params=exp_params, plt_range=range)
+    transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+                  exp_name='eldem_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
