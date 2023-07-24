@@ -227,8 +227,12 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range=plt_range)
 
-    test_mmd = float(VAET_kernel.mmd(target_sample.to(VAET_kernel.device), gen_sample.to(VAET_kernel.device)).detach().cpu())
+    device = VAET_kernel.device
+    test_mmd = float(VAET_kernel.mmd(target_sample.to(device), gen_sample.to(device)).detach().cpu())
+    mean_test_mmd = float(VAET_kernel.mmd(target_sample.to(device), gen_sample_mu.to(device)).detach().cpu())
+
     print(f'test_mmd was {test_mmd}')
+    print(f'mean test mmd was {mean_test_mmd}')
 
 
 def run():
@@ -241,7 +245,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-3, 3], [-3, 3]]
+    range = [[-2.5, 2.5], [-1, 1]]
 
     VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
                               exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
