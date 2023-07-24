@@ -108,12 +108,14 @@ class VAETransportKernel(nn.Module):
         #eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
         eps = self.get_eps(self.X)
         #diffs = torch.matmul(params['sig'], eps)
-        Z_sample = params['mu'] + 0 * params['sig'] * eps #diffs.reshape(diffs.shape[:-1])
+        Z_sample = params['mu'] #+ params['sig'] * eps #diffs.reshape(diffs.shape[:-1])
         return Z_sample
 
 
     def get_Lambda(self):
-        return self.fit_kXX_inv @ self.Z
+        mu,sig = self.get_mu_sig()
+        return self.fit_kXX_inv @ mu
+        #return self.fit_kXX_inv @ self.Z
 
 
     def get_eps(self, x):
@@ -171,8 +173,8 @@ class VAETransportKernel(nn.Module):
             mu = mu.reshape(len(mu),1)
             sig = sig.reshape(len(sig),1)
         mu_reg = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
-        sig_reg = torch.trace(sig.T @ self.fit_kXX_inv @ sig)
-        return self.params['reg_lambda'] * (mu_reg + sig_reg)
+        #sig_reg = torch.trace(sig.T @ self.fit_kXX_inv @ sig)
+        return self.params['reg_lambda'] * (mu_reg)
 
 
     def loss(self):
@@ -238,7 +240,7 @@ def run():
 
     range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
+    VAE_transport_exp(ref_gen, target_gen, N=30, t_iter=100,
                               exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
