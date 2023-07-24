@@ -72,7 +72,7 @@ class VAETransportKernel(nn.Module):
             n = len(v)
         if not len(t_idx):
             t_idx = torch.tril_indices(row=n, col=n, offset=0)
-        m = torch.zeros((n, n))
+        m = torch.zeros((n, n), device = self.device, dtype = self.dtype)
         m[t_idx[0], t_idx[1]] = v
         return m
 
@@ -186,15 +186,15 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
                         'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
-                        'nugget': 1e-4, 'X_tilde': test_sample #}
-                         ,'alpha_x': [], 'alpha_y': []}
+                        'nugget': 1e-4, 'X_tilde': test_sample }
+                         #,'alpha_x': [], 'alpha_y': []}
 
-    #VAET_kernel = VAETransportKernel(transport_params)
-    VAET_kernel = TransportKernel(transport_params)
+    VAET_kernel = VAETransportKernel(transport_params)
+    #VAET_kernel = TransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
-    #gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
-    gen_sample = VAET_kernel.Z +  VAET_kernel.X
+    gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
+    #gen_sample = VAET_kernel.Z +  VAET_kernel.X
 
     sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range=plt_range)
@@ -216,10 +216,11 @@ def run():
     range = [[-.8, 8], [-1, 1]]
 
    #At step 1000: fit_loss = 0.000242, reg_loss = 0.001107
+   #At step 10000: fit_loss = 0.000238, reg_loss = 0.005096
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=2001,
-                              exp_name='elden_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10001,
+                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
 
 
 if __name__=='__main__':
