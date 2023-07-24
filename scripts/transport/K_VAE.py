@@ -66,9 +66,8 @@ class VAETransportKernel(nn.Module):
     def init_Z(self):
         n = len(self.X[0])
         N = len(self.X)
-        #m =  int(n + (n *(n+1))//2)
-        return 0 * torch.randn([N, n], device=self.device, dtype=self.dtype)
-        #return torch.randn([N,2 *n], device = self.device, dtype = self.dtype)
+        m =  int(n + (n *(n+1))//2)
+        return torch.zeros([N, m], device = self.device, dtype = self.dtype)
 
 
     def v_to_lt(self, V, n = 0, t_idx = []):
@@ -87,20 +86,14 @@ class VAETransportKernel(nn.Module):
         if not len(Z):
             Z = self.Z
         mu = Z[:, :n]
-        return mu, mu
+        sig_vs = Z[:, n:]
 
-        #sig = Z[:, n:]**2
-        #return mu, sig
+        t_idx = self.t_idx
+        sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
+        sig_ltms_T = torch.transpose(sig_ltms,1,2)
 
-        #sig_vs = Z[:, n:]
-
-        #t_idx = self.t_idx
-        #sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
-        #sig_ltms_T = torch.transpose(sig_ltms,1,2)
-
-        #sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
-        #return mu, sig_ms
-        #return mu, sig
+        sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
+        return mu, sig_ms
 
 
     def get_sample(self, params = {}):
@@ -108,17 +101,14 @@ class VAETransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        #eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
-        #eps = self.get_eps(self.X)
-        #diffs = torch.matmul(params['sig'], eps)
-        Z_sample = params['mu'] #+ params['sig'] * eps #diffs.reshape(diffs.shape[:-1])
+        eps = torch.unsqueeze(self.get_eps(self.X),2)
+        diffs = torch.matmul(params['sig'], eps)
+        Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
 
 
     def get_Lambda(self):
-        mu,sig = self.get_mu_sig()
-        return self.fit_kXX_inv @ mu
-        #return self.fit_kXX_inv @ self.Z
+        return self.fit_kXX_inv @ self.Z
 
 
     def get_eps(self, x):
@@ -130,7 +120,6 @@ class VAETransportKernel(nn.Module):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x) @ Lambda
-        return z + x
         mu, sig = self.get_mu_sig(z)
         if just_mu:
             return mu + x
@@ -170,16 +159,9 @@ class VAETransportKernel(nn.Module):
     def loss_reg(self, Z = []):
         if not len(Z):
             Z = self.Z
-            mu, sig = self.get_mu_sig(Z)
             if len(Z.shape)==1:
                 Z = Z.reshape(len(Z),1)
-        if len(mu.shape) == 1:
-            mu = mu.reshape(len(mu),1)
-            #sig = sig.reshape(len(sig),1)
-        mu_reg = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
-        #sig_reg = torch.trace(sig.T @ self.fit_kXX_inv @ sig)
-        return self.params['reg_lambda'] * (mu_reg)
-
+        return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
     def loss(self):
         loss_mmd = self.loss_mmd()
@@ -199,7 +181,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = torch.tensor(ref_gen(N))
+    test_sample = ref_sample + .001 * torch.randn(ref_sample.shape) #torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
