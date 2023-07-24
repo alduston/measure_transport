@@ -94,7 +94,7 @@ class VAETransportKernel(nn.Module):
         time3 = TIME.time()
         sig_ms = torch.stack([m @ m.T for m in sig_ltms])
         time4 = TIME.time()
-        if not self.iters:
+        if self.iters < 3:
             print(f'Getting t_idx took {time2-time1}')
             print(f'Getting sig_ltms took {time3 - time2}')
             print(f'Getting sig_ms took {time4 - time3}')
