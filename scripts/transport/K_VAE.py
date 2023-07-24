@@ -207,7 +207,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params': params['mmd'], 'normalize': False,
-                        'reg_lambda': 1e-3, 'print_freq': 100, 'learning_rate': .1,
+                        'reg_lambda': 1e-4, 'print_freq': 100, 'learning_rate': .1,
                         'nugget': 1e-4, 'X_tilde': test_sample }
                          #,'alpha_x': [], 'alpha_y': []}
 
