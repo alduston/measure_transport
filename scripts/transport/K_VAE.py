@@ -133,6 +133,14 @@ class VAETransportKernel(nn.Module):
         return torch.randn(eps_shape, device=self.device, dtype=self.dtype)
 
 
+    def map_items(self, x):
+        x = torch.tensor(x, device=self.device, dtype=self.dtype)
+        Lambda = self.get_Lambda()
+        z = self.fit_kernel(self.X, x) @ Lambda
+        mu, sig = self.get_mu_sig(z)
+        return z, mu, sig
+
+
     def map(self, x, just_mu = False):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
@@ -213,6 +221,7 @@ def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp',
     tranport_kernel = TransportKernel(transport_params)
     train_kernel(tranport_kernel, n_iter=t_iter)
 
+
     gen_sample = tranport_kernel.map(test_sample).T
 
     sample_scatter(gen_sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range=plt_range)
@@ -251,6 +260,23 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     VAET_kernel = VAETransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
+    z_1, mu_1, sig_1 = VAET_kernel.map_items(ref_sample[0])
+    print(f'x_1 = {ref_sample[0].detach().cpu().numpy()}')
+    print(f'z_1 = {z_1.detach().cpu().numpy()}')
+    print(f'mu_1 = {mu_1.detach().cpu().numpy()}')
+    print(f'sig_1 = {sig_1.detach().cpu().numpy()}')
+    print(' ')
+
+
+    alt_sample = ref_sample[0] + .1*torch.randn(ref_sample[0].shape)
+    z_2, mu_2, sig_2 = VAET_kernel.map_items(ref_sample[0] + .1*torch.randn(ref_sample[0].shape))
+    print(f'x_2 = {alt_sample.detach().cpu().numpy()}')
+    print(f'z_2 = {z_2.detach().cpu().numpy()}')
+    print(f'mu_2 = {mu_2.detach().cpu().numpy()}')
+    print(f'sig_2 = {sig_2.detach().cpu().numpy()}')
+    print(' ')
+
+    
     gen_sample_mu = VAET_kernel.map(test_sample, just_mu = True)
     gen_sample = VAET_kernel.map(test_sample)
 
@@ -284,11 +310,11 @@ def run():
     range = [[-3, 3], [-1, 8]]
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=5001,
+                              exp_name='banana_VAE_exp2', params=exp_params, plt_range=range)
 
-    transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='banana_exp', params=exp_params, plt_range=range)
+    #transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+                  #exp_name='banana_exp', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
