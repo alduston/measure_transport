@@ -109,11 +109,6 @@ class VAETransportKernel(nn.Module):
         return Z_sample
 
 
-    def get_mu(self):
-        mu, sig = self.get_mu_sig()
-        return mu
-
-
     def get_Lambda(self):
         return self.fit_kXX_inv @ self.Z
 
@@ -123,11 +118,13 @@ class VAETransportKernel(nn.Module):
         return torch.randn(eps_shape, device=self.device, dtype=self.dtype)
 
 
-    def map(self, x):
+    def map(self, x, just_mu = False):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x) @ Lambda
         mu, sig = self.get_mu_sig(z)
+        if just_mu:
+            return mu + x
         eps = self.get_eps(x)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
         return z_sample + x
@@ -203,7 +200,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     #VAET_kernel = TransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
-    gen_sample_mu = VAET_kernel.get_mu() + VAET_kernel.X
+    gen_sample_mu = VAET_kernel.map(ref_sample, just_mu = True)
     gen_sample = VAET_kernel.map(ref_sample) #VAET_kernel.get_sample() + VAET_kernel.X #
     #gen_sample = VAET_kernel.Z +  VAET_kernel.X
 
