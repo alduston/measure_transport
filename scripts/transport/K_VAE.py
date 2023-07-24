@@ -67,7 +67,7 @@ class VAETransportKernel(nn.Module):
         n = len(self.X[0])
         N = len(self.X)
         m =  int(n + (n *(n+1))//2)
-        return torch.zeros([N,m], device = self.device, dtype = self.dtype)
+        return torch.randn([N,m], device = self.device, dtype = self.dtype)
 
 
     def v_to_lt(self, V, n = 0, t_idx = []):
@@ -227,9 +227,9 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-.8, .8], [-1, 1]]
+    range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=2000,
+    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=4000,
                               exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
