@@ -102,7 +102,7 @@ class VAETransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        eps = torch.unsqueeze(params['eps'],2)
+        eps = torch.unsqueeze(self.get_eps(self.X),2) #torch.unsqueeze(params['eps'],2)
         diffs = torch.matmul(params['sig'], eps)
 
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
@@ -204,7 +204,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     train_kernel(VAET_kernel, n_iter=t_iter)
 
     gen_sample_mu = VAET_kernel.get_mu() + VAET_kernel.X
-    gen_sample = VAET_kernel.map(test_sample) #VAET_kernel.get_sample() + VAET_kernel.X #
+    gen_sample = VAET_kernel.map(ref_sample) #VAET_kernel.get_sample() + VAET_kernel.X #
     #gen_sample = VAET_kernel.Z +  VAET_kernel.X
 
     sample_scatter(gen_sample_mu, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
@@ -216,7 +216,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range=plt_range)
 
-    test_mmd = float(VAET_kernel.mmd(target_sample, gen_sample).detach().cpu())
+    test_mmd = float(VAET_kernel.mmd(target_sample.to(VAET_kernel.device), gen_sample.to(VAET_kernel.device)).detach().cpu())
     print(f'test_mmd was {test_mmd}')
 
 
@@ -232,7 +232,7 @@ def run():
 
     range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=4000,
+    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
                               exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
