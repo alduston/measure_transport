@@ -279,7 +279,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_pinweel
+    target_gen = sample_banana
 
     l = l_scale(torch.tensor(ref_gen(5000)))
 
@@ -290,10 +290,10 @@ def run():
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                              exp_name='banana_VAE_exp', params=exp_params, plt_range=range)
+                              exp_name='banana_VAE_exp1', params=exp_params, plt_range=range)
 
     transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
-                  exp_name='banana_exp', params=exp_params, plt_range=range)
+                  exp_name='banana_exp1', params=exp_params, plt_range=range)
 
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
