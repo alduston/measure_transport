@@ -199,7 +199,8 @@ def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp',
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = ref_sample # torch.tensor(ref_gen(N))
+    est_sample = torch.tensor(ref_gen(N))
+    # test_sample = ref_sample
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
@@ -234,7 +235,8 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = ref_sample #torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(N))
+    #test_sample = ref_sample
     target_sample = torch.tensor(target_gen(N)).T
 
     if target_sample.shape[0] != max(target_sample.shape):
@@ -281,7 +283,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-1, 1], [-1, 1]]
+    range = [[-3, 3], [-1, 8]]
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
