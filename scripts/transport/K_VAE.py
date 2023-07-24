@@ -243,7 +243,7 @@ def run():
 
     range = [[-3, 3], [-3, 3]]
 
-    VAE_transport_exp(ref_gen, target_gen, N=1000, t_iter=3000,
+    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=8000,
                               exp_name='swiss_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 9900: fit_loss = 0.000112, reg_loss = 0.006806
