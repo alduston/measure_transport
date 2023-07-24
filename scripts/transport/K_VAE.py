@@ -204,7 +204,7 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
     train_kernel(VAET_kernel, n_iter=t_iter)
 
     gen_sample_mu = VAET_kernel.get_mu() + VAET_kernel.X
-    gen_sample = VAET_kernel.get_sample() + VAET_kernel.X #VAET_kernel.map(test_sample)
+    gen_sample = VAET_kernel.map(test_sample) #VAET_kernel.get_sample() + VAET_kernel.X #
     #gen_sample = VAET_kernel.Z +  VAET_kernel.X
 
     sample_scatter(gen_sample_mu, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
@@ -215,6 +215,9 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range=plt_range)
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range=plt_range)
+
+    test_mmd = float(VAET_kernel.mmd(target_sample, gen_sample).detach().cpu())
+    print(f'test_mmd was {test_mmd}')
 
 
 def run():
