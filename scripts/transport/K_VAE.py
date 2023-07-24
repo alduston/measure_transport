@@ -3,12 +3,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from copy import copy, deepcopy
-import time
 from transport_kernel import get_kernel, normalize, TransportKernel, l_scale, clear_plt
 from fit_kernel import train_kernel,sample_scatter, sample_hmap
 import os
-from get_data import sample_normal, sample_banana
+from get_data import sample_normal, sample_banana, mgan2
 from picture_to_dist import sample_elden_ring
+import time as TIME
 
 
 
@@ -107,10 +107,8 @@ class VAETransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
-    def get_eps(self, x, add_dim = False):
+    def get_eps(self, x):
         eps_shape = list(x.shape)
-        if add_dim:
-            eps_shape.insert(0,1)
         return torch.randn(eps_shape, device=self.device, dtype=self.dtype)
 
 
@@ -125,7 +123,11 @@ class VAETransportKernel(nn.Module):
 
 
     def loss_mmd(self):
+        start1 =  TIME.time()
         map_vec = self.get_sample() + self.X
+        end1 =  TIME.time()
+
+        start2 = TIME.time()
         Y = self.Y
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
         mmd_ZY = self.mmd_kernel(map_vec, Y)
@@ -136,6 +138,11 @@ class VAETransportKernel(nn.Module):
         Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
+
+        end2 = TIME.time()
+        if not self.iters:
+            print(f'Getting map vec took {end1 - start1}')
+            print(f'Rest took {end2 - start2}')
 
         return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
@@ -205,20 +212,21 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_elden_ring
+    target_gen = mgan2
 
-    l = l_scale(torch.tensor(ref_gen(3000)))
+    l = l_scale(torch.tensor(ref_gen(1000)))
 
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-.8, 8], [-1, 1]]
+    range = [[-2.5, 2.5], [-1, 1]]
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=1500, t_iter=3000,
-                              exp_name='elden_VAE_exp', params=exp_params, plt_range=range)
+    VAE_transport_exp(ref_gen, target_gen, N=2000, t_iter=2000,
+                              exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
 
+#At step 2900: fit_loss = 0.000103, reg_loss = 0.002147
 
 if __name__=='__main__':
     run()
