@@ -81,7 +81,6 @@ class VAETransportKernel(nn.Module):
 
 
     def get_mu_sig(self, Z = []):
-        time1 = TIME.time()
         n = len(self.X[0])
         if not len(Z):
             Z = self.Z
@@ -89,14 +88,13 @@ class VAETransportKernel(nn.Module):
 
         sig_vs = Z[:, n:]
         t_idx = self.t_idx
-        time2 = TIME.time()
         sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
+        sig_ltms_T = torch.transpose(sig_ltms,1,2)
         time3 = TIME.time()
-        sig_ms = torch.stack([m @ m.T for m in sig_ltms])
+
+        sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
         time4 = TIME.time()
         if self.iters < 3:
-            print(f'Getting t_idx took {time2-time1}')
-            print(f'Getting sig_ltms took {time3 - time2}')
             print(f'Getting sig_ms took {time4 - time3}')
         return mu, sig_ms
 
