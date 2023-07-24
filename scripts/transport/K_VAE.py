@@ -116,7 +116,8 @@ class VAETransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        eps = torch.unsqueeze(self.get_eps(self.X),2)
+        eps = torch.unsqueeze(self.eps,2)
+        #eps = torch.unsqueeze(self.get_eps(self.X),2)
         diffs = torch.matmul(params['sig'], eps)
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
@@ -138,8 +139,7 @@ class VAETransportKernel(nn.Module):
         mu, sig = self.get_mu_sig(z)
         if just_mu:
             return mu + x
-        eps = self.eps
-        #eps = self.get_eps(x)
+        eps = self.get_eps(x)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
         return z_sample + x
 
