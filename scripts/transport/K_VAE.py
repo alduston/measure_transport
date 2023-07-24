@@ -138,7 +138,8 @@ class VAETransportKernel(nn.Module):
         mu, sig = self.get_mu_sig(z)
         if just_mu:
             return mu + x
-        eps = self.get_eps(x)
+        eps = self.eps
+        #eps = self.get_eps(x)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
         return z_sample + x
 
@@ -244,7 +245,7 @@ def run():
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    range = [[-2.5, 2.5], [-1, 1]]
+    range = [[-2.5, 2.5], [-1.1, 1.1]]
 
     VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=10000,
                               exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
