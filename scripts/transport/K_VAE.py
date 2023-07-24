@@ -199,7 +199,7 @@ def transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'exp',
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    est_sample = torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(N))
     # test_sample = ref_sample
     target_sample = torch.tensor(target_gen(N)).T
 
@@ -249,12 +249,10 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
 
 
     VAET_kernel = VAETransportKernel(transport_params)
-    #VAET_kernel = TransportKernel(transport_params)
     train_kernel(VAET_kernel, n_iter=t_iter)
 
     gen_sample_mu = VAET_kernel.map(test_sample, just_mu = True)
-    gen_sample = VAET_kernel.map(test_sample) #VAET_kernel.get_sample() + VAET_kernel.X #
-    #gen_sample = VAET_kernel.Z +  VAET_kernel.X
+    gen_sample = VAET_kernel.map(test_sample)
 
     sample_scatter(gen_sample_mu, f'{save_dir}/cond_sample_mean.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample_mu, f'{save_dir}/cond_sample_mean_map.png', bins=25, d=2, range=plt_range)
