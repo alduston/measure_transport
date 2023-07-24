@@ -69,13 +69,14 @@ class VAETransportKernel(nn.Module):
         m =  int(n + (n *(n+1))//2)
         return torch.zeros([N,m], device = self.device, dtype = self.dtype)
 
-    def v_to_lt(self, v, n = 0, t_idx = []):
+    def v_to_lt(self, V, n = 0, t_idx = []):
+        N = len(V)
         if not n:
-            n = len(v)
+            n = V.shape[1]
         if not len(t_idx):
             t_idx = torch.tril_indices(row=n, col=n, offset=0)
-        m = torch.zeros((n, n), device = self.device, dtype = self.dtype)
-        m[t_idx[0], t_idx[1]] = v
+        m = torch.zeros((N, n, n), device = self.device, dtype = self.dtype)
+        m[:, t_idx[0], t_idx[1]] = V
         return m
 
 
@@ -89,7 +90,7 @@ class VAETransportKernel(nn.Module):
         sig_vs = Z[:, n:]
         t_idx = self.t_idx
         time2 = TIME.time()
-        sig_ltms = [self.v_to_lt(v,n,t_idx) for v in sig_vs]
+        sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
         time3 = TIME.time()
         sig_ms = torch.stack([m @ m.T for m in sig_ltms])
         time4 = TIME.time()
