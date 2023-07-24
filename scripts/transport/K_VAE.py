@@ -92,14 +92,26 @@ class VAETransportKernel(nn.Module):
 
 
     def get_sample(self, params = {}):
+        time1 =  TIME.time()
         if not len(params):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
+        time2 = TIME.time()
 
         eps = torch.unsqueeze(params['eps'],2)
+        time3 = TIME.time()
+
         diffs = torch.matmul(params['sig'], eps)
+        time4 = TIME.time()
 
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
+        time5 = TIME.time()
+
+        if not self.iters:
+            print(f'Getting mu, sig took {time2-time1}')
+            print(f'Getting eps, sig took {time3 - time2}')
+            print(f'Getting diffs, sig took {time4 - time3}')
+            print(f'Getting Z_sample, sig took {time5 - time4}')
         return Z_sample
 
 
@@ -123,11 +135,8 @@ class VAETransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        start1 =  TIME.time()
         map_vec = self.get_sample() + self.X
-        end1 =  TIME.time()
 
-        start2 = TIME.time()
         Y = self.Y
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
         mmd_ZY = self.mmd_kernel(map_vec, Y)
@@ -138,11 +147,6 @@ class VAETransportKernel(nn.Module):
         Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
-
-        end2 = TIME.time()
-        if not self.iters:
-            print(f'Getting map vec took {end1 - start1}')
-            print(f'Rest took {end2 - start2}')
 
         return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
@@ -227,6 +231,8 @@ def run():
                               exp_name='mgan2_VAE_exp', params=exp_params, plt_range=range)
 
 #At step 2900: fit_loss = 0.000103, reg_loss = 0.002147
+#0.1363
+#.241
 
 if __name__=='__main__':
     run()
