@@ -286,7 +286,7 @@ def run():
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-    range = [[-2.5, 2.5], [-1.1, 1.1]]
+    range = [[-4, 4], [-4, 4]]
 
 
     VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
