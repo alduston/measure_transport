@@ -359,7 +359,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     except OSError:
         pass
 
-    l = l_scale(torch.tensor(ref_gen(N)))
+    l = l_scale(torch.tensor(ref_gen(N[:, 1])))
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
