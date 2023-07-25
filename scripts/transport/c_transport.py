@@ -200,7 +200,7 @@ def run():
     target_gen = sample_banana
     range = [[-2.5,2.5],[-1,5]]
     process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 1000, n_iter = 2000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 5000, n_iter = 8000,
                               plt_range=range, process_funcs=process_funcs)
 
 
