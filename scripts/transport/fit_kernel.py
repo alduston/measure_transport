@@ -10,7 +10,7 @@ from get_data import resample, normal_theta_circle, normal_theta_two_circle, sam
     normal_theta_circle_noisy,sample_pinweel,sample_unif_dumbell
 
 from picture_to_dist import sample_elden_ring, sample_bambdad, sample_twisted_rings
-from kernel_geodesics import geo_diffs, boosted_geo_diffs
+#from kernel_geodesics import geo_diffs, boosted_geo_diffs
 from copy import deepcopy
 import random
 
