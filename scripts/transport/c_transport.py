@@ -68,7 +68,7 @@ class CondTransportKernel(nn.Module):
         w = torch.concat([x_mu, y_eta], dim=1)
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
-        return torch.concat([z + y_eta, x_mu], dim = 1)
+        return torch.concat([x_mu, z + y_eta], dim = 1)
 
 
     def loss_mmd(self):
@@ -193,7 +193,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
 def run():
     ref_gen = sample_normal
     target_gen = sample_banana
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 2000, n_iter = 4000)
+    range = [[-2.5,2.5],[-1,5]]
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 2000, n_iter = 4000, plt_range=range)
 
 
 if __name__=='__main__':
