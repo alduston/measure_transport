@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
-from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 import os
 from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal, mgan1, mgan2, mgan3,\
@@ -17,12 +16,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def geq_1d(tensor):
-    if not len(tensor.shape):
-        tensor = tensor.reshape(1,1)
-    elif len(tensor.shape) == 1:
-        tensor = tensor.reshape(len(tensor), 1)
-    return tensor
+
 
 
 def flip_2tensor(tensor):
@@ -43,7 +37,8 @@ def mmd(Z, Y, mmd_kernel):
     return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
 
 
-class CondTransportKernel(nn.Module):
+
+class TwoDCondTransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
         super().__init__()
         if device:
@@ -54,8 +49,8 @@ class CondTransportKernel(nn.Module):
             else:
                 self.device = 'cpu'
         self.dtype = torch.float32
-        base_params['device'] = self.device
         self.params = base_params
+        base_params['device'] = self.device
 
         self.Z_ref= geq_1d(torch.tensor(base_params['Z_ref'], device=self.device, dtype=self.dtype))
         self.Y_ref = geq_1d(torch.tensor(base_params['Y_ref'], device = self.device, dtype = self.dtype))
@@ -92,7 +87,7 @@ class CondTransportKernel(nn.Module):
 
     def init_Z(self):
         return 0 * deepcopy(self.Y_target - self.Y_ref)
-        #return torch.zeros(self.Y_ref.shape , device = self.device, dtype = self.dtype)
+        return torch.zeros(self.Y_ref.shape , device = self.device, dtype = self.dtype)
 
 
     def init_alpha_x(self):
@@ -168,8 +163,6 @@ def U_KL(sample, unif_range = [-3,3]):
     densitys = np.asarray(densitys)
     KL_div = np.sum(np.log(1 / densitys))
     return KL_div
-
-
 
 
 
@@ -254,7 +247,7 @@ def light_conditional_transport_exp(ref_sample, target_sample, ref_test_sample, 
                                  'reg_lambda': 1e-5, 'print_freq':100, 'learning_rate': .06,
                                  'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
 
-        cond_transport_kernel = CondTransportKernel(cond_transport_params)
+        cond_transport_kernel = TwoDCondTransportKernel(cond_transport_params)
         train_kernel(cond_transport_kernel, n_iter= 2 * t_iter)
         sample = cond_transport_kernel.map(X_target_test, Y_ref_test)
 
@@ -307,7 +300,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
                         'reg_lambda':  1e-5, 'print_freq': 100, 'learning_rate': .06,
                         'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
 
-    cond_transport_kernel = CondTransportKernel(cond_transport_params)
+    cond_transport_kernel = TwoDCondTransportKernel(cond_transport_params)
     train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)
     sample = cond_transport_kernel.map(X_target, Y_ref)
 

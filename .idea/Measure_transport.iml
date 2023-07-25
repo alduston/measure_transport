@@ -6,6 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$/scripts/transport" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/scripts/unif" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/scripts/rand_features" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scripts/archive" isTestSource="false" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.7 (SindyTorch)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

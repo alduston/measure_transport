@@ -275,7 +275,7 @@ def sample_uniform(N = 100,  d = 2, l = -1.5, h = 1.5):
 def sample_banana(N):
     xx = np.random.randn(1, N)
     zz = np.random.randn(1, N)
-    Y = np.concatenate((xx, np.power(xx, 2) + 0.3 * zz), 1).reshape(2, N)
+    Y = np.concatenate((xx, np.power(xx, 2) + 0.3 * zz), 1).reshape(N, 2)
     return Y
 
 def proj_circle(N = 500):
