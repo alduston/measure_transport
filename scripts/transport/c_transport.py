@@ -187,7 +187,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
 
     if len(process_funcs):
         backward = process_funcs[1]
-        gen_sample = backward(gen_sample)
+        gen_sample = backward(gen_sample.cpu())
 
     d = len(gen_sample[0])
     if d <=2:
@@ -201,7 +201,6 @@ def run():
     target_gen = sample_banana
     range = [[-2.5,2.5],[-1,5]]
     process_funcs = [flip_2tensor, flip_2tensor]
-    #process_funcs = []
     conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 5000, n_iter = 8000,
                               plt_range=range, process_funcs=process_funcs)
 
