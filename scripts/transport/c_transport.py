@@ -9,6 +9,7 @@ from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 
 
+
 def geq_1d(tensor):
     if not len(tensor.shape):
         tensor = tensor.reshape(1,1)
@@ -56,10 +57,19 @@ class CondTransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
-        self.alpha_z = (1 / self.Nx) * torch.ones(self.Nx, device=self.device, dtype=self.dtype)
-        self.alpha_y = (1 / self.Ny) * torch.ones(self.Ny, device=self.device, dtype=self.dtype)
+        self.test = False
+        if 'Y_eta_test' in base_params.keys():
+            self.test = True
+            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+
+        self.alpha_z = self.p_vec(self.Nx)
+        self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
         self.iters = 0
+
+
+    def p_vec(self, n):
+        return torch.full(n, 1/n, device=self.device, dtype=self.dtype)
 
 
     def init_Z(self):
@@ -77,6 +87,21 @@ class CondTransportKernel(nn.Module):
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
         return torch.concat([x_mu, z + y_eta], dim = 1)
+
+
+    def mmd(self, map_vec, target):
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, target)
+        mmd_YY = self.mmd_kernel(target, target)
+
+        alpha_z = self.p_vec(len(map_vec))
+        alpha_y = self.p_vec(len(target))
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+
+        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
 
     def loss_mmd(self):
@@ -100,6 +125,14 @@ class CondTransportKernel(nn.Module):
         return  self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 
+    def loss_test(self):
+        x_mu = self.X_mu
+        y_eta = self.Y_eta_test
+        target = self.Y
+        map_vec = self.map(x_mu, y_eta)
+        return self.mmd(map_vec, target)
+
+
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
@@ -107,6 +140,8 @@ class CondTransportKernel(nn.Module):
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
+        if self.test:
+            loss_dict['test'] = self.loss_test()
         return loss, loss_dict
 
 
@@ -134,6 +169,11 @@ class VAECondTransportKernel(nn.Module):
         self.Ny = len(self.Y)
         self.eps = self.get_eps(self.Y_mu)
 
+        self.test = False
+        if 'Y_eta_test' in base_params.keys():
+            self.test = True
+            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.fit_kXX = self.fit_kernel(self.X, self.X)
 
@@ -147,10 +187,15 @@ class VAECondTransportKernel(nn.Module):
         n = len(self.Y_mu[0])
         self.t_idx = torch.tril_indices(row=n, col=n, offset=0)
 
-        self.alpha_z = (1 / self.Nx) * torch.ones(self.Nx, device=self.device, dtype=self.dtype)
-        self.alpha_y = (1 / self.Ny) * torch.ones(self.Ny, device=self.device, dtype=self.dtype)
+        self.alpha_z = self.p_vec(self.Nx)
+        self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
         self.iters = 0
+
+
+    def p_vec(self, n):
+        return torch.full(n, 1 / n, device=self.device, dtype=self.dtype)
+
 
     def get_sig_base(self, n):
         sig_base = []
@@ -246,6 +291,29 @@ class VAECondTransportKernel(nn.Module):
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
 
+    def mmd(self, map_vec, target):
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, target)
+        mmd_YY = self.mmd_kernel(target, target)
+
+        alpha_z = self.p_vec(len(map_vec))
+        alpha_y = self.p_vec(len(target))
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+
+        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+
+
+    def loss_test(self):
+        x_mu = self.X_mu
+        y_eta = self.Y_eta_test
+        target = self.Y
+        map_vec = self.map(x_mu, y_eta)
+        return self.mmd(map_vec, target)
+
+
     def loss_reg(self):
         Z = geq_1d(self.Z)
         return  self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
@@ -254,46 +322,59 @@ class VAECondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
+
+
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
+        if self.test:
+            loss_dict['test'] = self.loss_test()
         return loss, loss_dict
 
 
 
-def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001):
-    base_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
+
+def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
+    transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                    'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-4}
-    transport_kernel = TransportKernel(base_params)
+    if len(Y_eta_test):
+        transport_params['Y_eta_test'] = Y_eta_test
+    transport_kernel = TransportKernel(transport_params)
     train_kernel(transport_kernel, n_iter=n_iter)
     return transport_kernel
 
 
-def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001):
-    base_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
+def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
+    transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                    'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-4}
-    transport_kernel = VAETransportKernel(base_params)
+    if len(Y_eta_test):
+        transport_params['Y_eta_test'] = Y_eta_test
+    transport_kernel = VAETransportKernel(transport_params)
     train_kernel(transport_kernel, n_iter=n_iter)
     return transport_kernel
 
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001):
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                         'print_freq': 100, 'learning_rate': .06, 'nugget': 1e-4}
+    if len(Y_eta_test):
+        transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001):
+def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                         'print_freq': 100, 'learning_rate': .06, 'nugget': 1e-4}
+    if len(Y_eta_test):
+        transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = VAECondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
@@ -305,6 +386,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
+    test_sample = ref_gen(N)
 
     trained_models = []
 
@@ -314,16 +396,18 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
 
     Y_eta = ref_sample[:, 0]
+    Y_eta_test = test_sample[:, 0]
     Y_mu = target_sample[:, 0]
-    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter))
+    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
 
 
     for i in range(1, len(target_sample[0])):
         X_mu = target_sample[:, :i]
         Y_mu = target_sample[:, i]
         Y_eta = ref_sample[:,i]
+        Y_eta_test = test_sample[:, i]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test))
     return trained_models
 
 
@@ -359,13 +443,13 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     except OSError:
         pass
 
-    l = l_scale(torch.tensor(ref_gen(N[:, 1])))
+    l = l_scale(torch.tensor(ref_gen(N)[:, 1]))
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs)
-                                          #,base_model_trainer = base_VAEkernel_transport,
+                                          #base_model_trainer = base_VAEkernel_transport,
                                           #cond_model_trainer = cond_VAEkernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
@@ -378,8 +462,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         plt.legend()
         plt.savefig(f'{save_dir}/conditional_hists.png')
         clear_plt()
-
-
 
 
     if len(process_funcs):
@@ -399,7 +481,7 @@ def run():
     range = [[-2.5,2.5],[-1.1,1.1]]
     #process_funcs = [flip_2tensor, flip_2tensor ]
     process_funcs = []
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2', N = 5000, n_iter = 10000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2', N = 5000, n_iter = 1000,
                               plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
 
 

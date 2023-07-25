@@ -41,12 +41,16 @@ def prob_normalization(alpha):
 def train_kernel(kernel_model, n_iter = 100):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr=kernel_model.params['learning_rate'])
     Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
+    if kernel_model.test:
+        Loss_dict['test'] = []
     kernel_model.train()
     for i in range(n_iter):
         loss, loss_dict = train_step(kernel_model, optimizer)
         if not i % kernel_model.params['print_freq']:
-            print(f'At step {i}: fit_loss = {round(float((loss_dict["fit"])),6)},'
-                  f' reg_loss = {round(float(loss_dict["reg"]),6)}')
+            print_str = f'At step {i}: fit_loss = {round(float((loss_dict["fit"])),6)},' + f' reg_loss = {round(float(loss_dict["reg"]),6)}'
+            if kernel_model.test:
+                print_str += f', test loss = {round(float(loss_dict["test"]),6)}'
+            print(print_str)
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
     return kernel_model, Loss_dict
 

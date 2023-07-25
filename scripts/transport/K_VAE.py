@@ -37,6 +37,11 @@ class VAETransportKernel(nn.Module):
 
         self.eps = self.get_eps(self.X)
 
+        self.test = False
+        if 'Y_eta_test' in base_params.keys():
+            self.test = True
+            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+
         self.N = len(self.X)
         self.n = len(self.Y)
 
@@ -154,7 +159,6 @@ class VAETransportKernel(nn.Module):
         return sample
 
 
-
     def loss_mmd(self):
         map_vec = self.get_sample() + self.X
 
@@ -191,6 +195,13 @@ class VAETransportKernel(nn.Module):
         return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 
+    def loss_test(self):
+        y_eta = self.Y_eta_test
+        target = self.Y
+        map_vec = self.map(y_eta)
+        return self.mmd(map_vec, target)
+
+
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg  = self.loss_reg()
@@ -198,6 +209,8 @@ class VAETransportKernel(nn.Module):
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
+        if self.test:
+            loss_dict['test'] = self.loss_test()
         return loss, loss_dict
 
 

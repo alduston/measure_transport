@@ -5,6 +5,13 @@ import matplotlib.pyplot as plt
 from copy import copy, deepcopy
 import time
 
+def geq_1d(tensor):
+    if not len(tensor.shape):
+        tensor = tensor.reshape(1,1)
+    elif len(tensor.shape) == 1:
+        tensor = tensor.reshape(len(tensor), 1)
+    return tensor
+
 
 def t_one_normalize(vec):
     return vec/torch.linalg.norm(vec, ord = 1)
@@ -139,8 +146,14 @@ class TransportKernel(nn.Module):
         self.X = torch.tensor(base_params['X'], device=self.device, dtype=self.dtype)
         self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
 
+        self.test = False
+        if 'Y_eta_test' in base_params.keys():
+            self.test = True
+            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+
         self.N = len(self.X)
         self.n = len(self.Y)
+
 
         if self.params['normalize']:
             self.X = normalize(self.X)
@@ -252,6 +265,14 @@ class TransportKernel(nn.Module):
         return self.params['reg_lambda_alpha'] * alpha_x.T @ self.fit_kXX_inv @ alpha_x
 
 
+    def loss_test(self):
+        y_eta = self.Y_eta_test
+        target = self.Y
+        map_vec = self.map(y_eta)
+        return self.mmd(map_vec, target)
+
+
+
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg  = self.loss_reg()
@@ -259,6 +280,8 @@ class TransportKernel(nn.Module):
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
+        if self.test:
+            loss_dict['test'] = self.loss_test()
         return loss, loss_dict
 
 
