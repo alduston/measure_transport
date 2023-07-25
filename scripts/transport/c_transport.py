@@ -143,13 +143,13 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
         ptarget_sample = target_sample
 
     Y_eta = ref_sample[:, 0]
-    Y_mu = target_sample[:, 0]
+    Y_mu = ptarget_sample[:, 0]
     trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter))
 
 
     for i in range(1, len(ptarget_sample[0])):
-        X_mu = target_sample[:, :i]
-        Y_mu = target_sample[:, i]
+        X_mu = ptarget_sample[:, :i]
+        Y_mu = ptarget_sample[:, i]
         Y_eta = ref_sample[:,i]
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter))
@@ -182,12 +182,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,process_funcs)
+    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs)
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
     if len(process_funcs):
         backward = process_funcs[1]
-        gen_sample = backward(gen_sample.cpu())
+        #gen_sample = backward(gen_sample.cpu())
 
     d = len(gen_sample[0])
     if d <=2:
