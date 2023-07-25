@@ -354,9 +354,6 @@ def conditional_gen(trained_models, ref_sample, cond_sample):
     return X
 
 
-
-
-
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
                               exp_name= 'exp', plt_range = None, process_funcs = []):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -380,7 +377,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         for slice_val in slice_vals:
             ref_slice_sample = torch.full([N],  slice_val, device = trained_models[0].device)
             slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
-            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60)
+            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=[-1.5,1.5])
         plt.legend()
         plt.savefig(f'{save_dir}/conditional_hists.png')
         clear_plt()
@@ -405,7 +402,7 @@ def run():
     range = [[-2.5,2.5],[-1.1,1.1]]
     #process_funcs = [flip_2tensor, flip_2tensor]
     process_funcs = []
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan_2_CVAE', N = 5000, n_iter = 10000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_CVAE', N = 5000, n_iter = 10000,
                               plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
 
 
