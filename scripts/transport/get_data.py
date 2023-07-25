@@ -2,7 +2,7 @@ import numpy as np
 import sklearn
 import sklearn.datasets
 from sklearn.utils import shuffle as util_shuffle
-from ellipse import rand_ellipse
+#from ellipse import rand_ellipse
 from scipy.stats import norm
 
 
@@ -171,12 +171,6 @@ def unif_circle(N = 200):
     return sample
 
 
-def unif_elipse(N = 1000, a = .4, b = 3):
-    X, Y = rand_ellipse(a = a, b = b, size=N)
-    sample = np.asarray([[x, y] for x, y in zip(X, Y)])
-    return sample
-
-
 def two_unif_circle(N = 200):
     theta = np.random.uniform(low = -np.pi, high = np.pi, size = N)
     X = np.cos(theta)
@@ -277,6 +271,7 @@ def sample_banana(N):
     zz = np.random.randn(1, N)
     Y = np.concatenate((xx, np.power(xx, 2) + 0.3 * zz), 1).reshape(N, 2)
     return Y
+
 
 def proj_circle(N = 500):
     X = np.random.uniform(low=-1, high=1, size=N)
