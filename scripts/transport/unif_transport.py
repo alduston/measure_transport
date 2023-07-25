@@ -8,7 +8,7 @@ from scipy.optimize import LinearConstraint
 from scipy.optimize import minimize
 from scipy.optimize import least_squares
 import os
-from ellipse import rand_ellipse
+#from ellipse import rand_ellipse
 import pandas as pd
 from get_data import normal_theta_circle
 
