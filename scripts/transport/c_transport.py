@@ -138,18 +138,17 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     if len(process_funcs):
         forward = process_funcs[0]
-        ptarget_sample = forward(target_sample)
-    else:
-        ptarget_sample = target_sample
+        target_sample = forward(target_sample)
+
 
     Y_eta = ref_sample[:, 0]
-    Y_mu = ptarget_sample[:, 0]
+    Y_mu = target_sample[:, 0]
     trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter))
 
 
-    for i in range(1, len(ptarget_sample[0])):
-        X_mu = ptarget_sample[:, :i]
-        Y_mu = ptarget_sample[:, i]
+    for i in range(1, len(target_sample[0])):
+        X_mu = target_sample[:, :i]
+        Y_mu = target_sample[:, i]
         Y_eta = ref_sample[:,i]
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter))
