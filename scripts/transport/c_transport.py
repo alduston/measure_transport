@@ -193,7 +193,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
 def run():
     ref_gen = sample_normal
     target_gen = sample_banana
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 2000, n_iter = 2000)
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 2000, n_iter = 4000)
 
 
 if __name__=='__main__':
