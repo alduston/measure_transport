@@ -10,7 +10,12 @@ from get_data import sample_normal, sample_banana, mgan2, sample_swiss_roll, mga
 from picture_to_dist import sample_elden_ring
 import time as TIME
 
-
+def geq_1d(tensor):
+    if not len(tensor.shape):
+        tensor = tensor.reshape(1,1)
+    elif len(tensor.shape) == 1:
+        tensor = tensor.reshape(len(tensor), 1)
+    return tensor
 
 class VAETransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
@@ -27,18 +32,13 @@ class VAETransportKernel(nn.Module):
         base_params['device'] = self.device
         self.params = base_params
 
-        self.X = torch.tensor(base_params['X'], device=self.device, dtype=self.dtype)
-        self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+        self.X = geq_1d(torch.tensor(base_params['X'], device=self.device, dtype=self.dtype))
+        self.Y = geq_1d(torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype))
 
         self.eps = self.get_eps(self.X)
 
-
         self.N = len(self.X)
         self.n = len(self.Y)
-
-        if self.params['normalize']:
-            self.X = normalize(self.X)
-            self.Y = normalize(self.Y)
 
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.fit_kXX = self.fit_kernel(self.X, self.X)
@@ -140,7 +140,7 @@ class VAETransportKernel(nn.Module):
 
 
     def map(self, x, just_mu = False):
-        x = torch.tensor(x, device=self.device, dtype=self.dtype)
+        x = geq_1d(torch.tensor(x, device=self.device, dtype=self.dtype))
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x).T @ Lambda
         mu, sig = self.get_mu_sig(z)
@@ -148,7 +148,11 @@ class VAETransportKernel(nn.Module):
             return mu + x
         eps = self.get_eps(x)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
-        return z_sample + x
+        sample =  z_sample + x
+        if sample.shape[1]==1:
+            sample = sample.reshape(len(sample))
+        return sample
+
 
 
     def loss_mmd(self):
@@ -249,9 +253,8 @@ def VAE_transport_exp(ref_gen, target_gen, N, params, t_iter = 801, exp_name= 'e
         target_sample = target_sample.T
 
     transport_params = {'X': ref_sample, 'Y': target_sample, 'fit_kernel_params': params['fit'],
-                        'mmd_kernel_params': params['mmd'], 'normalize': False,
-                        'reg_lambda': 1e-5, 'print_freq': 500, 'learning_rate': .1,
-                        'nugget': 1e-4, 'X_tilde': test_sample }
+                        'mmd_kernel_params': params['mmd'], 'reg_lambda': 1e-5, 'print_freq': 500,
+                        'learning_rate': .1, 'nugget': 1e-4, 'X_tilde': test_sample }
 
 
     VAET_kernel = VAETransportKernel(transport_params)
