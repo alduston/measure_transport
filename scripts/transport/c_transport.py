@@ -14,6 +14,12 @@ def geq_1d(tensor):
         tensor = tensor.reshape(len(tensor), 1)
     return tensor
 
+def flip_2tensor(tensor):
+    Ttensor = torch.zeros(tensor.T.shape)
+    Ttensor[0] += tensor.T[1]
+    Ttensor[1] += tensor.T[0]
+    return Ttensor.T
+
 
 class CondTransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
@@ -194,7 +200,10 @@ def run():
     ref_gen = sample_normal
     target_gen = sample_banana
     range = [[-2.5,2.5],[-1,5]]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 2000, n_iter = 4000, plt_range=range)
+    process_funcs = [flip_2tensor, flip_2tensor]
+    #process_funcs = []
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'test', N = 5000, n_iter = 8000,
+                              plt_range=range, process_funcs=process_funcs)
 
 
 if __name__=='__main__':
