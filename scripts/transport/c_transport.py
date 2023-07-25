@@ -4,8 +4,9 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
-from get_data import sample_banana, sample_normal
+from get_data import sample_banana, sample_normal, mgan2
 from K_VAE import VAETransportKernel
+import matplotlib.pyplot as plt
 
 
 def geq_1d(tensor):
@@ -330,6 +331,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
 
 def compositional_gen(trained_models, ref_sample):
+    ref = geq_1d(ref_sample)
     Y_eta =  ref_sample[:, 0]
     base_model = trained_models[0]
     X = base_model.map(Y_eta)
@@ -341,8 +343,21 @@ def compositional_gen(trained_models, ref_sample):
     return X
 
 
+def conditional_gen(trained_models, ref_sample, cond_sample):
+    ref_sample = geq_1d(ref_sample)
+    X = geq_1d(cond_sample)
+    Y_eta = ref_sample[:, 0]
+    for i in range(0, len(trained_models)):
+        model = trained_models[i]
+        Y_eta = ref_sample[:, i]
+        X = model.map(X, Y_eta)
+    return X
 
-def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
+
+
+
+
+def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
                               exp_name= 'exp', plt_range = None, process_funcs = []):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -361,6 +376,18 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
+    if len(slice_vals):
+        for slice_val in slice_vals:
+            ref_slice_sample = torch.full([N],  slice_val, device = trained_models[0].device)
+            slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
+            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60)
+        plt.legend()
+        plt.savefig(f'{save_dir}/conditional_hists.png')
+        clear_plt()
+
+
+
+
     if len(process_funcs):
         backward = process_funcs[1]
         gen_sample = backward(gen_sample.cpu())
@@ -374,11 +401,11 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001,
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
-    range = [[-2.5,2.5],[-1,5]]
+    target_gen = mgan2
+    range = [[-2.5,2.5],[-1,1]]
     process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'VAEtest', N = 5000, n_iter = 10000,
-                              plt_range=range, process_funcs=process_funcs)
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan_2_CVAE', N = 5000, n_iter = 10000,
+                              plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
 
 
 if __name__=='__main__':
