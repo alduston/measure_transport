@@ -149,7 +149,7 @@ class TransportKernel(nn.Module):
         self.test = False
         if 'Y_eta_test' in base_params.keys():
             self.test = True
-            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+            self.Y_eta_test = torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype)
 
         self.N = len(self.X)
         self.n = len(self.Y)
@@ -174,17 +174,15 @@ class TransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
-        #if self.params['alpha_x']:
-        #self.alpha_x = nn.Parameter(self.init_alpha_x(), requires_grad=True)
-        #else:
-        self.alpha_x = (1/self.N) * torch.ones(self.N, device = self.device, dtype = self.dtype)
 
-        #if not len(self.params['alpha_y']):
-           # self.alpha_y = (1 / self.n) * torch.ones(self.n, device=self.device, dtype=self.dtype)
-        #else:
-        self.alpha_y =(1/self.n) * torch.ones(self.N, device = self.device, dtype = self.dtype)
+        self.alpha_x = self.p_vec(self.N)
+        self.alpha_y =self.p_vec(self.n)
 
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
+
+
+    def p_vec(self, n):
+        return torch.full([n], 1 / n, device=self.device, dtype=self.dtype)
 
 
     def init_Z(self):
@@ -201,10 +199,7 @@ class TransportKernel(nn.Module):
     def map(self, x):
         x = torch.tensor(x, device=self.device, dtype=self.dtype)
         Lambda = self.get_Lambda()
-        res =  (Lambda.T @ self.fit_kernel(self.X, x) + x.T)
-        #if self.params['alpha_x']:
-            #alpha_x_p = t_one_normalize((1 / self.N) * torch.exp(-self.alpha_x))
-            #res = t_resample(res, alpha_x_p)
+        res =  self.fit_kernel(self.X, x).T @ Lambda + x
         return res
 
 
@@ -241,14 +236,20 @@ class TransportKernel(nn.Module):
 
 
     def mmd(self, map_vec, target):
-        Y = target
-        normalization = self.N/(self.N-1)
+        Y = target.reshape(len(target))
+        map_vec = map_vec.reshape(len(map_vec))
 
-        k_YY_mean = torch.mean(self.mmd_kernel(Y,Y))
-        k_ZZ = self.mmd_kernel(map_vec, map_vec)
-        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
-        k_ZY =  self.mmd_kernel(Y, map_vec)
-        return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, Y)
+        mmd_YY = self.mmd_kernel(Y, Y)
+
+        alpha_y = self.p_vec(len(target))
+        alpha_z = self.p_vec(len(map_vec))
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+        return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
 
     def loss_reg(self, Z = []):
@@ -270,7 +271,6 @@ class TransportKernel(nn.Module):
         target = self.Y
         map_vec = self.map(y_eta)
         return self.mmd(map_vec, target)
-
 
 
     def loss(self):

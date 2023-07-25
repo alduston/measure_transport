@@ -67,6 +67,9 @@ class VAETransportKernel(nn.Module):
         self.alpha_y = (1 / self.n) * torch.ones(self.n, device=self.device, dtype=self.dtype)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
+    def p_vec(self, n):
+        return torch.full([n], 1 / n, device=self.device, dtype=self.dtype)
+
 
     def get_sig_base(self, n):
         sig_base = []
@@ -175,16 +178,25 @@ class VAETransportKernel(nn.Module):
 
         return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
+    #torch.Size([500])
+    #torch.Size([500, 1])
+    #torch.Size([500, 1])
 
     def mmd(self, map_vec, target):
-        Y = target
-        normalization = self.N/(self.N-1)
+        Y = target.reshape(len(target))
 
-        k_YY_mean = torch.mean(self.mmd_kernel(Y,Y))
-        k_ZZ = self.mmd_kernel(map_vec, map_vec)
-        k_ZZ = k_ZZ - torch.diag(torch.diag(k_ZZ))
-        k_ZY =  self.mmd_kernel(Y, map_vec)
-        return normalization * (torch.mean(k_ZZ)) - 2 * torch.mean(k_ZY) + k_YY_mean
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, Y)
+        mmd_YY = self.mmd_kernel(Y, Y)
+
+        alpha_y = self.p_vec(len(target))
+        alpha_z = self.p_vec(len(map_vec))
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+
+        return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
 
     def loss_reg(self, Z = []):

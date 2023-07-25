@@ -69,7 +69,7 @@ class CondTransportKernel(nn.Module):
 
 
     def p_vec(self, n):
-        return torch.full(n, 1/n, device=self.device, dtype=self.dtype)
+        return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
 
 
     def init_Z(self):
@@ -194,7 +194,7 @@ class VAECondTransportKernel(nn.Module):
 
 
     def p_vec(self, n):
-        return torch.full(n, 1 / n, device=self.device, dtype=self.dtype)
+        return torch.full([n], 1 / n, device=self.device, dtype=self.dtype)
 
 
     def get_sig_base(self, n):
@@ -338,7 +338,7 @@ class VAECondTransportKernel(nn.Module):
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-4}
+                   'print_freq': 1, 'learning_rate': .1, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = TransportKernel(transport_params)
@@ -349,7 +349,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
 def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq': 100, 'learning_rate': .1, 'nugget': 1e-4}
+                   'print_freq': 1, 'learning_rate': .1, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = VAETransportKernel(transport_params)
@@ -361,7 +361,7 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq': 100, 'learning_rate': .06, 'nugget': 1e-4}
+                        'print_freq': 1, 'learning_rate': .06, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = CondTransportKernel(transport_params)
@@ -372,7 +372,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq': 100, 'learning_rate': .06, 'nugget': 1e-4}
+                        'print_freq': 1, 'learning_rate': .06, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = VAECondTransportKernel(transport_params)
@@ -449,8 +449,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs)
-                                          #base_model_trainer = base_VAEkernel_transport,
-                                          #cond_model_trainer = cond_VAEkernel_transport)
+                                          #,base_model_trainer = base_VAEkernel_transport
+                                          #,cond_model_trainer = cond_VAEkernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -481,7 +481,7 @@ def run():
     range = [[-2.5,2.5],[-1.1,1.1]]
     #process_funcs = [flip_2tensor, flip_2tensor ]
     process_funcs = []
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2', N = 5000, n_iter = 1000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2', N = 500, n_iter = 1000,
                               plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
 
 
