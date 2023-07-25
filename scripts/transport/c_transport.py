@@ -402,8 +402,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 def run():
     ref_gen = sample_normal
     target_gen = mgan2
-    range = [[-2.5,2.5],[-1,1]]
-    process_funcs = [flip_2tensor, flip_2tensor]
+    range = [[-2.5,2.5],[-1.1,1.1]]
+    #process_funcs = [flip_2tensor, flip_2tensor]
+    process_funcs = []
     conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan_2_CVAE', N = 5000, n_iter = 10000,
                               plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
 
