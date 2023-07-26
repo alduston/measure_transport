@@ -478,7 +478,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 #003641
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
+    target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
     slice_range = [-3,3]
     #process_funcs = [flip_2tensor, flip_2tensor ]
