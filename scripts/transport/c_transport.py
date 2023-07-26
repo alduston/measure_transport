@@ -434,8 +434,8 @@ def compositional_gen(trained_models, ref_sample):
 
     for i in range(1, len(trained_models)):
         model = trained_models[i]
-        Y_eta = ref_sample[:, i]
-        X = model.map(X, Y_eta)
+        #Y_eta = ref_sample[:, i]
+        X = model.map(X, model.Y_eta_test)
     return X
 
 
@@ -501,7 +501,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 5000, n_iter = 5000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 5000, n_iter = 10000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
