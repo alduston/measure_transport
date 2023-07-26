@@ -481,8 +481,8 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
     slice_range = [-3,3]
-    process_funcs = [flip_2tensor, flip_2tensor ]
     process_funcs = []
+    process_funcs = [flip_2tensor, flip_2tensor ]
     conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_flip', N = 5000, n_iter = 20000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
