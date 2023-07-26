@@ -39,7 +39,7 @@ def prob_normalization(alpha):
 
 
 def train_kernel(kernel_model, n_iter = 100):
-    optimizer = torch.optim.SGD(kernel_model.parameters(), lr= 100 * kernel_model.params['learning_rate'],
+    optimizer = torch.optim.SGD(kernel_model.parameters(), lr= 60 * kernel_model.params['learning_rate'],
                                 nesterov = True, momentum=0.9)
     #optimizer = torch.optim.Adam(kernel_model.parameters(), lr= kernel_model.params['learning_rate']/10)
     Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
