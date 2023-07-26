@@ -325,7 +325,7 @@ class VAECondTransportKernel(nn.Module):
         sig_error = torch.trace(sig_vs.T @ self.fit_kXX_inv @ sig_vs)
         if self.iters < 5000:
             sig_error *=0
-        return  self.params['reg_lambda'] * torch.trace(mu_error + sig_error)
+        return  self.params['reg_lambda'] * (mu_error + sig_error)
 
 
     def loss(self):
