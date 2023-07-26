@@ -211,7 +211,7 @@ class VAECondTransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device=self.device, dtype=self.dtype)
 
         ly = l_scale(self.Y_mu)
-        Z_var = 0 * torch.stack([sig_base for i in range(N)])
+        Z_var = .1 * ly * torch.stack([sig_base for i in range(N)])
         Z = torch.concat([Z_mean, Z_var], dim=1)
         return Z
 
@@ -361,10 +361,12 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
 
 def hybrid_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     mu_kernel = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
+    print('\n')
     Y_eta_sig = mu_kernel.map(mu_kernel.X)
     Y_eta_sig_test = mu_kernel.map(mu_kernel.Y_eta_test)
-    base_VAEkernel_transport(Y_eta_sig, Y_mu, params, n_iter//4, Y_eta_sig_test)
-    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, n_iter , Y_eta_sig_test)
+    base_kernel_transport(Y_eta_sig, Y_mu, params, n_iter//3, Y_eta_sig_test)
+    print('\n')
+    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, n_iter//3 , Y_eta_sig_test)
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
@@ -391,10 +393,12 @@ def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_te
 
 def hybrid_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     mu_kernel = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
+    print('\n')
     Y_eta_sig = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta)[:, -1]
     Y_eta_sig_test = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta_test)[:, -1]
-    cond_kernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//4, Y_eta_sig_test)
-    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//4 , Y_eta_sig_test)
+    cond_kernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//3, Y_eta_sig_test)
+    print('\n')
+    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//3 , Y_eta_sig_test)
 
 
 
