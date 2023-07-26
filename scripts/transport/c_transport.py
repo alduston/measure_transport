@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
-from get_data import sample_banana, sample_normal, mgan2
+from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel
 from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 
@@ -213,7 +213,7 @@ class VAECondTransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device=self.device, dtype=self.dtype)
 
         ly = l_scale(self.Y_mu)
-        Z_var = 1 * torch.stack([sig_base for i in range(N)])
+        Z_var = ly * torch.stack([sig_base for i in range(N)])
         Z = torch.concat([Z_mean, Z_var], dim=1)
         return Z
 
@@ -249,8 +249,8 @@ class VAECondTransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        #eps = torch.unsqueeze(self.eps,2)
-        eps = torch.unsqueeze(self.get_eps(self.Y_mu), 2)
+        eps = torch.unsqueeze(self.eps,2)
+        #eps = torch.unsqueeze(self.get_eps(self.Y_mu), 2)
         diffs = torch.matmul(params['sig'], eps)
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
@@ -399,7 +399,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     Y_eta = ref_sample[:, 0]
     Y_eta_test = test_sample[:, 0]
     Y_mu = target_sample[:, 0]
-    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
+    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, 100, Y_eta_test))
 
 
     for i in range(1, len(target_sample[0])):
@@ -437,7 +437,7 @@ def conditional_gen(trained_models, ref_sample, cond_sample):
 
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
-                              exp_name= 'exp', plt_range = None, process_funcs = []):
+                              exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = []):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -449,9 +449,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                          ,base_model_trainer = base_VAEkernel_transport
-                                          ,cond_model_trainer = cond_VAEkernel_transport)
+    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs)
+                                          #,base_model_trainer=base_VAEkernel_transport
+                                          #,cond_model_trainer=cond_VAEkernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -459,7 +459,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         for slice_val in slice_vals:
             ref_slice_sample = torch.full([N],  slice_val, device = trained_models[0].device)
             slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
-            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=[-1.5,1.5])
+            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
         plt.legend()
         plt.savefig(f'{save_dir}/conditional_hists.png')
         clear_plt()
@@ -475,17 +475,16 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
     return True
 
-
+#003641
 def run():
-    #0.005766
-    #0.002505
     ref_gen = sample_normal
-    target_gen = mgan2
-    range = [[-2.5,2.5],[-1.1,1.1]]
+    target_gen = sample_banana
+    range = [[-3,3],[-3,3]]
+    slice_range = [-3,3]
     #process_funcs = [flip_2tensor, flip_2tensor ]
     process_funcs = []
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_CVAE', N = 5000, n_iter = 10000,
-                              plt_range=range, process_funcs=process_funcs, slice_vals=[-1.1, 0, 1.1])
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral', N = 5000, n_iter = 10000,
+                              plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
 if __name__=='__main__':

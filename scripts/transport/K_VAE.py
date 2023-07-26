@@ -87,7 +87,7 @@ class VAETransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device = self.device, dtype = self.dtype)
 
         ly = l_scale(self.Y)
-        sig =  1 * torch.stack([sig_base for i in range(N)])
+        sig =  ly * torch.stack([sig_base for i in range(N)])
 
         Z = torch.concat([mu, sig], dim = 1)
         return Z
@@ -124,8 +124,8 @@ class VAETransportKernel(nn.Module):
             mu,sig = self.get_mu_sig()
             params = {'mu': mu, 'sig': sig, 'eps': self.eps}
 
-        # eps = torch.unsqueeze(self.eps,2)
-        eps = torch.unsqueeze(self.get_eps(self.X), 2)
+        eps = torch.unsqueeze(self.eps,2)
+        #eps = torch.unsqueeze(self.get_eps(self.X), 2)
         diffs = torch.matmul(params['sig'], eps)
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
