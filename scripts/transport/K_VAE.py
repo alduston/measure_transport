@@ -127,8 +127,6 @@ class VAETransportKernel(nn.Module):
 
         eps = torch.unsqueeze(self.eps,2)
         diffs = torch.matmul(params['sig'], eps)
-        if self.iters < 5000:
-            diffs *= 0
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
 
@@ -210,8 +208,6 @@ class VAETransportKernel(nn.Module):
 
         mu_error = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
         sig_error = torch.trace(sig_vs.T @ self.fit_kXX_inv @ sig_vs)
-        if self.iters < 5000:
-            sig_error *= 0
         return self.params['reg_lambda'] * (mu_error + sig_error)
 
 
