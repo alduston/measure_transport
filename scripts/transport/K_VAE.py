@@ -106,6 +106,7 @@ class VAETransportKernel(nn.Module):
 
     def get_mu_sig(self, Z = []):
         n = len(self.X[0])
+        self.nx = n
         if not len(Z):
             Z = self.Z
         mu = Z[:, :n]
@@ -203,9 +204,8 @@ class VAETransportKernel(nn.Module):
 
 
     def loss_reg(self, Z = []):
-        n = len(self.X[0])
-        mu = Z[:, :n]
-        sig_vs = Z[:, n:]
+        mu = Z[:, :self.nx]
+        sig_vs = Z[:, self.nx:]
 
         mu_error = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
         sig_error = torch.trace(sig_vs.T @ self.fit_kXX_inv @ sig_vs)
