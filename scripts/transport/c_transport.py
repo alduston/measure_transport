@@ -317,7 +317,15 @@ class VAECondTransportKernel(nn.Module):
 
     def loss_reg(self):
         Z = geq_1d(self.Z)
-        return  self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
+        n = len(self.Y_mu[0])
+        mu = Z[:, :n]
+        sig_vs = Z[:, n:]
+
+        mu_error = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
+        sig_error = torch.trace(sig_vs.T @ self.fit_kXX_inv @ sig_vs)
+        if self.iters < 5000:
+            sig_error *=0
+        return  self.params['reg_lambda'] * torch.trace(mu_error + sig_error)
 
 
     def loss(self):
