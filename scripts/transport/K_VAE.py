@@ -128,7 +128,7 @@ class VAETransportKernel(nn.Module):
         #eps = torch.unsqueeze(self.get_eps(self.X), 2)
         diffs = torch.matmul(params['sig'], eps)
         if self.iters < 5000:
-            diffs *= 0 
+            diffs *= 0
         Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
         return Z_sample
 
