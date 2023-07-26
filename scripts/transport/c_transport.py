@@ -211,7 +211,7 @@ class VAECondTransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device=self.device, dtype=self.dtype)
 
         ly = l_scale(self.Y_mu)
-        Z_var = 0 * torch.stack([sig_base for i in range(N)])
+        Z_var = ly * torch.stack([sig_base for i in range(N)])
         Z = torch.concat([Z_mean, Z_var], dim=1)
         return Z
 
@@ -356,7 +356,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
 def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 5e-6,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq': 50, 'learning_rate': .01, 'nugget': 1e-4}
+                   'print_freq': 50, 'learning_rate': .001, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = VAETransportKernel(transport_params)
@@ -379,7 +379,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-6,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq': 50, 'learning_rate': .01, 'nugget': 1e-4}
+                        'print_freq': 50, 'learning_rate': .001, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = VAECondTransportKernel(transport_params)
