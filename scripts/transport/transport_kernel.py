@@ -281,7 +281,7 @@ class TransportKernel(nn.Module):
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
         if self.test:
-            loss_dict['test'] = self.loss_test()
+            loss_dict['test']= 0 #self.loss_test()
         return loss, loss_dict
 
 
