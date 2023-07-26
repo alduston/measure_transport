@@ -87,7 +87,7 @@ class VAETransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device = self.device, dtype = self.dtype)
 
         ly = l_scale(self.Y)
-        sig =  .1 * ly * torch.stack([sig_base for i in range(N)])
+        sig =  ly * torch.stack([sig_base for i in range(N)])
 
         Z = torch.concat([mu, sig], dim = 1)
         return Z
@@ -179,9 +179,6 @@ class VAETransportKernel(nn.Module):
 
         return Ek_ZZ - 2 * Ek_ZY + Ek_YY
 
-    #torch.Size([500])
-    #torch.Size([500, 1])
-    #torch.Size([500, 1])
 
     def mmd(self, map_vec, target):
         Y = target.reshape(len(target))
