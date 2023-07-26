@@ -153,7 +153,7 @@ class VAETransportKernel(nn.Module):
         Lambda = self.get_Lambda()
         z =  self.fit_kernel(self.X, x).T @ Lambda
         mu, sig = self.get_mu_sig(z)
-        if just_mu:
+        if just_mu or self.iters < 5000:
             return mu + x
         eps = self.get_eps(x)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})

@@ -16,9 +16,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-
-
-
 def flip_2tensor(tensor):
     Ttensor = deepcopy(tensor.T)
     Ttensor[0] = deepcopy(tensor.T[1])
