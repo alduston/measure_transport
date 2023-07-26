@@ -335,7 +335,7 @@ class VAECondTransportKernel(nn.Module):
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 5e-6,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq': 50, 'learning_rate': .1, 'nugget': 1e-4}
+                   'print_freq': 50, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = TransportKernel(transport_params)
@@ -346,7 +346,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
 def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 5e-6,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq': 50, 'learning_rate': .1, 'nugget': 1e-4}
+                   'print_freq': 50, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = VAETransportKernel(transport_params)
@@ -358,7 +358,7 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-6,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq': 50, 'learning_rate': .1, 'nugget': 1e-4}
+                        'print_freq': 50, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = CondTransportKernel(transport_params)
@@ -445,9 +445,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs)
-                                          #,base_model_trainer=base_VAEkernel_transport
-                                          #,cond_model_trainer=cond_VAEkernel_transport)
+    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
+                                          ,base_model_trainer=base_VAEkernel_transport
+                                          ,cond_model_trainer=cond_VAEkernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -474,8 +474,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 #003641
 
 #Adam:
-#0.000562
 #0.000937
+#0.000562
 
 def run():
     ref_gen = sample_normal
