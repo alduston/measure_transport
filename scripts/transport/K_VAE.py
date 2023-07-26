@@ -222,8 +222,6 @@ class VAETransportKernel(nn.Module):
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
-        if self.test:
-            loss_dict['test'] = 0 #self.loss_test()
         return loss, loss_dict
 
 
