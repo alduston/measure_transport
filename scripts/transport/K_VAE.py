@@ -203,7 +203,7 @@ class VAETransportKernel(nn.Module):
 
 
     def loss_reg(self, Z = []):
-        n = len(self.Y_mu[0])
+        n = len(self.X[0])
         mu = Z[:, :n]
         sig_vs = Z[:, n:]
 
