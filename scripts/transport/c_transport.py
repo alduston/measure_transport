@@ -442,11 +442,10 @@ def compositional_gen(trained_models, ref_sample):
 def conditional_gen(trained_models, ref_sample, cond_sample):
     ref_sample = geq_1d(ref_sample)
     X = geq_1d(cond_sample)
-    Y_eta = ref_sample[:, 0]
+    #Y_eta = ref_sample[:, 0]
     for i in range(0, len(trained_models)):
         model = trained_models[i]
-        Y_eta = ref_sample[:, i]
-        X = model.map(X, Y_eta)
+        X = model.map(X, model.Y_eta_test)
     return X
 
 
