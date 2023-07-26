@@ -364,6 +364,12 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
     return transport_kernel
 
 
+def hybrid_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
+    mu_kernel = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
+    Y_eta_sig = mu_kernel.map(mu_kernel.X)
+    Y_eta_sig_test = mu_kernel.map(mu_kernel.Y_eta_test)
+    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, n_iter , Y_eta_sig_test)
+
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-6,
@@ -385,6 +391,13 @@ def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_te
     ctransport_kernel = VAECondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
+
+
+def hybrid_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
+    mu_kernel = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
+    Y_eta_sig = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta)[:, -1]
+    Y_eta_sig_test = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta_test)[:, -1]
+    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter , Y_eta_sig_test)
 
 
 
@@ -456,8 +469,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                          ,base_model_trainer=base_VAEkernel_transport
-                                          ,cond_model_trainer=cond_VAEkernel_transport)
+                                          ,base_model_trainer=hybrid_base_kernel_transport
+                                          ,cond_model_trainer=hybrid_cond_kernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -494,7 +507,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_flip2', N = 5000, n_iter = 10000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_flip2', N = 5000, n_iter = 5000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
