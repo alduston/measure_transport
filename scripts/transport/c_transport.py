@@ -472,6 +472,11 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     return True
 
 #003641
+
+#Adam:
+#0.000562
+#0.000937
+
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
@@ -479,7 +484,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_flip', N = 5000, n_iter = 10000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_flip2', N = 5000, n_iter = 10000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
