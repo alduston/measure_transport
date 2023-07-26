@@ -319,10 +319,10 @@ def run():
     range = [[-4, 4], [-4, 4]]
 
 
-    VAE_transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+    VAE_transport_exp(ref_gen, target_gen, N=3000, t_iter=6001,
                               exp_name='banana_VAE_exp1', params=exp_params, plt_range=range)
 
-    transport_exp(ref_gen, target_gen, N=5000, t_iter=10001,
+    transport_exp(ref_gen, target_gen, N=3000, t_iter=6001,
                   exp_name='banana_exp1', params=exp_params, plt_range=range)
 
 

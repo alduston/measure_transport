@@ -503,7 +503,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 5000, n_iter = 10000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 50, n_iter = 200,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
