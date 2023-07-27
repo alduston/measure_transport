@@ -24,6 +24,37 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
+class Comp_transport_model:
+    def __init__(self, submodels, cond = False, device = None):
+        self.submodels = submodels
+        self.cond = cond
+        if device:
+            self.device = device
+        else:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
+
+    def base_map(self, z):
+        for submodel in self.submodels:
+            z = submodel.map(z)
+        return z
+
+    def c_map(self, x, z):
+        x = geq_1d(torch.tensor(x, device = self.device))
+        z = geq_1d(torch.tensor(z, device = self.device))
+        for submodel in self.submodels:
+            z = submodel.map(x,z, no_x = True)
+        return torch.concat([x, z], dim = 1)
+
+    def map(self, z , x = []):
+        if self.cond:
+            return self.c_map(x,z)
+        return self.base_map(z)
+
+
+
 class CondTransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
         super().__init__()
@@ -80,12 +111,14 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
-    def map(self, x_mu, y_eta):
+    def map(self, x_mu, y_eta, no_x = False):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         w = torch.concat([x_mu, y_eta], dim=1)
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
+        if no_x:
+            return z + y_eta
         return torch.concat([x_mu, z + y_eta], dim = 1)
 
 
@@ -263,7 +296,7 @@ class VAECondTransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
-    def map(self, x_mu, y_eta):
+    def map(self, x_mu, y_eta, no_x = False):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         w = torch.concat([x_mu, y_eta], dim=1)
@@ -272,6 +305,8 @@ class VAECondTransportKernel(nn.Module):
         mu, sig = self.get_mu_sig(z)
         eps = self.get_eps(y_eta)
         z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
+        if no_x:
+            return z_sample + y_eta
         return torch.concat([x_mu, z_sample + y_eta], dim = 1)
 
 
@@ -360,14 +395,14 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
     return transport_kernel
 
 
-def hybrid_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
-    mu_kernel = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
+def double_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
+    model_1 = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
     print('\n')
-    Y_eta_sig = mu_kernel.map(mu_kernel.X)
-    Y_eta_sig_test = mu_kernel.map(mu_kernel.Y_eta_test)
-    base_kernel_transport(Y_eta_sig, Y_mu, params, int(n_iter * (2/3)), Y_eta_sig_test)
-    print('\n')
-    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, int(n_iter * (2/3)) , Y_eta_sig_test)
+    Y_eta_sig = model_1.map(model_1.X)
+    Y_eta_sig_test = model_1.map(model_1.Y_eta_test)
+    model_2 = base_kernel_transport(Y_eta_sig, Y_mu, params, n_iter//2, Y_eta_sig_test)
+    models = [model_1, model_2]
+    return Comp_transport_model(models, cond=False)
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
@@ -392,14 +427,14 @@ def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_te
     return ctransport_kernel
 
 
-def hybrid_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
-    mu_kernel = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
+def double_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
+    model_1 = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
     print('\n')
-    Y_eta_sig = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta)[:, -1]
-    Y_eta_sig_test = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta_test)[:, -1]
-    cond_kernel_transport(X_mu, Y_mu, Y_eta_sig, params, int(n_iter * (2/3)), Y_eta_sig_test)
-    print('\n')
-    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, int(n_iter * (2/3)) , Y_eta_sig_test)
+    Y_eta_sig = model_1.map(model_1.X_mu, model_1.Y_eta)[:, -1]
+    Y_eta_sig_test = model_1.map(model_1.X_mu, model_1.Y_eta_test, no_x = True)
+    model_2 =  cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//2 , Y_eta_sig_test)
+    models = [model_1, model_2]
+    return Comp_transport_model(models, cond=True)
 
 
 
@@ -441,17 +476,17 @@ def compositional_gen(trained_models, ref_sample):
 
     for i in range(1, len(trained_models)):
         model = trained_models[i]
-        #Y_eta = ref_sample[:, i]
-        X = model.map(model.X_mu, model.Y_eta_test)
+        Y_eta = ref_sample[:, i]
+        X = model.map(X, Y_eta)
     return X
 
 
 def conditional_gen(trained_models, ref_sample, cond_sample):
     X = geq_1d(cond_sample)
-    #Y_eta = ref_sample[:, 0]
     for i in range(0, len(trained_models)):
         model = trained_models[i]
-        X = model.map(X, model.Y_eta_test)
+        Y_eta = ref_sample[:, i]
+        X = model.map(X, Y_eta)
     return X
 
 
@@ -469,8 +504,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                          ,base_model_trainer=hybrid_base_kernel_transport
-                                          ,cond_model_trainer=hybrid_cond_kernel_transport)
+                                          ,base_model_trainer=double_base_kernel_transport
+                                          ,cond_model_trainer=double_cond_kernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -507,7 +542,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 5000, n_iter = 8001,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 3000, n_iter = 6001,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
