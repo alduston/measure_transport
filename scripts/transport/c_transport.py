@@ -409,7 +409,7 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
 
-    comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='comp_spiral', plt_range=range)
+    comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='spiral_composed', plt_range=range)
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []

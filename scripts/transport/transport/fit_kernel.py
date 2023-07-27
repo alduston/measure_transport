@@ -90,9 +90,7 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     x, y = sample.T
     x = np.asarray(x)
     y = np.asarray(y)
-    size = 7
-    s = [size for x in x]
-    plt.scatter(x,y, s=s)
+    plt.scatter(x,y, s=7)
     
     if range != None:
         x_left, x_right = range[0]
