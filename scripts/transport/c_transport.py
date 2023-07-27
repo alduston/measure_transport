@@ -176,7 +176,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
 
-        range = [[-3, 3], [-3, 3]]
+        range = [[-3, 3], [-3, 3 ]]
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]
 
