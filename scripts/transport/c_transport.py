@@ -71,7 +71,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
-        self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
+        self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Nx = len(self.X)
 
@@ -181,7 +181,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        
+
         x_mu = torch.tensor(mgan2(len(self.Y_eta_test))[:,0], device = self.device)
         #x_mu = self.X_mu
 
@@ -267,8 +267,13 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
         n_iter = int(n_iter * f)
-        Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
+
+        X_mu = torch.tensor(mgan2(len(X_mu))[:, 0], device=model.device)
+        Y_eta = torch.tensor(sample_normal(len(X_mu))[:, 0], device=model.device)
+        X_mu_test = torch.tensor(mgan2(len(X_mu))[:, 0], device=model.device)
+
+        Y_eta = model.map(X_mu, Y_eta, no_x = True)
+        Y_eta_test = model.map(X_mu_test, model.Y_eta_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
