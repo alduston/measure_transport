@@ -281,7 +281,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     Y_eta = ref_sample[:, 0]
     Y_eta_test = test_sample[:, 0]
     Y_mu = target_sample[:, 0]
-    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
+    #trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
 
 
     for i in range(1, len(target_sample[0])):
