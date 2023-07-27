@@ -262,7 +262,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 4, f = .6):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 4, f = 1):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
@@ -385,7 +385,7 @@ def run():
     slice_range = [-2.5,2.5]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 6000,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 8000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs,
                               slice_vals=[-1.1, 0, 1.1])
 
