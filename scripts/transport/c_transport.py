@@ -163,6 +163,18 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
+        plot_vec = map_vec.detach().cpu().numpy()
+        x, y = plot_vec.T
+        plt.scatter(x, y, range=[[-2.5, 2.5], [-1, 5]])
+        plt.savefig('c_output_scatter.png')
+        clear_plt()
+        if self.iters < 50:
+            plot_vec = target.detach().cpu().numpy()
+            x, y = plot_vec.T
+            plt.scatter(x, y, range=[[-2.5, 2.5], [-1, 5]])
+            plt.savefig('c_target_scatter.png')
+            clear_plt()
+
         return self.mmd(map_vec, target)
 
 
@@ -346,6 +358,19 @@ class VAECondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
+
+        plot_vec = map_vec.detach().cpu().numpy()
+        x, y = plot_vec.T
+        plt.scatter(x,y, range = [[-2.5,2.5], [-1,5]])
+        plt.savefig('c_output_scatter.png')
+        clear_plt()
+        if self.iters< 50:
+            plot_vec = target.detach().cpu().numpy()
+            x,y = plot_vec.T
+            plt.scatter(x,y, range = [[-2.5,2.5], [-1,5]])
+            plt.savefig('c_target_scatter.png')
+            clear_plt()
+
         return self.mmd(map_vec, target)
 
 
@@ -376,7 +401,7 @@ class VAECondTransportKernel(nn.Module):
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  500, 'learning_rate': .01, 'nugget': 1e-4}
+                   'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = TransportKernel(transport_params)
@@ -387,7 +412,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
 def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  500, 'learning_rate': .01, 'nugget': 1e-4}
+                   'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = VAETransportKernel(transport_params)
@@ -395,20 +420,21 @@ def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []
     return transport_kernel
 
 
-def double_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
-    model_1 = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
-    print('\n')
-    Y_eta_sig = model_1.map(model_1.X)
-    Y_eta_sig_test = model_1.map(model_1.Y_eta_test)
-    model_2 = base_kernel_transport(Y_eta_sig, Y_mu, params, n_iter//2, Y_eta_sig_test)
-    models = [model_1, model_2]
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = 1):
+    models = []
+    for i in range(n):
+        model = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
+        n_iter = int(n_iter * f)
+        Y_eta = model.map(model.X)
+        Y_eta_test = model.map(model.Y_eta_test)
+        models.append(model)
     return Comp_transport_model(models, cond=False)
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq': 500, 'learning_rate': .01, 'nugget': 1e-4}
+                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = CondTransportKernel(transport_params)
@@ -419,7 +445,8 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq':  500, 'learning_rate': .01, 'nugget': 1e-4}
+                        'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
+
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = VAECondTransportKernel(transport_params)
@@ -427,13 +454,14 @@ def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_te
     return ctransport_kernel
 
 
-def double_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
-    model_1 = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
-    print('\n')
-    Y_eta_sig = model_1.map(model_1.X_mu, model_1.Y_eta)[:, -1]
-    Y_eta_sig_test = model_1.map(model_1.X_mu, model_1.Y_eta_test, no_x = True)
-    model_2 =  cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//2 , Y_eta_sig_test)
-    models = [model_1, model_2]
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], n = 3, f = 1):
+    models = []
+    for i in range(n):
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
+        n_iter = int(n_iter * f)
+        Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
+        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
+        models.append(model)
     return Comp_transport_model(models, cond=True)
 
 
@@ -469,7 +497,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
 
 def compositional_gen(trained_models, ref_sample):
-    ref = geq_1d(ref_sample)
+    ref_sample = geq_1d(ref_sample)
     Y_eta =  ref_sample[:, 0]
     base_model = trained_models[0]
     X = base_model.map(Y_eta)
@@ -502,10 +530,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-
     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                          ,base_model_trainer=double_base_kernel_transport
-                                          ,cond_model_trainer=double_cond_kernel_transport)
+                                          ,base_model_trainer=comp_base_kernel_transport
+                                          ,cond_model_trainer=comp_cond_kernel_transport)
 
     gen_sample = compositional_gen(trained_models, ref_gen(N))
 
@@ -525,7 +552,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
     d = len(gen_sample[0])
     if d <=2:
-        #sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
+        sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
         sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
     return True
 
@@ -537,12 +564,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
-    range = [[-3,3],[-3,3]]
+    target_gen = sample_banana
+    range = [[-2.5,2.5],[-1,5]]
     slice_range = [-3,3]
     process_funcs = []
-    #process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 3000, n_iter = 6001,
+    process_funcs = [flip_2tensor, flip_2tensor]
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'banana_composed', N = 10, n_iter = 100,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 

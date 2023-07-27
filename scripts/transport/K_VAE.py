@@ -212,6 +212,13 @@ class VAETransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(y_eta)
+        plt.hist(map_vec.detach().cpu().numpy(),  bins = 40, range = [-1,5])
+        plt.savefig('output_hist.png')
+        clear_plt()
+        if self.iters < 50:
+            plt.hist(target.detach().cpu().numpy(), bins = 40, range = [-1,5])
+            plt.savefig('target_hist.png')
+            clear_plt()
         return self.mmd(map_vec, target)
 
 
