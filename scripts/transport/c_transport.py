@@ -343,11 +343,18 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     Y_eta_test = ref_gen(N)
     Y_mu = target_gen(N)
 
-    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=5, f=.75)
-    gen_sample = comp_model.map(torch.tensor(Y_eta_test, device=comp_model.device))
+    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=5, f=.45)
+
+    Y_eta_plot = ref_gen(100 * N)
+    Y_mu_plot = target_gen(100 * N)
+    gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
+
 
     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
-    sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
+    sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range)
+
+    sample_scatter(Y_mu_plot, f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
+    sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range)
 
     return True
 
