@@ -327,7 +327,7 @@ def conditional_gen(trained_models, ref_sample, cond_sample):
 
 
 
-def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', plt_range = None):
+def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', plt_range = None, vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -351,10 +351,10 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
 
     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
-    sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range)
+    sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range, vmax= vmax)
 
     sample_scatter(Y_mu_plot, f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
-    sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range)
+    sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax= vmax)
 
     return True
 
@@ -409,7 +409,7 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
 
-    comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='spiral_composed', plt_range=range)
+    comp_gen_exp(ref_gen, target_gen, N=5000, n_iter=6001, exp_name='spiral_composed', plt_range=range, vmax = .15)
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
