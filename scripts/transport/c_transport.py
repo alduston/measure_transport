@@ -72,7 +72,6 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
-        self.X_mu_test = []
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Nx = len(self.X)
 
@@ -94,6 +93,7 @@ class CondTransportKernel(nn.Module):
         if 'Y_eta_test' in base_params.keys():
             self.test = True
             self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+            self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
@@ -176,7 +176,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
 
-        range = [[-3, 3], [-3, 3 ]]
+        range = [[-2.5, 2.5], [-1.1, 1]]
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]
 
@@ -186,7 +186,7 @@ class CondTransportKernel(nn.Module):
         plt.scatter(x, y, s = 1)
         plt.xlim(x_left, x_right)
         plt.ylim(y_bottom, y_top)
-        plt.savefig('c_output_scatter.png')
+        plt.savefig('c_output_scatter_1.png')
         clear_plt()
         if self.iters < 50:
             plot_vec = target.detach().cpu().numpy()
@@ -238,6 +238,9 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
                         'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
+    if len(X_mu_test):
+        transport_params['X_mu_test'] = X_mu_test
+
     ctransport_kernel = CondTransportKernel(transport_params)
     if len(X_mu_test):
         ctransport_kernel.X_mu_test = X_mu_test
@@ -246,15 +249,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .6):
-    X_mu_test = []
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 4, f = .6):
     models = []
     for i in range(n):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test)
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
         Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
-        X_mu_test = model.X_mu_test
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -265,7 +266,9 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
+
     test_sample = ref_gen(5 * N)
+    test_target_sample = target_gen(5 * N)
 
     trained_models = []
 
@@ -282,11 +285,13 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     for i in range(1, len(target_sample[0])):
         X_mu = target_sample[:, :i]
+        X_mu_test = test_target_sample[:, i:]
         Y_mu = target_sample[:, i]
         Y_eta = ref_sample[:,i]
         Y_eta_test = test_sample[:, i]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter,
+                                                 Y_eta_test = Y_eta_test, X_mu_test = X_mu_test))
     return trained_models
 
 
@@ -357,13 +362,14 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
-    range = [[-3,3],[-3,3]]
-    slice_range = [-3,3]
+    target_gen = mgan2
+    range = [[-2.5,2.5],[-1,1]]
+    slice_range = [-2.5,2.5]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_composed', N = 2000, n_iter = 4000,
-                              plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 6000,
+                              plt_range=range, slice_range= slice_range, process_funcs=process_funcs,
+                              slice_vals=[-1.1, 0, 1.1])
 
 
 if __name__=='__main__':
