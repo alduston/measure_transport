@@ -8,7 +8,7 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 import numpy as np
-
+import random
 
 
 def geq_1d(tensor):
@@ -170,9 +170,19 @@ class CondTransportKernel(nn.Module):
         return  self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 
+    def prob_add(self, t_1, t_2, p = .001):
+        T = []
+        for i in range(len(t_1)):
+            if random.random() < p:
+                T.append(t_2[i])
+            else:
+                T.append(t_1[i])
+        return torch.tensor(T, device= self.device).reshape(t_1.shape)
+
+
     def loss_test(self):
         eps = .01
-        x_mu = (1-eps)*torch.tensor( mgan2(len(self.Y_eta_test))[:,0]) + eps*self.X_mu
+        x_mu = self.prob_add(self.X_mu, torch.tensor( mgan2(len(self.Y_eta_test))[:,0]), eps)
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
