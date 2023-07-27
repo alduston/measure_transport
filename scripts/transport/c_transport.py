@@ -171,9 +171,8 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        #x_mu =  mgan2(len(self.Y_eta_test))[:,0] #self.X_mu
-        x_mu = self.X_mu
-        x_mu = torch.tensor(x_mu, device = self.device) + .001* torch.randn(x_mu.shape, device = self.device)
+        eps = .01
+        x_mu = (1-eps)*torch.tensor( mgan2(len(self.Y_eta_test))[:,0]) + eps*self.X_mu
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
