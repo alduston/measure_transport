@@ -171,8 +171,9 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu =  mgan2(len(self.Y_eta_test))[:,0] #self.X_mu
-        x_mu = torch.tensor(x_mu, device = self.device)
+        #x_mu =  mgan2(len(self.Y_eta_test))[:,0] #self.X_mu
+        x_mu = self.X_mu
+        x_mu = torch.tensor(x_mu, device = self.device) + .001* torch.randn(x_mu.shape)
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
@@ -256,7 +257,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
+        Y_eta_test = model.map(model.X_mu, model.Y_eta_test)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
