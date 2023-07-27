@@ -340,7 +340,7 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     Y_eta = ref_gen(N)
-    Y_eta_test = ref_gen(20 * N)
+    Y_eta_test = ref_gen(5 * N)
     Y_mu = target_gen(N)
 
     comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=6, f=.55)
