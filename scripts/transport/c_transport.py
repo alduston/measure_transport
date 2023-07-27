@@ -120,10 +120,6 @@ class CondTransportKernel(nn.Module):
 
 
     def map(self, x_mu, y_eta, no_x = False):
-        #if not len(self.X_mu_test):
-            #self.X_mu_test =  self.expand(x_mu, len(y_eta))
-        #if len(x_mu)!= len(y_eta):
-            #x_mu = self.X_mu_test
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         w = torch.concat([x_mu, y_eta], dim=1)
@@ -262,18 +258,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 6, f = 1):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 4, f = .6):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
         n_iter = int(n_iter * f)
-
-        X_mu = torch.tensor(mgan2(len(X_mu))[:, 0], device=model.device)
-        Y_eta = torch.tensor(sample_normal(len(X_mu))[:, 0], device=model.device)
-        X_mu_test = torch.tensor(mgan2(len(X_mu))[:, 0], device=model.device)
-
-        Y_eta = model.map(X_mu, Y_eta, no_x = True)
-        Y_eta_test = model.map(X_mu_test, model.Y_eta_test, no_x = True)
+        Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
+        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -335,8 +326,8 @@ def conditional_gen(trained_models, ref_sample, cond_sample):
     return X
 
 
-def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
-                              exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = []):
+
+def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', plt_range = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -347,30 +338,58 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
-    trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                          ,base_model_trainer=comp_base_kernel_transport
-                                          ,cond_model_trainer=comp_cond_kernel_transport)
 
-    gen_sample = compositional_gen(trained_models, ref_gen(N))
+    Y_eta = ref_gen(N)
+    Y_eta_test = ref_gen(N)
+    Y_mu = target_gen(N)
 
-    if len(slice_vals):
-        for slice_val in slice_vals:
-            ref_slice_sample = torch.full([N],  slice_val, device = trained_models[0].device)
-            slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
-            plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
-        plt.legend()
-        plt.savefig(f'{save_dir}/conditional_hists.png')
-        clear_plt()
+    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=5, f=.75)
+    gen_sample = comp_model.map(torch.tensor(Y_eta_test, device=comp_model.device))
 
-    if len(process_funcs):
-        backward = process_funcs[1]
-        gen_sample = backward(gen_sample.cpu())
+    sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
+    sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
 
-    d = len(gen_sample[0])
-    if d <=2:
-        sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
-        sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
     return True
+
+
+
+def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
+                           exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = []):
+     save_dir = f'../../data/kernel_transport/{exp_name}'
+     try:
+         os.mkdir(save_dir)
+     except OSError:
+         pass
+
+     l = l_scale(torch.tensor(ref_gen(N)[:, 1]))
+     mmd_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
+     fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
+     exp_params = {'fit': mmd_params, 'mmd': fit_params}
+
+     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
+                                           ,base_model_trainer=comp_base_kernel_transport
+                                           ,cond_model_trainer=comp_cond_kernel_transport)
+
+     gen_sample = compositional_gen(trained_models, ref_gen(N))
+
+     if len(slice_vals):
+         for slice_val in slice_vals:
+             ref_slice_sample = torch.full([N],  slice_val, device = trained_models[0].device)
+             slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
+             plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
+         plt.legend()
+         plt.savefig(f'{save_dir}/conditional_hists.png')
+         clear_plt()
+
+     if len(process_funcs):
+         backward = process_funcs[1]
+         gen_sample = backward(gen_sample.cpu())
+
+     d = len(gen_sample[0])
+     if d <=2:
+         sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
+         sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
+     return True
 
 #003641
 
@@ -380,14 +399,17 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
-    range = [[-2.5,2.5],[-1,1]]
-    slice_range = [-2.5,2.5]
-    process_funcs = []
+    target_gen = sample_spirals
+    range = [[-3,3],[-3,3]]
+
+    comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='exp', plt_range=range)
+
+    #slice_range = [-2.5,2.5]
+    #process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 8000,
-                              plt_range=range, slice_range= slice_range, process_funcs=process_funcs,
-                              slice_vals=[-1.1, 0, 1.1])
+    #conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 8000,
+                              #plt_range=range, slice_range= slice_range, process_funcs=process_funcs,
+                              #slice_vals=[-1.1, 0, 1.1])
 
 
 if __name__=='__main__':

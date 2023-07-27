@@ -236,8 +236,8 @@ class TransportKernel(nn.Module):
 
 
     def mmd(self, map_vec, target):
-        Y = target.reshape(len(target))
-        map_vec = map_vec.reshape(len(map_vec))
+        Y = target
+        #map_vec = map_vec.reshape(len(map_vec))
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
         mmd_ZY = self.mmd_kernel(map_vec, Y)
