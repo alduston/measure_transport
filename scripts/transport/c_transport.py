@@ -257,7 +257,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        Y_eta_test = model.map(model.X_mu, model.Y_eta_test)
+        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
