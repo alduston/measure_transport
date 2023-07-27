@@ -235,7 +235,7 @@ def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = 
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
         n_iter = int(n_iter * f)
-        Y_eta = model.map(torch.tensor(sample_normal(len(model.X), device = model.device))) #model.map(model.X)
+        Y_eta = model.map(torch.tensor(sample_normal(len(model.X)), device = model.device)) #model.map(model.X)
         Y_eta_test = model.map(model.Y_eta_test)
         models.append(model)
     return Comp_transport_model(models, cond=False)
