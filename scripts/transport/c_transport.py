@@ -235,7 +235,7 @@ def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = 
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
         n_iter = int(n_iter * f)
-        Y_eta = model.map(model.X)
+        Y_eta = model.map(torch.tensor(sample_normal(len(model.X), device = model.device))) #model.map(model.X)
         Y_eta_test = model.map(model.Y_eta_test)
         models.append(model)
     return Comp_transport_model(models, cond=False)
@@ -343,7 +343,7 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     Y_eta_test = ref_gen(N)
     Y_mu = target_gen(N)
 
-    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=5, f=.45)
+    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=6, f=.55)
 
     Y_eta_plot = ref_gen(100 * N)
     Y_mu_plot = target_gen(100 * N)
