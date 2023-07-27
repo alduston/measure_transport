@@ -176,7 +176,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
 
-        range = [[-2.5, 2.5], [-1.1, 1.1]]
+        range = [[-3, 3], [-3, 3]]
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]
 
@@ -221,7 +221,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =, f = .6):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =5, f = .6):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -265,7 +265,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
-    test_sample = ref_gen(20 * N)
+    test_sample = ref_gen(5 * N)
 
     trained_models = []
 
@@ -357,8 +357,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
-    range = [[-2.5,2.5],[-1,5]]
+    target_gen = sample_spirals
+    range = [[-3,3],[-3,3]]
     slice_range = [-3,3]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor]
