@@ -442,12 +442,11 @@ def compositional_gen(trained_models, ref_sample):
     for i in range(1, len(trained_models)):
         model = trained_models[i]
         #Y_eta = ref_sample[:, i]
-        X = model.map(X, model.Y_eta_test)
+        X = model.map(model.X_mu, model.Y_eta_test)
     return X
 
 
 def conditional_gen(trained_models, ref_sample, cond_sample):
-    ref_sample = geq_1d(ref_sample)
     X = geq_1d(cond_sample)
     #Y_eta = ref_sample[:, 0]
     for i in range(0, len(trained_models)):
@@ -491,7 +490,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
     d = len(gen_sample[0])
     if d <=2:
-        sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
+        #sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
         sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
     return True
 
@@ -508,7 +507,7 @@ def run():
     slice_range = [-3,3]
     process_funcs = []
     #process_funcs = [flip_2tensor, flip_2tensor ]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 3000, n_iter = 6005,
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_hybrid', N = 5000, n_iter = 8001,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
