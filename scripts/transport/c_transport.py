@@ -7,6 +7,7 @@ from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel
 from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 
@@ -71,6 +72,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
+        self.X_mu_test = []
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Nx = len(self.X)
 
@@ -111,7 +113,17 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
+    def expand(self, tensor, N):
+        n = len(tensor)
+        indexes = torch.tensor(np.random.choice(list(range(n)), size = N), device = self.device).long()
+        return tensor[indexes]
+
+
     def map(self, x_mu, y_eta, no_x = False):
+        if not len(self.X_mu_test):
+            self.X_mu_test =  self.expand(x_mu, len(y_eta))
+        if len(x_mu)!= len(y_eta):
+            x_mu = self.X_mu_test
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         w = torch.concat([x_mu, y_eta], dim=1)
@@ -163,15 +175,25 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(x_mu, y_eta)
+
+        range = [[-2.5, 2.5], [-1.1, 1.1]]
+        x_left, x_right = range[0]
+        y_bottom, y_top = range[1]
+
         plot_vec = map_vec.detach().cpu().numpy()
         x, y = plot_vec.T
-        plt.scatter(x, y, range=[[-2.5, 2.5], [-1, 5]])
+        s = 15 * np.ones(x.shape)
+        plt.scatter(x, y, s = 1)
+        plt.xlim(x_left, x_right)
+        plt.ylim(y_bottom, y_top)
         plt.savefig('c_output_scatter.png')
         clear_plt()
         if self.iters < 50:
             plot_vec = target.detach().cpu().numpy()
             x, y = plot_vec.T
-            plt.scatter(x, y, range=[[-2.5, 2.5], [-1, 5]])
+            plt.scatter(x, y, s = 1)
+            plt.xlim(x_left, x_right)
+            plt.ylim(y_bottom, y_top)
             plt.savefig('c_target_scatter.png')
             clear_plt()
 
@@ -186,216 +208,6 @@ class CondTransportKernel(nn.Module):
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
-
-
-class VAECondTransportKernel(nn.Module):
-    def __init__(self, base_params, device=None):
-        super().__init__()
-        if device:
-            self.device = device
-        else:
-            if torch.cuda.is_available():
-                self.device = 'cuda'
-            else:
-                self.device = 'cpu'
-        self.dtype = torch.float32
-        self.params = base_params
-        base_params['device'] = self.device
-
-        self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
-        self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
-        self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
-        self.Nx = len(self.X)
-
-        self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
-        self.Ny = len(self.Y)
-        self.eps = self.get_eps(self.Y_mu)
-
-        self.test = False
-        if 'Y_eta_test' in base_params.keys():
-            self.test = True
-            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
-
-        self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
-        self.fit_kXX = self.fit_kernel(self.X, self.X)
-
-        self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
-        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
-
-        self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
-        self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
-        self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
-
-        n = len(self.Y_mu[0])
-        self.t_idx = torch.tril_indices(row=n, col=n, offset=0)
-
-        self.alpha_z = self.p_vec(self.Nx)
-        self.alpha_y = self.p_vec(self.Ny)
-        self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
-        self.iters = 0
-
-
-    def p_vec(self, n):
-        return torch.full([n], 1 / n, device=self.device, dtype=self.dtype)
-
-
-    def get_sig_base(self, n):
-        sig_base = []
-        for i in range(n):
-            sig_base += [0.0]*i
-            sig_base += [1.0]
-        return sig_base
-
-
-    def init_Z(self):
-        n = len(self.Y_mu[0])
-        N = self.Nx
-        Z_mean = torch.zeros([N,n], device=self.device, dtype=self.dtype)
-        sig_base = self.get_sig_base(n)
-        sig_base = torch.tensor(sig_base, device=self.device, dtype=self.dtype)
-
-        ly = l_scale(self.Y_mu)
-        Z_var = .5 * ly * torch.stack([sig_base for i in range(N)])
-        Z = torch.concat([Z_mean, Z_var], dim=1)
-        return Z
-
-
-    def v_to_lt(self, V, n = 0, t_idx = []):
-        N = len(V)
-        if not n:
-            n = V.shape[1]-1
-        if not len(t_idx):
-            t_idx = torch.tril_indices(row=n, col=n, offset=0)
-        m = torch.zeros((N, n, n), device = self.device, dtype = self.dtype)
-        m[:, t_idx[0], t_idx[1]] = V
-        return m
-
-
-    def get_mu_sig(self, Z = []):
-        n = len(self.Y_mu[0])
-        self.nx = n
-        if not len(Z):
-            Z = self.Z
-        mu = Z[:, :n]
-        sig_vs = Z[:, n:]
-
-        t_idx = self.t_idx
-        sig_ltms = self.v_to_lt(sig_vs,n,t_idx)
-        sig_ltms_T = torch.transpose(sig_ltms,1,2)
-
-        sig_ms = torch.matmul(sig_ltms, sig_ltms_T)
-        return mu, sig_ms
-
-
-    def get_sample(self, params = {}):
-        if not len(params):
-            mu,sig = self.get_mu_sig()
-            params = {'mu': mu, 'sig': sig, 'eps': self.eps}
-
-        eps = torch.unsqueeze(self.eps,2)
-        diffs = torch.matmul(params['sig'], eps)
-        Z_sample = params['mu'] + diffs.reshape(diffs.shape[:-1])
-        return Z_sample
-
-
-    def get_eps(self, x):
-        eps_shape = list(x.shape)
-        return torch.randn(eps_shape, device=self.device, dtype=self.dtype)
-
-
-    def get_Lambda(self):
-        return self.fit_kXX_inv @ self.Z
-
-
-    def map(self, x_mu, y_eta, no_x = False):
-        y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
-        x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
-        w = torch.concat([x_mu, y_eta], dim=1)
-        Lambda = self.get_Lambda()
-        z = self.fit_kernel(self.X, w).T @ Lambda
-        mu, sig = self.get_mu_sig(z)
-        eps = self.get_eps(y_eta)
-        z_sample = self.get_sample({'mu': mu, 'sig': sig, 'eps': eps})
-        if no_x:
-            return z_sample + y_eta
-        return torch.concat([x_mu, z_sample + y_eta], dim = 1)
-
-
-    def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_eta + self.get_sample()], dim=1)
-        target = self.Y
-
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
-
-        alpha_z = self.alpha_z
-        alpha_y = self.alpha_y
-
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = self.E_mmd_YY
-        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-
-
-    def mmd(self, map_vec, target):
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
-        mmd_YY = self.mmd_kernel(target, target)
-
-        alpha_z = self.p_vec(len(map_vec))
-        alpha_y = self.p_vec(len(target))
-
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = alpha_y @ mmd_YY @ alpha_y
-
-        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-
-
-    def loss_test(self):
-        x_mu = self.X_mu
-        y_eta = self.Y_eta_test
-        target = self.Y
-        map_vec = self.map(x_mu, y_eta)
-
-        plot_vec = map_vec.detach().cpu().numpy()
-        x, y = plot_vec.T
-        plt.scatter(x,y, range = [[-2.5,2.5], [-1,5]])
-        plt.savefig('c_output_scatter.png')
-        clear_plt()
-        if self.iters< 50:
-            plot_vec = target.detach().cpu().numpy()
-            x,y = plot_vec.T
-            plt.scatter(x,y, range = [[-2.5,2.5], [-1,5]])
-            plt.savefig('c_target_scatter.png')
-            clear_plt()
-
-        return self.mmd(map_vec, target)
-
-
-    def loss_reg(self):
-        Z = geq_1d(self.Z)
-        mu = Z[:, :self.nx]
-        sig_vs = Z[:, self.nx:]
-
-        mu_error = torch.trace(mu.T @ self.fit_kXX_inv @ mu)
-        sig_error = torch.trace(sig_vs.T @ self.fit_kXX_inv @ sig_vs)
-        return  self.params['reg_lambda'] * (mu_error + sig_error)
-
-
-    def loss(self):
-        loss_mmd = self.loss_mmd()
-        loss_reg = self.loss_reg()
-
-
-        loss = loss_mmd + loss_reg
-        loss_dict = {'fit': loss_mmd.detach().cpu(),
-                     'reg': loss_reg.detach().cpu(),
-                     'total': loss.detach().cpu()}
-        return loss, loss_dict
-
-
 
 
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
@@ -409,21 +221,10 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
-    transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
-                   'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
-    if len(Y_eta_test):
-        transport_params['Y_eta_test'] = Y_eta_test
-    transport_kernel = VAETransportKernel(transport_params)
-    train_kernel(transport_kernel, n_iter=n_iter)
-    return transport_kernel
-
-
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = 1):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =, f = .6):
     models = []
     for i in range(n):
-        model = base_VAEkernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
+        model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X)
         Y_eta_test = model.map(model.Y_eta_test)
@@ -431,36 +232,29 @@ def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = 
     return Comp_transport_model(models, cond=False)
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = [], X_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                         'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     ctransport_kernel = CondTransportKernel(transport_params)
+    if len(X_mu_test):
+        ctransport_kernel.X_mu_test = X_mu_test
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def cond_VAEkernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
-                        'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                        'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
 
-    if len(Y_eta_test):
-        transport_params['Y_eta_test'] = Y_eta_test
-    ctransport_kernel = VAECondTransportKernel(transport_params)
-    train_kernel(ctransport_kernel, n_iter)
-    return ctransport_kernel
-
-
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], n = 3, f = 1):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .6):
+    X_mu_test = []
     models = []
     for i in range(n):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test)
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
         Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
+        X_mu_test = model.X_mu_test
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -471,7 +265,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
-    test_sample = ref_gen(N)
+    test_sample = ref_gen(20 * N)
 
     trained_models = []
 
@@ -545,7 +339,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         plt.savefig(f'{save_dir}/conditional_hists.png')
         clear_plt()
 
-
     if len(process_funcs):
         backward = process_funcs[1]
         gen_sample = backward(gen_sample.cpu())
@@ -564,12 +357,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_banana
+    target_gen = mgan2
     range = [[-2.5,2.5],[-1,5]]
     slice_range = [-3,3]
     process_funcs = []
-    process_funcs = [flip_2tensor, flip_2tensor]
-    conditional_transport_exp(ref_gen, target_gen, exp_name= 'banana_composed', N = 10, n_iter = 100,
+    #process_funcs = [flip_2tensor, flip_2tensor]
+    conditional_transport_exp(ref_gen, target_gen, exp_name= 'spiral_composed', N = 3000, n_iter = 5000,
                               plt_range=range, slice_range= slice_range, process_funcs=process_funcs, slice_vals=[0])
 
 
