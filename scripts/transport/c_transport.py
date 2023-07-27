@@ -120,10 +120,10 @@ class CondTransportKernel(nn.Module):
 
 
     def map(self, x_mu, y_eta, no_x = False):
-        if not len(self.X_mu_test):
-            self.X_mu_test =  self.expand(x_mu, len(y_eta))
-        if len(x_mu)!= len(y_eta):
-            x_mu = self.X_mu_test
+        #if not len(self.X_mu_test):
+            #self.X_mu_test =  self.expand(x_mu, len(y_eta))
+        #if len(x_mu)!= len(y_eta):
+            #x_mu = self.X_mu_test
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         w = torch.concat([x_mu, y_eta], dim=1)
@@ -267,7 +267,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    test_sample = ref_gen(5 * N)
+    test_sample = ref_gen(N)
     test_target_sample = target_gen(5 * N)
 
     trained_models = []
