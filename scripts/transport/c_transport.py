@@ -211,7 +211,7 @@ class VAECondTransportKernel(nn.Module):
         sig_base = torch.tensor(sig_base, device=self.device, dtype=self.dtype)
 
         ly = l_scale(self.Y_mu)
-        Z_var = ly * torch.stack([sig_base for i in range(N)])
+        Z_var = .5 * ly * torch.stack([sig_base for i in range(N)])
         Z = torch.concat([Z_mean, Z_var], dim=1)
         return Z
 
