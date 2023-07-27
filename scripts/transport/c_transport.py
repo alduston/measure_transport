@@ -365,9 +365,9 @@ def hybrid_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test 
     print('\n')
     Y_eta_sig = mu_kernel.map(mu_kernel.X)
     Y_eta_sig_test = mu_kernel.map(mu_kernel.Y_eta_test)
-    base_kernel_transport(Y_eta_sig, Y_mu, params, n_iter//3, Y_eta_sig_test)
+    base_kernel_transport(Y_eta_sig, Y_mu, params, int(n_iter * (2/3)), Y_eta_sig_test)
     print('\n')
-    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, n_iter//3 , Y_eta_sig_test)
+    return base_VAEkernel_transport(Y_eta_sig, Y_mu, params, int(n_iter * (2/3)) , Y_eta_sig_test)
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = []):
@@ -397,9 +397,9 @@ def hybrid_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_et
     print('\n')
     Y_eta_sig = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta)[:, -1]
     Y_eta_sig_test = mu_kernel.map(mu_kernel.X_mu, mu_kernel.Y_eta_test)[:, -1]
-    cond_kernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//3, Y_eta_sig_test)
+    cond_kernel_transport(X_mu, Y_mu, Y_eta_sig, params, int(n_iter * (2/3)), Y_eta_sig_test)
     print('\n')
-    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, n_iter//3 , Y_eta_sig_test)
+    return cond_VAEkernel_transport(X_mu, Y_mu, Y_eta_sig, params, int(n_iter * (2/3)) , Y_eta_sig_test)
 
 
 
