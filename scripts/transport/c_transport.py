@@ -345,8 +345,8 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
     comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=6, f=.55)
 
-    Y_eta_plot = ref_gen(100 * N)
-    Y_mu_plot = target_gen(100 * N)
+    Y_eta_plot = ref_gen(25 * N)
+    Y_mu_plot = target_gen(25 * N)
     gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
 
 
