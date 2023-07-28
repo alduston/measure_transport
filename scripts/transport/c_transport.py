@@ -207,7 +207,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =10, f = .9):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =3, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -237,7 +237,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 10, f = .9):
+                               X_mu_test = [],Y_mu_test = [], n = 3, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -326,7 +326,7 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     Y_eta_test = ref_gen(5 * N)
     Y_mu = target_gen(N)
 
-    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=10, f=.9)
+    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=3, f=.5)
 
     Y_eta_plot = ref_gen(25 * N)
     Y_mu_plot = target_gen(25 * N)
@@ -390,9 +390,10 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
+
     range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=1001, n_iter=1001, slice_vals=[0],
+    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=101, slice_vals=[0],
                               exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
