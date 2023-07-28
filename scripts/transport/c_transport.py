@@ -183,6 +183,36 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
+
+        range = [[-3, 3], [-3, 3]]
+        x_left, x_right = range[0]
+        y_bottom, y_top = range[1]
+
+        plot_vec = map_vec.detach().cpu().numpy()
+        x, y = plot_vec.T
+        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+        plt.savefig('output_map.png')
+        clear_plt()
+
+        plt.scatter(x, y, s=5)
+        plt.xlim(x_left, x_right)
+        plt.ylim(y_bottom, y_top)
+        plt.savefig('output_scatter.png')
+        clear_plt()
+
+        if self.iters < 50:
+            plot_vec = target.detach().cpu().numpy()
+            x, y = plot_vec.T
+            plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+            plt.savefig('target_map.png')
+            clear_plt()
+
+            plt.scatter(x, y, s=5)
+            plt.xlim(x_left, x_right)
+            plt.ylim(y_bottom, y_top)
+            plt.savefig('target_scatter.png')
+            clear_plt()
+
         return self.mmd(map_vec, target)
 
 
