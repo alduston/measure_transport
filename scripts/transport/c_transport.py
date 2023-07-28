@@ -262,6 +262,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
+        reg_test(model, X_mu, Y_eta)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
         Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
@@ -291,7 +292,6 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     Y_mu = target_sample[:, 0]
     #trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
 
-
     for i in range(1, len(target_sample[0])):
         X_mu = target_sample[:, :i]
         X_mu_test = test_target_sample[:, i:]
@@ -301,8 +301,20 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter,
                                                  Y_eta_test = Y_eta_test, X_mu_test = X_mu_test))
+
     return trained_models
 
+def reg_test(model, X_mu, Y_eta):
+    x = X_mu[:5]
+    y = Y_eta[:5]
+
+    x_alt = x + .1 * torch.randn(x.shape, device = model.device)
+
+    input_diffs = x_alt - x
+    output_diffs = model.map(x,y) - model.map(x_alt, y)
+
+    diff_ratio = torch.sum(output_diffs **2)/torch.sum(input_diffs **2)
+    print(f'Diff ratio was {diff_ratio}')
 
 def compositional_gen(trained_models, ref_sample):
     ref_sample = geq_1d(ref_sample)
@@ -343,7 +355,7 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     Y_eta_test = ref_gen(5 * N)
     Y_mu = target_gen(N)
 
-    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=6, f=.55)
+    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=10, f=.9)
 
     Y_eta_plot = ref_gen(25 * N)
     Y_mu_plot = target_gen(25 * N)
@@ -409,7 +421,10 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
 
-    comp_gen_exp(ref_gen, target_gen, N=5000, n_iter=6001, exp_name='spiral_composed', plt_range=range, vmax = .15)
+    #comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='spiral_composed', plt_range=range)
+
+    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0],
+                              exp_name='exp', plt_range=None, slice_range=None, process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
