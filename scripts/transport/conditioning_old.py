@@ -163,6 +163,10 @@ class CondTransportKernel(nn.Module):
         x_mu = self.Z_ref
         target = self.W_target
         map_vec = self.map(x_mu, y_eta)
+        plot_test(self, map_vec, target, x_mu, y_eta,
+                  plt_range=[[-3, 3], [-3, 3]], vmax=.16,
+                  slice_vals=[0], slice_range=[-3, 3],
+                  exp_name='ring_exp')
         return self.mmd(map_vec, target)
 
 
@@ -175,6 +179,52 @@ class CondTransportKernel(nn.Module):
                      'total': loss.detach().cpu()}
         return loss, loss_dict
 
+def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None,
+              slice_vals= [0], slice_range = None, exp_name = 'exp', flip = False):
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    for slice_val in slice_vals:
+        x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
+        y = model.map(x_slice, y_eta, no_x = True).detach().cpu().numpy()
+        plt.hist(y, bins=60, range=slice_range, label=f'z = {slice_val}')
+    plt.legend()
+    plt.savefig(f'{save_dir}/slice_hist.png')
+    clear_plt()
+
+    range = plt_range
+    x_left, x_right = range[0]
+    y_bottom, y_top = range[1]
+
+    if flip:
+        map_vec = flip_2tensor(map_vec)
+        target = flip_2tensor(target)
+
+    plot_vec = map_vec.detach().cpu().numpy()
+    x, y = plot_vec.T
+    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=vmax)
+    plt.colorbar()
+    plt.savefig(f'{save_dir}/output_map.png')
+    clear_plt()
+
+    plt.scatter(x, y, s=5)
+    plt.xlim(x_left, x_right)
+    plt.ylim(y_bottom, y_top)
+    plt.savefig(f'{save_dir}/output_scatter.png')
+    clear_plt()
+
+    if model.iters < 50:
+        plot_vec = target.detach().cpu().numpy()
+        x, y = plot_vec.T
+        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=vmax)
+        plt.colorbar()
+        plt.savefig(f'{save_dir}/target_map.png')
+        clear_plt()
+
+        plt.scatter(x, y, s=5)
+        plt.xlim(x_left, x_right)
+        plt.ylim(y_bottom, y_top)
+        plt.savefig(f'{save_dir}/target_scatter.png')
+        clear_plt()
+    return True
 
 
 def U_KL(sample, unif_range = [-3,3]):
@@ -195,8 +245,6 @@ def U_KL(sample, unif_range = [-3,3]):
     densitys = np.asarray(densitys)
     KL_div = np.sum(np.log(1 / densitys))
     return KL_div
-
-
 
 
 
