@@ -201,12 +201,10 @@ class CondTransportKernel(nn.Module):
 
 def mgan2_plot_test(model, map_vec, target, x_mu, y_eta, exp_name = 'mgan2_composed'):
     save_dir = f'../../data/kernel_transport/{exp_name}'
-    slice_vals = [-1.1, 0, 1.1]
+    slice_vals = [-1.1, 0.0, 1.1]
     for slice_val in slice_vals:
         x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
-        slice_map_vec = model.map(x_slice, y_eta)
-        slice_plot_vec = slice_map_vec.detach().cpu().numpy()
-        x, y = slice_plot_vec.T
+        y = model.map(x_slice, y_eta, no_x = True).detach().cpu().numpy()
         plt.hist(y, bins=60, range=[-1.5, 1.5], label=f'z = {slice_val}')
     plt.legend()
     plt.savefig(f'{save_dir}/slice_hist.png')
