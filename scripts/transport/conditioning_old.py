@@ -338,7 +338,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
                         'nugget': 1e-4, 'Y_eta_test': Y_test,  'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
-    train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)
+    train_kernel(cond_transport_kernel, n_iter=  t_iter)
     sample = cond_transport_kernel.map(X_target, Y_ref)
 
     slice_samples = []
