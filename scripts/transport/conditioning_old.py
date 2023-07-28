@@ -88,6 +88,13 @@ class CondTransportKernel(nn.Module):
         self.alpha_y = (1 / self.n) * torch.ones(self.n, device=self.device, dtype=self.dtype)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
+        self.test = False
+        if 'Y_eta_test' in base_params.keys():
+            self.test = True
+            self.Y_eta_test = torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype)
+
+    def p_vec(self, n):
+        return torch.full([n], 1 / n, device=self.device, dtype=self.dtype)
 
     def init_Z(self):
         return 0 * deepcopy(self.Y_target - self.Y_ref)
@@ -112,6 +119,19 @@ class CondTransportKernel(nn.Module):
         res = torch.concat([res_y, z], dim = 1)
         return res
 
+    def mmd(self, map_vec, target):
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, target)
+        mmd_YY = self.mmd_kernel(target, target)
+
+        alpha_z = self.p_vec(len(map_vec))
+        alpha_y = self.p_vec(len(target))
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+
+        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
     def loss_mmd(self):
         map_vec = torch.concat([self.Z_ref, self.Y_ref + self.Z], dim = 1)
@@ -136,6 +156,14 @@ class CondTransportKernel(nn.Module):
             return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kref_inv @ Z)
         except BaseException:
             return self.params['reg_lambda'] * Z.T @ self.fit_kref_inv @ Z
+
+
+    def loss_test(self):
+        y_eta = self.Y_eta_test
+        x_mu = self.Z_ref
+        target = self.W_target
+        map_vec = self.map(x_mu, y_eta)
+        return self.mmd(map_vec, target)
 
 
     def loss(self):
@@ -284,6 +312,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
     Y_ref = ref_sample[:, 1]
     Y_target = target_sample[:, 1]
     X_test = test_sample[:, 0]
+    Y_test = test_sample[:, 1]
 
     l = l_scale(X_ref)
 
@@ -306,7 +335,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
     cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                         'fit_kernel_params': params['mmd'],'mmd_kernel_params': params['fit'], 'normalize': False,
                         'reg_lambda':  1e-5, 'print_freq': 100, 'learning_rate': .06,
-                        'nugget': 1e-4, 'X_tilde': X_target, 'alpha_y': [], 'alpha_x': False}
+                        'nugget': 1e-4, 'Y_eta_test': Y_test,  'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
     train_kernel(cond_transport_kernel, n_iter= 4 * t_iter)

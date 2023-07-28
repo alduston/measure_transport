@@ -270,6 +270,7 @@ class TransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y
         map_vec = self.map(y_eta)
+        return self.mmd(map_vec, target)
         '''
         plt.hist(map_vec.detach().cpu().numpy(), bins=40, range=[-1, 5])
         plt.savefig('output_hist.png')
@@ -279,7 +280,6 @@ class TransportKernel(nn.Module):
             plt.savefig('target_hist.png')
             clear_plt()
         '''
-        return self.mmd(map_vec, target)
 
 
     def loss(self):
