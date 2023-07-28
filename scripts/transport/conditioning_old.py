@@ -274,6 +274,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(N))
     target_sample = torch.tensor(target_gen(N)).T
     if target_sample.shape[0]!= max(target_sample.shape):
         target_sample = target_sample.T
@@ -282,6 +283,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
     X_target = target_sample[:,0]
     Y_ref = ref_sample[:, 1]
     Y_target = target_sample[:, 1]
+    X_test = test_sample[:, 0]
 
     l = l_scale(X_ref)
 
@@ -294,7 +296,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
     transport_params = {'X': X_ref, 'Y':  X_target, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params':  params['mmd'], 'normalize': False,
                         'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
-                         'nugget': 1e-4, 'X_tilde': X_ref, 'alpha_y': [], 'alpha_x': False}
+                         'nugget': 1e-4, 'Y_eta_test': X_test, 'alpha_y': [], 'alpha_x': False}
 
     transport_kernel = TransportKernel(transport_params)
     train_kernel(transport_kernel, n_iter=t_iter)
