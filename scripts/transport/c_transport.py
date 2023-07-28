@@ -265,7 +265,6 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
     return ctransport_kernel
 
 
-
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
                                X_mu_test = [],Y_mu_test = [], n = 4, f = .5):
     models = []
@@ -277,7 +276,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
         Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
-
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,process_funcs = [],
@@ -313,7 +311,6 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                                  Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
-
     return trained_models
 
 
@@ -423,12 +420,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan1
+    target_gen = sample_spirals
 
-    range = [[-2.5,2.5],[-1.1,3]]
+    range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1, 0, 1.1], vmax = .5,
-                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1,2], process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
+                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
