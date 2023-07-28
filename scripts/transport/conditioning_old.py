@@ -109,15 +109,18 @@ class CondTransportKernel(nn.Module):
         return self.fit_kref_inv @ (self.Z)
 
 
-    def map(self, z, y):
+    def map(self, z, y, no_x = False):
         y = geq_1d(torch.tensor(y, device=self.device, dtype=self.dtype))
         z = geq_1d(torch.tensor(z, device=self.device, dtype=self.dtype))
         zy = torch.concat([z, y], dim=1)
         Lambda = self.get_Lambda()
         w = self.fit_kernel(self.W_ref, zy).T @ Lambda
         res_y = w + y
+        if no_x:
+            return res_y
         res = torch.concat([res_y, z], dim = 1)
         return res
+
 
     def mmd(self, map_vec, target):
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -159,8 +162,8 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        y_eta = self.Y_eta_test
-        x_mu = self.Z_ref
+        y_eta = self.Y_ref
+        x_mu = self.X_target
         target = self.W_target
         map_vec = self.map(x_mu, y_eta)
         plot_test(self, map_vec, target, x_mu, y_eta,
@@ -178,6 +181,7 @@ class CondTransportKernel(nn.Module):
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
+
 
 def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None,
               slice_vals= [0], slice_range = None, exp_name = 'exp', flip = False):
@@ -200,7 +204,7 @@ def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None
 
     plot_vec = map_vec.detach().cpu().numpy()
     x, y = plot_vec.T
-    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=vmax)
+    plt.hist2d(x, y, density=True, bins=25, range=range, cmin=0, vmin=0, vmax=vmax)
     plt.colorbar()
     plt.savefig(f'{save_dir}/output_map.png')
     clear_plt()
@@ -351,9 +355,12 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
 
     ref_sample = torch.tensor(ref_gen(N))
     test_sample = torch.tensor(ref_gen(N))
+
     target_sample = torch.tensor(target_gen(N)).T
+    test_target_sample = torch.tensor(target_gen(N)).T
     if target_sample.shape[0]!= max(target_sample.shape):
         target_sample = target_sample.T
+        test_target_sample = test_target_sample.T
 
     X_ref = ref_sample[:,0]
     X_target = target_sample[:,0]
@@ -361,6 +368,9 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
     Y_target = target_sample[:, 1]
     X_test = test_sample[:, 0]
     Y_test = test_sample[:, 1]
+
+    X_target_test = test_target_sample[:,0]
+    Y_target_test = test_target_sample[:,1]
 
     l = l_scale(X_ref)
 
@@ -372,25 +382,24 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
 
     transport_params = {'X': X_ref, 'Y':  X_target, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params':  params['mmd'], 'normalize': False,
-                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .1,
+                        'reg_lambda': 1e-5, 'print_freq': 100, 'learning_rate': .01,
                          'nugget': 1e-4, 'Y_eta_test': X_test, 'alpha_y': [], 'alpha_x': False}
 
-    transport_kernel = TransportKernel(transport_params)
-    train_kernel(transport_kernel, n_iter=t_iter)
-
-    Z_ref = transport_kernel.map(X_ref).T
+    #transport_kernel = TransportKernel(transport_params)
+    #train_kernel(transport_kernel, n_iter=t_iter)
+    #Z_ref = transport_kernel.map(X_ref).T
 
     cond_transport_params = {'Z_ref': X_target, 'Y_ref': Y_ref, 'X_target': X_target, 'Y_target': Y_target,
                         'fit_kernel_params': params['mmd'],'mmd_kernel_params': params['fit'], 'normalize': False,
-                        'reg_lambda':  1e-5, 'print_freq': 100, 'learning_rate': .06,
+                        'reg_lambda':  1e-5, 'print_freq': 100, 'learning_rate': .01,
                         'nugget': 1e-4, 'Y_eta_test': Y_test,  'alpha_y': [], 'alpha_x': False}
 
     cond_transport_kernel = CondTransportKernel(cond_transport_params)
     train_kernel(cond_transport_kernel, n_iter=  t_iter)
-    sample = cond_transport_kernel.map(X_target, Y_ref)
+    sample = cond_transport_kernel.map(X_target_test, Y_test)
 
     slice_samples = []
-    N = len(Z_ref)
+    N = len(X_ref)
 
     #slice_vals =  [-1.1, 0, 1.1]
     slice_vals = [0]
@@ -398,22 +407,22 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
         z_slice = torch.full([10000], z)
         idxs = torch.LongTensor(random.choices(list(range(N)), k=10000))
 
-        slice_sample = cond_transport_kernel.map(z_slice ,Y_ref[idxs])
+        slice_sample = cond_transport_kernel.map(z_slice ,Y_test[idxs], no_x=True)
         slice_samples.append(slice_sample)
 
     for i,csample in enumerate(slice_samples):
-        csample = csample.T[0].T
+        #csample = csample.T[0].T
         plt.hist(csample.detach().cpu().numpy(), label = f'z = {slice_vals[i]}', bins = 60)
     plt.legend()
     plt.savefig(f'{save_dir}/cond_hist.png')
     clear_plt()
 
-    target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
-    sample = flip_2tensor(sample.detach())
+    sample = sample.detach()
 
     sample_scatter(sample, f'{save_dir}/cond_sample.png', bins=25, d=2, range = plt_range)
-    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=25, d=2, range = plt_range)
+    sample_hmap(sample, f'{save_dir}/cond_sample_map.png', bins=50, d=2, range = plt_range, vmax = .16)
 
+    target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = plt_range)
     sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = plt_range)
 
@@ -438,7 +447,7 @@ def run():
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
     range = [[-3,3], [-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=5001,
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=6001,
                               exp_name='ring_exp', params=exp_params, plt_range=range)
 
 

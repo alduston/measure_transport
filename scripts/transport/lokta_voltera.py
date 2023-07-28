@@ -3,7 +3,7 @@ from scipy.integrate import odeint
 from scipy.stats import lognorm
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
-
+import torch
 
 class DeterministicLotkaVolterra:
     def __init__(self, T):
@@ -104,9 +104,9 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20):
     X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
 
-    X = np.real(X)[:Xd]
-    Y = np.real(Y)[: Yd]
-    return X, Y
+    X = torch.tensor(np.real(X)[:Xd])
+    Y = torch.tensor(np.real(Y)[: Yd])
+    return torch.concat([X,Y], dim = 1)
 
 
 if __name__ == '__main__':
