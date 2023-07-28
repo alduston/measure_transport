@@ -184,6 +184,13 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
 
+        slice_map_vec = self.map(0 * x_mu, y_eta)
+        slice_plot_vec = slice_map_vec.detach().cpu().numpy()
+        x, y = slice_plot_vec.T
+        plt.hist(y, bins=60, range=[-3,3])
+        plt.savefig('slice_hist.png')
+        clear_plt()
+
         range = [[-3, 3], [-3, 3]]
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]
