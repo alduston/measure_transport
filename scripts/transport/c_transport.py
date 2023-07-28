@@ -207,7 +207,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = .5):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 1, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -237,7 +237,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 3, f = .5):
+                               X_mu_test = [],Y_mu_test = [], n = 1, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -343,7 +343,7 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
 
 
-def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [],
+def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [], vmax = None,
                            exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = []):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
@@ -378,7 +378,11 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      d = len(gen_sample[0])
      if d <=2:
          sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
+         sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
+
          sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
+         sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
+
      return True
 
 #003641
@@ -393,8 +397,8 @@ def run():
 
     range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0],
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=10001, slice_vals=[0], vmax = .14,
+                              exp_name='spiral', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
