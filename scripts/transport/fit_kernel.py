@@ -43,12 +43,12 @@ def train_kernel(kernel_model, n_iter = 100):
     Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
     if kernel_model.test:
         Loss_dict['test'] = []
-    kernel_model.train()
     for i in range(n_iter):
         loss, loss_dict = train_step(kernel_model, optimizer)
         Loss_dict = update_list_dict(Loss_dict, loss_dict)
         if not i % kernel_model.params['print_freq']:
             print_str = f'At step {i}: fit_loss = {round(float((loss_dict["fit"])),6)},' + f' reg_loss = {round(float(loss_dict["reg"]),6)}'
+            kernel_model.eval()
             test_loss = kernel_model.loss_test().detach().cpu()
             print_str += f', test loss = {round(float(test_loss),6)}'
             print(print_str)
@@ -56,6 +56,7 @@ def train_kernel(kernel_model, n_iter = 100):
 
 
 def train_step(kernel_model, optimizer):
+    kernel_model.train()
     optimizer.zero_grad()
     loss, loss_dict = kernel_model.loss()
     loss.backward()

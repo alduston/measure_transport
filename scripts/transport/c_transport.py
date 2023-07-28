@@ -94,6 +94,8 @@ class CondTransportKernel(nn.Module):
             self.test = True
             self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
             self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
+            self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
+            self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
@@ -178,21 +180,31 @@ class CondTransportKernel(nn.Module):
 
     def loss_test(self):
 
-        x_mu = torch.tensor(mgan2(len(self.Y_eta_test))[:,0], device = self.device)
-        #x_mu = self.X_mu
+        #x_mu = torch.tensor(mgan2(len(self.Y_eta_test))[:,0], device = self.device)
+        #x_mu = self.X_mu_test
 
+        #y_eta = self.Y_eta_test
+        #target = self.Y_test
+
+        x_mu = self.X_mu_test
         y_eta = self.Y_eta_test
-        target = self.Y
+        target = self.Y_test
+
         map_vec = self.map(x_mu, y_eta)
 
-        range = [[-2.5, 2.5], [-1.1, 1]]
+        if self.iters < 50:
+            print(torch.concat([self.X_mu_test,self.Y_eta_test],dim = 1)[0])
+            print(map_vec[0])
+
+        #map_vec = self.map(x_mu, y_eta)
+
+        range = [[-3, 3], [-3, 3]]
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]
 
         plot_vec = map_vec.detach().cpu().numpy()
         x, y = plot_vec.T
-        s = 15 * np.ones(x.shape)
-        plt.scatter(x, y, s = 1)
+        plt.scatter(x, y, s = 5)
         plt.xlim(x_left, x_right)
         plt.ylim(y_bottom, y_top)
         plt.savefig('c_output_scatter_1.png')
@@ -200,7 +212,7 @@ class CondTransportKernel(nn.Module):
         if self.iters < 50:
             plot_vec = target.detach().cpu().numpy()
             x, y = plot_vec.T
-            plt.scatter(x, y, s = 1)
+            plt.scatter(x, y, s = 5)
             plt.xlim(x_left, x_right)
             plt.ylim(y_bottom, y_top)
             plt.savefig('c_target_scatter.png')
@@ -230,7 +242,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =5, f = .6):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =10, f = .9):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -241,7 +253,8 @@ def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = 
     return Comp_transport_model(models, cond=False)
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = [], X_mu_test = []):
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = [], X_mu_test = [],
+                          Y_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
                         'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
@@ -249,23 +262,24 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
         transport_params['Y_eta_test'] = Y_eta_test
     if len(X_mu_test):
         transport_params['X_mu_test'] = X_mu_test
+    if len(Y_mu_test):
+        transport_params['Y_mu_test'] = Y_mu_test
 
     ctransport_kernel = CondTransportKernel(transport_params)
-    if len(X_mu_test):
-        ctransport_kernel.X_mu_test = X_mu_test
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [], X_mu_test = [], n = 4, f = .6):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
+                               X_mu_test = [],Y_mu_test = [], n = 10, f = .9):
     models = []
     for i in range(n):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test, X_mu_test = X_mu_test)
-        reg_test(model, X_mu, Y_eta)
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
+                                                    X_mu_test = X_mu_test, Y_mu_test = Y_mu_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        Y_eta_test = model.map(model.X_mu, model.Y_eta_test, no_x = True)
+        Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -277,7 +291,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    test_sample = ref_gen(N)
+    test_sample = ref_gen(5 * N)
     test_target_sample = target_gen(5 * N)
 
     trained_models = []
@@ -290,31 +304,23 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001,pr
     Y_eta = ref_sample[:, 0]
     Y_eta_test = test_sample[:, 0]
     Y_mu = target_sample[:, 0]
-    #trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
+    trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
 
     for i in range(1, len(target_sample[0])):
         X_mu = target_sample[:, :i]
-        X_mu_test = test_target_sample[:, i:]
+        X_mu_test = test_target_sample[:, :i]
+
         Y_mu = target_sample[:, i]
+        Y_mu_test = test_target_sample[:, i]
+
         Y_eta = ref_sample[:,i]
         Y_eta_test = test_sample[:, i]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter,
-                                                 Y_eta_test = Y_eta_test, X_mu_test = X_mu_test))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
+                                                 Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
 
     return trained_models
 
-def reg_test(model, X_mu, Y_eta):
-    x = X_mu[:5]
-    y = Y_eta[:5]
-
-    x_alt = x + .1 * torch.randn(x.shape, device = model.device)
-
-    input_diffs = x_alt - x
-    output_diffs = model.map(x,y) - model.map(x_alt, y)
-
-    diff_ratio = torch.sum(output_diffs **2)/torch.sum(input_diffs **2)
-    print(f'Diff ratio was {diff_ratio}')
 
 def compositional_gen(trained_models, ref_sample):
     ref_sample = geq_1d(ref_sample)
@@ -389,7 +395,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
                                            ,base_model_trainer=comp_base_kernel_transport
                                            ,cond_model_trainer=comp_cond_kernel_transport)
 
-     gen_sample = compositional_gen(trained_models, ref_gen(N))
+     gen_sample = compositional_gen(trained_models, ref_gen(10 * N))
 
      if len(slice_vals):
          for slice_val in slice_vals:
@@ -407,7 +413,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      d = len(gen_sample[0])
      if d <=2:
          sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = d, range = plt_range)
-         sample_scatter(target_gen(N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
+         sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
      return True
 
 #003641
@@ -421,10 +427,8 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
 
-    #comp_gen_exp(ref_gen, target_gen, N=3000, n_iter=6001, exp_name='spiral_composed', plt_range=range)
-
-    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0],
-                              exp_name='exp', plt_range=None, slice_range=None, process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=2001, slice_vals=[0],
+                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
