@@ -179,45 +179,10 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-
-        #x_mu = torch.tensor(mgan2(len(self.Y_eta_test))[:,0], device = self.device)
-        #x_mu = self.X_mu_test
-
-        #y_eta = self.Y_eta_test
-        #target = self.Y_test
-
         x_mu = self.X_mu_test
         y_eta = self.Y_eta_test
         target = self.Y_test
-
         map_vec = self.map(x_mu, y_eta)
-
-        if self.iters < 50:
-            print(torch.concat([self.X_mu_test,self.Y_eta_test],dim = 1)[0])
-            print(map_vec[0])
-
-        #map_vec = self.map(x_mu, y_eta)
-
-        range = [[-3, 3], [-3, 3]]
-        x_left, x_right = range[0]
-        y_bottom, y_top = range[1]
-
-        plot_vec = map_vec.detach().cpu().numpy()
-        x, y = plot_vec.T
-        plt.scatter(x, y, s = 5)
-        plt.xlim(x_left, x_right)
-        plt.ylim(y_bottom, y_top)
-        plt.savefig('c_output_scatter_1.png')
-        clear_plt()
-        if self.iters < 50:
-            plot_vec = target.detach().cpu().numpy()
-            x, y = plot_vec.T
-            plt.scatter(x, y, s = 5)
-            plt.xlim(x_left, x_right)
-            plt.ylim(y_bottom, y_top)
-            plt.savefig('c_target_scatter.png')
-            clear_plt()
-
         return self.mmd(map_vec, target)
 
 
@@ -427,7 +392,7 @@ def run():
     target_gen = sample_spirals
     range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=2001, slice_vals=[0],
+    conditional_transport_exp(ref_gen, target_gen, N=1001, n_iter=1001, slice_vals=[0],
                               exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
