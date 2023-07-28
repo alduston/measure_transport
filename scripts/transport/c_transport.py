@@ -5,7 +5,6 @@ from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1
-from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -17,6 +16,7 @@ def geq_1d(tensor):
     elif len(tensor.shape) == 1:
         tensor = tensor.reshape(len(tensor), 1)
     return tensor
+
 
 def flip_2tensor(tensor):
     Ttensor = 0 * tensor.T
@@ -37,10 +37,12 @@ class Comp_transport_model:
             else:
                 self.device = 'cpu'
 
+
     def base_map(self, z):
         for submodel in self.submodels:
             z = submodel.map(z)
         return z
+
 
     def c_map(self, x, z):
         x = geq_1d(torch.tensor(x, device = self.device))
@@ -49,11 +51,11 @@ class Comp_transport_model:
             z = submodel.map(x,z, no_x = True)
         return torch.concat([x, z], dim = 1)
 
+
     def map(self, z , x = []):
         if self.cond:
             return self.c_map(x,z)
         return self.base_map(z)
-
 
 
 class CondTransportKernel(nn.Module):
@@ -435,14 +437,13 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
          sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
          sample_hmap(target_gen(10 * N), f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
-
      return True
 
 
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
+    target_gen = mgan2
 
     range = [[-2.5,2.5],[-1.1,1.1]]
 
@@ -451,12 +452,7 @@ def run():
                               exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5,1.5],
                               process_funcs=process_funcs)
 
-    #slice_range = [-2.5,2.5]
-    #process_funcs = []
-    #process_funcs = [flip_2tensor, flip_2tensor]
-    #conditional_transport_exp(ref_gen, target_gen, exp_name= 'mgan2_composed', N = 2000, n_iter = 8000,
-                              #plt_range=range, slice_range= slice_range, process_funcs=process_funcs,
-                              #slice_vals=[-1.1, 0, 1.1])
+
 
 
 if __name__=='__main__':
