@@ -381,7 +381,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
          sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
 
          sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
-         sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
+         sample_hmap(target_gen(10 * N), f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
 
      return True
 
