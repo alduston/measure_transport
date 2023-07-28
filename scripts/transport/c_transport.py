@@ -183,11 +183,14 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
-
         plot_test(self, map_vec, target, x_mu, y_eta,
-                  plt_range = [[-3,3], [-3,3]], vmax = .15,
-                  slice_vals=[0], slice_range = [-3,3],
-                  exp_name = 'spiral_composed')
+                   plt_range = [[-2.5,2.5], [-1.1,1.1]], vmax = 2,
+                   slice_vals=[-1.1, 0, 1.1], slice_range = [-1.5,1.5],
+                   exp_name = 'mgan2_composed', flip = True)
+        #plot_test(self, map_vec, target, x_mu, y_eta,
+                  #plt_range = [[-3,3], [-3,3]], vmax = .15,
+                  #slice_vals=[0], slice_range = [-3,3],
+                  #exp_name = 'spiral_composed')
         return self.mmd(map_vec, target)
 
 
@@ -203,7 +206,7 @@ class CondTransportKernel(nn.Module):
 
 
 def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None,
-              slice_vals= [0], slice_range = None, exp_name = 'exp'):
+              slice_vals= [0], slice_range = None, exp_name = 'exp', flip = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     for slice_val in slice_vals:
         x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
@@ -216,6 +219,10 @@ def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None
     range = plt_range
     x_left, x_right = range[0]
     y_bottom, y_top = range[1]
+
+    if flip:
+        map_vec = flip_2tensor(map_vec)
+        target = flip_2tensor(target)
 
     plot_vec = map_vec.detach().cpu().numpy()
     x, y = plot_vec.T
@@ -431,20 +438,18 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
      return True
 
-#003641
 
-#Adam:
-#0.000937
-#0.000562
 
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
 
-    range = [[-3,3],[-3,3]]
+    range = [[-2.5,2.5],[-1.1,1.1]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
+    process_funcs = [flip_2tensor, flip_2tensor]
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1, 0, 1.1], vmax = 2,
+                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5,1.5],
+                              process_funcs=process_funcs)
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
