@@ -441,7 +441,7 @@ def run():
     range = [[-2.5,2.5],[-1.1,1.1]]
 
     conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = 2,
-                              exp_name='mgan2_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
+                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5,1.5], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
