@@ -184,42 +184,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
 
-        slice_map_vec = self.map(0 * x_mu, y_eta)
-        slice_plot_vec = slice_map_vec.detach().cpu().numpy()
-        x, y = slice_plot_vec.T
-        plt.hist(y, bins=60, range=[-3,3])
-        plt.savefig('slice_hist.png')
-        clear_plt()
-
-        range = [[-3, 3], [-3, 3]]
-        x_left, x_right = range[0]
-        y_bottom, y_top = range[1]
-
-        plot_vec = map_vec.detach().cpu().numpy()
-        x, y = plot_vec.T
-        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
-        plt.savefig('output_map.png')
-        clear_plt()
-
-        plt.scatter(x, y, s=5)
-        plt.xlim(x_left, x_right)
-        plt.ylim(y_bottom, y_top)
-        plt.savefig('output_scatter.png')
-        clear_plt()
-
-        if self.iters < 50:
-            plot_vec = target.detach().cpu().numpy()
-            x, y = plot_vec.T
-            plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
-            plt.savefig('target_map.png')
-            clear_plt()
-
-            plt.scatter(x, y, s=5)
-            plt.xlim(x_left, x_right)
-            plt.ylim(y_bottom, y_top)
-            plt.savefig('target_scatter.png')
-            clear_plt()
-
+        mgan2_plot_test(self, map_vec, target, x_mu, y_eta)
         return self.mmd(map_vec, target)
 
 
@@ -231,6 +196,50 @@ class CondTransportKernel(nn.Module):
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
+
+
+
+def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
+    slice_vals = [-1.1, 0, 1.1]
+    for slice_val in slice_vals:
+        x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
+        slice_map_vec = model.map(x_slice, y_eta)
+        slice_plot_vec = slice_map_vec.detach().cpu().numpy()
+        x, y = slice_plot_vec.T
+        plt.hist(y, bins=60, range=[-1.5, 1.5], label=f'z = {slice_val}')
+    plt.legend()
+    plt.savefig('slice_hist.png')
+    clear_plt()
+
+    range = [[-3, 3], [-3, 3]]
+    x_left, x_right = range[0]
+    y_bottom, y_top = range[1]
+
+    plot_vec = map_vec.detach().cpu().numpy()
+    x, y = plot_vec.T
+    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+    plt.savefig('output_map.png')
+    clear_plt()
+
+    plt.scatter(x, y, s=5)
+    plt.xlim(x_left, x_right)
+    plt.ylim(y_bottom, y_top)
+    plt.savefig('output_scatter.png')
+    clear_plt()
+
+    if model.iters < 50:
+        plot_vec = target.detach().cpu().numpy()
+        x, y = plot_vec.T
+        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+        plt.savefig('target_map.png')
+        clear_plt()
+
+        plt.scatter(x, y, s=5)
+        plt.xlim(x_left, x_right)
+        plt.ylim(y_bottom, y_top)
+        plt.savefig('target_scatter.png')
+        clear_plt()
+    return True
 
 
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
@@ -427,12 +436,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
+    target_gen = mgan2
 
-    range = [[-3,3],[-3,3]]
+    range = [[-2.5,2.5],[-1.1,1.1]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = 2,
+                              exp_name='mgan2_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
