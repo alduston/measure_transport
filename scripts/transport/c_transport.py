@@ -199,7 +199,8 @@ class CondTransportKernel(nn.Module):
 
 
 
-def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
+def mgan2_plot_test(model, map_vec, target, x_mu, y_eta, exp_name = 'mgan2_composed'):
+    save_dir = f'../../data/kernel_transport/{exp_name}'
     slice_vals = [-1.1, 0, 1.1]
     for slice_val in slice_vals:
         x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
@@ -208,7 +209,7 @@ def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
         x, y = slice_plot_vec.T
         plt.hist(y, bins=60, range=[-1.5, 1.5], label=f'z = {slice_val}')
     plt.legend()
-    plt.savefig('slice_hist.png')
+    plt.savefig(f'{save_dir}/slice_hist.png')
     clear_plt()
 
     range = [[-2.5, 2.5], [-1.1, 1.1]]
@@ -218,26 +219,26 @@ def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
     plot_vec = map_vec.detach().cpu().numpy()
     x, y = plot_vec.T
     plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
-    plt.savefig('output_map.png')
+    plt.savefig(f'{save_dir}/output_map.png')
     clear_plt()
 
     plt.scatter(x, y, s=5)
     plt.xlim(x_left, x_right)
     plt.ylim(y_bottom, y_top)
-    plt.savefig('output_scatter.png')
+    plt.savefig(f'{save_dir}/output_scatter.png')
     clear_plt()
 
     if model.iters < 50:
         plot_vec = target.detach().cpu().numpy()
         x, y = plot_vec.T
         plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
-        plt.savefig('target_map.png')
+        plt.savefig(f'{save_dir}/target_map.png')
         clear_plt()
 
         plt.scatter(x, y, s=5)
         plt.xlim(x_left, x_right)
         plt.ylim(y_bottom, y_top)
-        plt.savefig('target_scatter.png')
+        plt.savefig(f'{save_dir}/target_scatter.png')
         clear_plt()
     return True
 
