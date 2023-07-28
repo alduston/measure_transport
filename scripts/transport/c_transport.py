@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
-from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel
+from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1
 from K_VAE import VAETransportKernel
 import matplotlib.pyplot as plt
 import numpy as np
@@ -393,12 +393,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = mgan1
 
-    range = [[-2.5,2.5],[-1.1,1.1]]
+    range = [[-2.5,2.5],[-1.1,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1, 0, 1.1], vmax = None,
-                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5,1.5], process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1, 0, 1.1], vmax = .5,
+                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1,2], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
