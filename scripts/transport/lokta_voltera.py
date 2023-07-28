@@ -2,6 +2,7 @@ import numpy as np
 from scipy.integrate import odeint
 from scipy.stats import lognorm
 from scipy.optimize import minimize
+import matplotlib.pyplot as plt
 
 
 class DeterministicLotkaVolterra:
@@ -98,93 +99,20 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
-def get_VL_data(N = 5000):
-    # define model
-    T = 20;
+def get_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20):
     LV = DeterministicLotkaVolterra(T)
-
-    # define true parameters and observation
-    xtrue = np.array([0.6859157, 0.10761319, 0.88789904, 0.116794825])
-    tt = np.linspace(0, LV.T, 1000)
-    ytrue = LV.simulate_ode(xtrue, tt)
-    yobs, tobs = LV.sample_data(xtrue)
-    nobs = int(yobs.size / 2.)
-    yobs_plot = yobs.reshape((nobs, 2))
-
-    # plot single simulation
-    import matplotlib.pyplot as plt
-
-    plt.figure()
-    plt.plot(tt, ytrue)
-    plt.plot(tobs[1:], yobs_plot, 'o', 'MarkerSize', 8)
-    plt.xlabel('$t$')
-    plt.ylabel('Observations')
-    plt.show()
-
-    # generate many training data
-    Ntrain = N
-    X = LV.sample_prior(Ntrain)
+    X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
-    X = np.real(X);
-    Y = np.real(Y)
+
+    X = np.real(X)[:Xd]
+    Y = np.real(Y)[: Yd]
     return X, Y
 
 
 if __name__ == '__main__':
+    X,Y = get_VL_data(4, 5)
 
+    for i in range(50):
+        plt.plot(Y[i])
+    plt.savefig('sample_trajectories.png')
 
-
-    # evaluate densities
-
-    '''
-    pi_prior = LV.prior_pdf(X)
-    print(pi_prior)
-    pi_lik = LV.likelihood(X, yobs)
-    print(pi_lik)
-    
-    # Run Inference
-    from MCMCSamplers import AdaptiveMetropolisSampler, GaussianProposal
-
-
-    # define target density and bounds
-    class Posterior():
-        def __init__(self, yobs):
-            self.yobs = yobs
-
-        def logpdf(self, x):
-            if len(x.shape) == 1:
-                x = x.reshape((1, LV.d))
-            return LV.log_likelihood(x, self.yobs) + LV.log_prior_pdf(x)
-
-
-    pi = Posterior(yobs[0, :])
-    bounds = np.array([[0.] * LV.d, [np.inf] * LV.d])
-
-    # find MAP point
-    x0 = np.random.rand(LV.d, )
-    neg_post = lambda x: -1 * pi.logpdf(x)
-    xmap = minimize(neg_post, x0)
-
-    # define Gaussian proposal
-    prop_std = 0.1;
-    prop = GaussianProposal(cov=prop_std ** 2 * np.eye(LV.d));
-
-    # run MCMC
-    n_steps = int(1e5)
-    mcmc = AdaptiveMetropolisSampler(pi, prop)
-    x_samps, logpdf_samps = mcmc.sample(xmap.x, n_steps, bounds)
-
-    # save results
-    data_file = 'DeterministicLV_mcmc'
-    import scipy.io
-
-    scipy.io.savemat(name + '.mat', mdict={'samples': x_samps, 'yobs': yobs, 'xtrue': xtrue})
-
-    # plot results
-    import pandas as pd
-
-    df = pd.DataFrame(x_samps, columns=['x1', 'x2', 'x3', 'x4'])
-    plt.figure()
-    pd.plotting.scatter_matrix(df, alpha=0.2)
-    plt.show()
-    '''

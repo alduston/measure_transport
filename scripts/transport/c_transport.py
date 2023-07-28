@@ -4,10 +4,11 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
-from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1
+from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+from lokta_voltera import get_VL_data
 
 
 def geq_1d(tensor):
@@ -190,9 +191,9 @@ class CondTransportKernel(nn.Module):
                    #slice_vals=[-1.1, 0, 1.1], slice_range = [-1.5,1.5],
                    #exp_name = 'mgan2_composed', flip = True)
         plot_test(self, map_vec, target, x_mu, y_eta,
-                  plt_range = [[-3,3], [-3,3]], vmax = .15,
+                  plt_range = [[-3,3], [-3,3]], vmax = .16,
                   slice_vals=[0], slice_range = [-3,3],
-                  exp_name = 'spiral_composed')
+                  exp_name = 'ring_composed')
         return self.mmd(map_vec, target)
 
 
@@ -443,15 +444,15 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
+    target_gen = sample_rings
 
     #range = [[-2.5,2.5],[-1.1,1.1]]
     range = [[-3, 3], [-3, 3]]
 
     process_funcs = [flip_2tensor, flip_2tensor]
     process_funcs = []
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3],
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .16,
+                              exp_name='ring_composed', plt_range=range, slice_range=[-3,3],
                               process_funcs=process_funcs)
 
 
