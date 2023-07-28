@@ -19,7 +19,7 @@ def geq_1d(tensor):
     return tensor
 
 def flip_2tensor(tensor):
-    Ttensor = torch.zeros(tensor.T.shape)
+    Ttensor = 0 * tensor.T
     Ttensor[0] += tensor.T[1]
     Ttensor[1] += tensor.T[0]
     return Ttensor.T
