@@ -184,7 +184,10 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
 
-        mgan2_plot_test(self, map_vec, target, x_mu, y_eta)
+        plot_test(self, map_vec, target, x_mu, y_eta,
+                  plt_range = [[-3,3], [-3,3]], vmax = .15,
+                  slice_vals=[0], slice_range = [-3,3],
+                  exp_name = 'spiral_composed')
         return self.mmd(map_vec, target)
 
 
@@ -199,24 +202,25 @@ class CondTransportKernel(nn.Module):
 
 
 
-def mgan2_plot_test(model, map_vec, target, x_mu, y_eta, exp_name = 'mgan2_composed'):
+def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None,
+              slice_vals= [0], slice_range = None, exp_name = 'exp'):
     save_dir = f'../../data/kernel_transport/{exp_name}'
-    slice_vals = [-1.1, 0.0, 1.1]
     for slice_val in slice_vals:
         x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
         y = model.map(x_slice, y_eta, no_x = True).detach().cpu().numpy()
-        plt.hist(y, bins=60, range=[-1.5, 1.5], label=f'z = {slice_val}')
+        plt.hist(y, bins=60, range=slice_range, label=f'z = {slice_val}')
     plt.legend()
     plt.savefig(f'{save_dir}/slice_hist.png')
     clear_plt()
 
-    range = [[-2.5, 2.5], [-1.1, 1.1]]
+    range = plt_range
     x_left, x_right = range[0]
     y_bottom, y_top = range[1]
 
     plot_vec = map_vec.detach().cpu().numpy()
     x, y = plot_vec.T
-    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
+    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=vmax)
+    plt.colorbar()
     plt.savefig(f'{save_dir}/output_map.png')
     clear_plt()
 
@@ -229,7 +233,8 @@ def mgan2_plot_test(model, map_vec, target, x_mu, y_eta, exp_name = 'mgan2_compo
     if model.iters < 50:
         plot_vec = target.detach().cpu().numpy()
         x, y = plot_vec.T
-        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
+        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=vmax)
+        plt.colorbar()
         plt.savefig(f'{save_dir}/target_map.png')
         clear_plt()
 
@@ -252,7 +257,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .5):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 5, f = .6):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -281,7 +286,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 4, f = .5):
+                               X_mu_test = [],Y_mu_test = [], n = 6, f = .6):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -374,7 +379,6 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     Y_mu_plot = target_gen(25 * N)
     gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
 
-
     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=50, d=2, range=plt_range, vmax= vmax)
 
@@ -386,7 +390,8 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [], vmax = None,
-                           exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = []):
+                           exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = [],
+                           base_model_trainer=comp_base_kernel_transport, cond_model_trainer=comp_cond_kernel_transport):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -398,9 +403,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      fit_params = {'name': 'r_quadratic', 'l': l * torch.exp(torch.tensor(-1.25)), 'alpha': 1}
      exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
-     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs
-                                           ,base_model_trainer=comp_base_kernel_transport
-                                           ,cond_model_trainer=comp_cond_kernel_transport)
+     trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter, process_funcs,
+                                           base_model_trainer, cond_model_trainer)
 
      gen_sample = compositional_gen(trained_models, ref_gen(10 * N))
 
@@ -435,12 +439,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = sample_spirals
 
-    range = [[-2.5,2.5],[-1.1,1.1]]
+    range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = 2,
-                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5,1.5], process_funcs=[])
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
+                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
     #process_funcs = []
