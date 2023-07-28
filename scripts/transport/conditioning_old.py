@@ -359,7 +359,7 @@ def run():
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
     range = [[-3,3], [-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N= 3000, t_iter=2001,
+    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=5001,
                               exp_name='ring_exp', params=exp_params, plt_range=range)
 
 
