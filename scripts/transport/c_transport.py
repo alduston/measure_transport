@@ -211,13 +211,13 @@ def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
     plt.savefig('slice_hist.png')
     clear_plt()
 
-    range = [[-3, 3], [-3, 3]]
+    range = [[-2.5, 2.5], [-1.1, 1.1]]
     x_left, x_right = range[0]
     y_bottom, y_top = range[1]
 
     plot_vec = map_vec.detach().cpu().numpy()
     x, y = plot_vec.T
-    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+    plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
     plt.savefig('output_map.png')
     clear_plt()
 
@@ -230,7 +230,7 @@ def mgan2_plot_test(model, map_vec, target, x_mu, y_eta):
     if model.iters < 50:
         plot_vec = target.detach().cpu().numpy()
         x, y = plot_vec.T
-        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=.15)
+        plt.hist2d(x, y, density=True, bins=50, range=range, cmin=0, vmin=0, vmax=2)
         plt.savefig('target_map.png')
         clear_plt()
 
