@@ -207,7 +207,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n =3, f = .5):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -393,7 +393,7 @@ def run():
 
     range = [[-3,3],[-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=101, slice_vals=[0],
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0],
                               exp_name='spiral_composed', plt_range=range, slice_range=[-3,3], process_funcs=[])
 
     #slice_range = [-2.5,2.5]
