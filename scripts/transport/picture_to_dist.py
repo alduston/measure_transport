@@ -67,13 +67,13 @@ def sample_elden_ring(N):
     img_array = process_img('elden_ring')
     img_base_sample = array_to_sample(img_array, base_val=0)
     sample = resample(img_base_sample.T, N=N)
-    return sample
+    return sample.T
 
 def sample_twisted_rings(N):
     img_array = process_img('rings')
     img_base_sample = array_to_sample(img_array, 255)
     sample = resample(img_base_sample.T, N=N)
-    return sample
+    return sample.T
 
 
 def sample_bambdad(N, p = 2, M = 300):
@@ -81,7 +81,7 @@ def sample_bambdad(N, p = 2, M = 300):
     #base_val = np.min(img_array)
     img_base_sample = array_to_sample(img_array, base_val=193, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
-    return sample
+    return sample.T
 
 
 def run():
