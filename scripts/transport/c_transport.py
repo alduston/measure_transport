@@ -489,25 +489,25 @@ def run():
 
     target_gen = sample_spirals
     range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax = .15,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
                               exp_name='spiral_composed', plt_range=range, slice_range=[-3,3],
                               process_funcs=process_funcs, skip_base=True)
 
     target_gen = sample_rings
     range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=.16,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.16,
                               exp_name='rings_composed', plt_range=range, slice_range=[-3, 3],
                               process_funcs=process_funcs, skip_base=True)
 
     target_gen = mgan1
     range = [[-2.5, 2.5], [-1, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=.5,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.5,
                               exp_name='mgan1_composed', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=process_funcs, skip_base=True)
 
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1, 1]]
-    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=2,
                               exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=process_funcs, skip_base=True)
 
