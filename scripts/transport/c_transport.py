@@ -39,24 +39,24 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
 
-    def base_map(self, z):
+    def base_map(self, y):
         for submodel in self.submodels:
-            z = submodel.map(z)
-        return z
+            y = submodel.map(y)
+        return y
 
 
-    def c_map(self, x, z):
+    def c_map(self, x, y):
         x = geq_1d(torch.tensor(x, device = self.device))
-        z = geq_1d(torch.tensor(z, device = self.device))
+        z = geq_1d(torch.tensor(y, device = self.device))
         for submodel in self.submodels:
-            z = submodel.map(x,z, no_x = True)
-        return torch.concat([x, z], dim = 1)
+            y = submodel.map(x,y, no_x = True)
+        return torch.concat([x, y], dim = 1)
 
 
-    def map(self, z , x = []):
+    def map(self, x = [], y = []):
         if self.cond:
-            return self.c_map(x,z)
-        return self.base_map(z)
+            return self.c_map(x,y)
+        return self.base_map(y)
 
 
 class CondTransportKernel(nn.Module):
@@ -75,6 +75,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
+
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Nx = len(self.X)
 
@@ -116,12 +117,6 @@ class CondTransportKernel(nn.Module):
 
     def get_Lambda(self):
         return self.fit_kXX_inv @ self.Z
-
-
-    def expand(self, tensor, N):
-        n = len(tensor)
-        indexes = torch.tensor(np.random.choice(list(range(n)), size = N), device = self.device).long()
-        return tensor[indexes]
 
 
     def map(self, x_mu, y_eta, no_x = False):
@@ -182,18 +177,18 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.X_mu#_test
-        y_eta = self.Y_eta#_test
+        x_mu = self.X_mu_test
+        y_eta = self.Y_eta_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
         #plot_test(self, map_vec, target, x_mu, y_eta,
                    #plt_range = [[-2.5,2.5], [-1.1,1.1]], vmax = 2,
                    #slice_vals=[-1.1, 0, 1.1], slice_range = [-1.5,1.5],
                    #exp_name = 'mgan2_composed', flip = True)
-        plot_test(self, map_vec, target, x_mu, y_eta,
-                  plt_range = [[-3,3], [-3,3]], vmax = .16,
-                  slice_vals=[0], slice_range = [-3,3],
-                  exp_name = 'ring_exp2')
+        #plot_test(self, map_vec, target, x_mu, y_eta,
+                  #plt_range = [[-3,3], [-3,3]], vmax = .16,
+                  #slice_vals=[0], slice_range = [-3,3],
+                  #exp_name = 'ring_exp2')
         return self.mmd(map_vec, target)
 
 
@@ -267,7 +262,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 1, f = .6):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -296,7 +291,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 1, f = .6):
+                               X_mu_test = [],Y_mu_test = [], n = 4, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -368,7 +363,7 @@ def compositional_gen(trained_models, ref_sample):
 def conditional_gen(trained_models, ref_sample, cond_sample, ref_idx_tensors):
     X = geq_1d(cond_sample)
     for i in range(0, len(trained_models)):
-        model = trained_models[i]
+        model = trained_models[i]#.submodels[0]
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         X = model.map(X, Y_eta)
     return X
@@ -445,12 +440,13 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
          gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_ref_sample,  cref_idx_tensors)
 
+     hist_idx = 1
      if len(slice_vals):
          for slice_val in slice_vals:
-             slice_shape =  list(slice_val.shape) + [N] if len(slice_val.shape) else [N]
-             ref_slice_sample = torch.full(slice_shape,  slice_val, device = trained_models[0].device)
-             slice_sample = conditional_gen([trained_models[-1]], ref_gen(N), ref_slice_sample)
-             plt.hist(slice_sample[:, 1].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
+             ref_slice_sample = torch.tensor([slice_val for i in range(len(cond_ref_sample))],
+                                             device = trained_models[0].device).reshape(cond_ref_sample.shape)
+             slice_sample = conditional_gen(trained_models, eta_ref_sample, ref_slice_sample, cref_idx_tensors)
+             plt.hist(slice_sample[:, hist_idx].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
          plt.legend()
          plt.savefig(f'{save_dir}/conditional_hists.png')
          clear_plt()
@@ -489,17 +485,32 @@ def lokta_vol_exp(N = 5000, n_iter = 10000):
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_rings
-
-    #range = [[-2.5,2.5],[-1.1,1.1]]
-    range = [[-3, 3], [-3, 3]]
-
-    process_funcs = [flip_2tensor, flip_2tensor]
     process_funcs = []
 
-    conditional_transport_exp(ref_gen, target_gen, N=1500, n_iter=2001, slice_vals=[], vmax = .16,
-                              exp_name='ring_exp2', plt_range=range, slice_range=[-3,3],
+    target_gen = sample_spirals
+    range = [[-3, 3], [-3, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax = .15,
+                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3],
                               process_funcs=process_funcs, skip_base=True)
+
+    target_gen = sample_rings
+    range = [[-3, 3], [-3, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=.16,
+                              exp_name='rings_composed', plt_range=range, slice_range=[-3, 3],
+                              process_funcs=process_funcs, skip_base=True)
+
+    target_gen = mgan1
+    range = [[-2.5, 2.5], [-1, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=.5,
+                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=process_funcs, skip_base=True)
+
+    target_gen = mgan2
+    range = [[-2.5, 2.5], [-1, 1]]
+    conditional_transport_exp(ref_gen, target_gen, N=8000, n_iter=2001, slice_vals=[0], vmax=2,
+                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=process_funcs, skip_base=True)
+
 
 
 

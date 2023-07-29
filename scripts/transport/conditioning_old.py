@@ -58,6 +58,8 @@ class CondTransportKernel(nn.Module):
 
         self.Z_ref= geq_1d(torch.tensor(base_params['Z_ref'], device=self.device, dtype=self.dtype))
         self.Y_ref = geq_1d(torch.tensor(base_params['Y_ref'], device = self.device, dtype = self.dtype))
+
+
         self.W_ref = torch.concat([self.Z_ref, self.Y_ref], dim=1)
         self.N = len(self.W_ref)
 
@@ -354,10 +356,10 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
         pass
 
     ref_sample = torch.tensor(ref_gen(N))
-    test_sample = torch.tensor(ref_gen(N))
+    test_sample = torch.tensor(ref_gen(5 * N))
 
     target_sample = torch.tensor(target_gen(N)).T
-    test_target_sample = torch.tensor(target_gen(N)).T
+    test_target_sample = torch.tensor(target_gen(5 * N)).T
     if target_sample.shape[0]!= max(target_sample.shape):
         target_sample = target_sample.T
         test_target_sample = test_target_sample.T
@@ -371,14 +373,6 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
 
     X_target_test = test_target_sample[:,0]
     Y_target_test = test_target_sample[:,1]
-
-    l = l_scale(X_ref)
-
-
-    if not params['fit']:
-        params['fit'] = {'name': 'radial', 'l': l / 5, 'sigma': 1}
-    if not params['mmd']:
-        params['mmd']= {'name': 'radial', 'l': l / 5, 'sigma': 1}
 
     transport_params = {'X': X_ref, 'Y':  X_target, 'fit_kernel_params': params['fit'],
                         'mmd_kernel_params':  params['mmd'], 'normalize': False,
@@ -424,7 +418,7 @@ def conditional_transport_exp(ref_gen, target_gen, N, t_iter = 801,exp_name= 'ex
 
     target_sample = torch.concat([geq_1d(X_target), geq_1d(Y_target)], dim=1)
     sample_scatter(target_sample, f'{save_dir}/target_sample.png', bins=25, d=2, range = plt_range)
-    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=25, d=2, range = plt_range)
+    sample_hmap(target_sample, f'{save_dir}/target_sample_map.png', bins=50, d=2, range = plt_range, vmax = .16)
 
 
   #scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/kernel_transport/mgan23/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/kernel_transport/
@@ -447,7 +441,7 @@ def run():
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
     range = [[-3,3], [-3,3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N= 5000, t_iter=6001,
+    conditional_transport_exp(ref_gen, target_gen, N= 1500, t_iter=1001,
                               exp_name='ring_exp', params=exp_params, plt_range=range)
 
 
