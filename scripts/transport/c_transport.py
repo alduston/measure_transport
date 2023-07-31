@@ -9,7 +9,7 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from lokta_voltera import get_VL_data
+from lokta_voltera import get_VL_data,get_cond_VL_data
 from picture_to_dist import sample_elden_ring
 
 
@@ -369,6 +369,8 @@ def conditional_gen(trained_models, ref_sample, cond_sample, ref_idx_tensors):
     for i in range(0, len(trained_models)):
         model = trained_models[i]#.submodels[0]
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
+        print(X.shape)
+        print(Y_eta.shape)
         X = model.map(X, Y_eta)
     return X
 
@@ -404,6 +406,16 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
     return True
 
+def sode_hist(trajectories, savedir, save_name = 'traj_hist'):
+    N,n = trajectories.shape
+    fig, axs = plt.subplots(n)
+    for i in range(n):
+        hist_data = trajectories[:, i]
+        axs[i].hist(hist_data.detach().cpu().numpy(), label=f't = {i}', range = [0,500], bins = 50)
+    for ax in fig.get_axes():
+        ax.label_outer()
+    plt.savefig(f'{savedir}/{save_name}.png')
+    clear_plt()
 
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [], vmax = None,
@@ -436,14 +448,20 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      if not skip_base:
         gen_sample = compositional_gen(trained_models, ref_gen(10 * N))
      else:
-         cond_idx_tensors =  get_idx_tensors(ref_idx_lists)[skip_idx]
+         cond_idx_tensor =  get_idx_tensors(ref_idx_lists)[skip_idx]
          cref_idx_tensors = get_idx_tensors(target_idx_lists)
 
-         cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensors]
+         cond_ref_sample = target_gen(10 * N)[:, torch.tensor([1, 2, 3, 4]).long()]
+         sode_hist(cond_ref_sample, save_dir, 'traj_hist')
+
+         cond_ref_sample = target_gen(10 * N)[:, cref_idx_tensors[0]]
          eta_ref_sample = ref_gen(10 * N)
 
          gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_ref_sample,  cref_idx_tensors)
+         sode_hist(gen_sample[:, torch.tensor([1,2]).long()], save_dir, 'gen_traj_hist')
 
+     '''
+    
      hist_idx = 1
      if len(slice_vals):
          for slice_val in slice_vals:
@@ -466,45 +484,45 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
          sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
          sample_hmap(target_gen(10 * N), f'{save_dir}/target_map.png', bins=70, d=2, range=plt_range, vmax=vmax)
-     return gen_sample
+     '''
+
+     return trained_models, eta_ref_sample,cref_idx_tensors, cond_idx_tensor
 
 
 
 def lokta_vol_exp(N = 10000, n_iter = 10000):
-    d = 5
-    ref_gen = lambda n: sample_normal(n, d+4)
+    d = 4
+    ref_gen = lambda n: sample_normal(n, d+1)
     target_gen = lambda n: get_VL_data(n, Yd = d)
 
-    ref_idx_lists = [[1,2,3,4,5,6,7,8]]
-    target_idx_list = [[0]]
+    ref_idx_lists = [[0], [0,1],[0,1,2], [0,1,2,3]]
+    target_idx_list = [[1],[2],[3],[4]]
     skip_base = True
 
-    gen_sample = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[], vmax=None,
+    #trained_models, eta_ref_sample, cref_idx_tensors, cond_idx_tensors =
+    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[], vmax=None,
                               exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
                               base_model_trainer=comp_base_kernel_transport,
                               cond_model_trainer=comp_cond_kernel_transport,
                               ref_idx_lists=ref_idx_lists , target_idx_lists=target_idx_list,
                               skip_base=skip_base, skip_idx=0)
-    plt.hist(gen_sample[-1].detach().numpy())
-    plt.savefig(f'../../data/kernel_transport/lk_exp/param_hist.png')
-    return True
+
+    #cond_sample = get_cond_VL_data(10 * N)[:, cond_idx_tensors]
+    #gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_sample, cref_idx_tensors)
+    #plt.hist(gen_sample[-1].detach().numpy())
+    #plt.savefig(f'../../data/kernel_transport/lk_exp/param_hist.png')
+    #return True
 
 
 def run():
-    ref_gen = sample_normal
-    target_gen = sample_elden_ring
-    range = [[-1, 1], [-1, 1]]
-
-    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=10001, slice_vals=[0], vmax=4.5,
-                              exp_name='elden_composed', plt_range=range, slice_range=[-1, 1],
-                              process_funcs=[], skip_base=True)
+    lokta_vol_exp(1000, 1000)
 
 
 
 
 
 if __name__=='__main__':
-run()
+    run()
 
 
 
