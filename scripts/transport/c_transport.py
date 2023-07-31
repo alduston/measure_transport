@@ -306,7 +306,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_t
 
 
 def get_idx_tensors(idx_lists):
-    return [torch.tensor(idx_lists).long() for idx_list in idx_lists]
+    return [torch.tensor(idx_list).long() for idx_list in idx_lists]
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
@@ -334,15 +334,17 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
         Y_mu = target_sample[:, ref_idx_tensors[0]]
         trained_models.append(base_model_trainer(Y_eta, Y_mu, params, n_iter, Y_eta_test))
 
-    for i in range(0, len(target_sample[0])-1):
+    for i in range(len(ref_idx_tensors)):
         X_mu = target_sample[:,  ref_idx_tensors[i]]
         X_mu_test = test_target_sample[:, ref_idx_tensors[i]]
 
         Y_mu = target_sample[:, target_idx_tensors[i]]
         Y_mu_test = test_target_sample[:, target_idx_tensors[i]]
 
+
         Y_eta = ref_sample[:,target_idx_tensors[i]]
         Y_eta_test = test_sample[:, target_idx_tensors[i]]
+
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                                  Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
@@ -385,13 +387,13 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
     exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
     Y_eta = ref_gen(N)
-    Y_eta_test = ref_gen(10 * N)
+    Y_eta_test = ref_gen(N)
     Y_mu = target_gen(N)
 
     comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=25, f=1)
 
-    Y_eta_plot = ref_gen(10 * N)
-    Y_mu_plot = target_gen(10 * N)
+    Y_eta_plot = ref_gen(5 * N)
+    Y_mu_plot = target_gen(5 *N)
     gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
 
     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
@@ -437,7 +439,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
          cond_idx_tensors =  get_idx_tensors(ref_idx_lists)[skip_idx]
          cref_idx_tensors = get_idx_tensors(target_idx_lists)
 
-         cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensors[0]]
+         cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensors]
          eta_ref_sample = ref_gen(10 * N)
 
          gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_ref_sample,  cref_idx_tensors)
@@ -464,78 +466,31 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
          sample_scatter(target_gen(10 * N), f'{save_dir}/target.png', bins=25, d=d, range=plt_range)
          sample_hmap(target_gen(10 * N), f'{save_dir}/target_map.png', bins=50, d=2, range=plt_range, vmax=vmax)
-     return True
+     return gen_sample
 
 
-def lokta_vol_exp(N = 5000, n_iter = 10000):
+def lokta_vol_exp(N = 10000, n_iter = 10000):
     d = 5
-    ref_gen = lambda n: sample_normal(n, d)
+    ref_gen = lambda n: sample_normal(n, d+4)
     target_gen = lambda n: get_VL_data(n, Yd = d)
 
-    ref_idx_lists = [[0,1,2,3]]
-    target_idx_list = [[4,5,6,7,8]]
+    ref_idx_lists = [[1,2,3,4,5,6,7,8]]
+    target_idx_list = [[0]]
     skip_base = True
 
-    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[], vmax=None,
+    gen_sample = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[], vmax=None,
                               exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
                               base_model_trainer=comp_base_kernel_transport,
                               cond_model_trainer=comp_cond_kernel_transport,
                               ref_idx_lists=ref_idx_lists , target_idx_lists=target_idx_list,
                               skip_base=skip_base, skip_idx=0)
+    plt.hist(gen_sample[-1].detach().numpy())
+    plt.savefig(f'../../data/kernel_transport/lk_exp/param_hist.png')
     return True
 
 
 def run():
-
-    ref_gen = sample_normal
-    process_funcs = []
-
-    #target_gen = sample_elden_ring
-    #range = [[-1, 1], [-1, 1]]
-    #comp_gen_exp(ref_gen, target_gen, N=2000, n_iter=1, exp_name='elden_ode', plt_range=range, vmax=4.5)
-
-
-    #conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=3001, slice_vals=[0], vmax=2,
-                              #exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
-                              #process_funcs=process_funcs, skip_base=True)
-
-
-    target_gen = sample_spirals
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax = .15,
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3,3],
-                              process_funcs=process_funcs, skip_base=True)
-
-    target_gen = sample_rings
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.16,
-                              exp_name='rings_composed', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=process_funcs, skip_base=True)
-
-    target_gen = mgan1
-    range = [[-2.5, 2.5], [-1, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1,0,1.1], vmax=.5,
-                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=process_funcs, skip_base=True)
-
-    target_gen = mgan2
-    range = [[-2.5, 2.5], [-1.1, 1.1]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1,0,1.1], vmax=2,
-                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=process_funcs, skip_base=True)
-
-    target_gen = sample_pinweel
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=None,
-                              exp_name='pinwheel_composed', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=process_funcs, skip_base=True)
-
-    target_gen = sample_swiss_roll
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1.1, 0, 1.1], vmax=.25,
-                              exp_name='swiss_roll_composed', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=process_funcs, skip_base=True)
-
+    lokta_vol_exp(N = 10000, n_iter=10000)
 
 
 

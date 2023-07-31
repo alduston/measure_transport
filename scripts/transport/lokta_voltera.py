@@ -104,8 +104,9 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20):
     X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
 
-    X = torch.tensor(np.real(X)[:Xd])
-    Y = torch.tensor(np.real(Y)[: Yd])
+
+    X = torch.tensor(np.real(X)[:, :Xd])
+    Y = torch.tensor(np.real(Y)[:,  :Yd])
     return torch.concat([X,Y], dim = 1)
 
 
