@@ -494,7 +494,7 @@ def run():
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     range = [[-1, 1], [-1, 1]]
-    
+
     conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=10001, slice_vals=[0], vmax=4.5,
                               exp_name='elden_composed', plt_range=range, slice_range=[-1, 1],
                               process_funcs=[], skip_base=True)
