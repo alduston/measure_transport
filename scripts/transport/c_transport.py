@@ -264,7 +264,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .5):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 5, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -293,7 +293,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 4, f = .5):
+                               X_mu_test = [],Y_mu_test = [], n = 5, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -392,8 +392,8 @@ def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', 
 
     comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=25, f=1)
 
-    Y_eta_plot = ref_gen(5 * N)
-    Y_mu_plot = target_gen(5 *N)
+    Y_eta_plot = ref_gen(N)
+    Y_mu_plot = target_gen(N)
     gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
 
     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
@@ -469,6 +469,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      return gen_sample
 
 
+
 def lokta_vol_exp(N = 10000, n_iter = 10000):
     d = 5
     ref_gen = lambda n: sample_normal(n, d+4)
@@ -490,15 +491,20 @@ def lokta_vol_exp(N = 10000, n_iter = 10000):
 
 
 def run():
-    lokta_vol_exp(N = 10000, n_iter=10000)
-
+    ref_gen = sample_normal
+    target_gen = sample_elden_ring
+    range = [[-1, 1], [-1, 1]]
+    
+    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=10001, slice_vals=[0], vmax=4.5,
+                              exp_name='elden_composed', plt_range=range, slice_range=[-1, 1],
+                              process_funcs=[], skip_base=True)
 
 
 
 
 
 if __name__=='__main__':
-    run()
+run()
 
 
 
