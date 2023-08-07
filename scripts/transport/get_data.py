@@ -6,6 +6,22 @@ from sklearn.utils import shuffle as util_shuffle
 from scipy.stats import norm
 
 
+def rand_covar(N):
+    L = np.zeros((N,N))
+    for i in range(N):
+        for j in range(i+1):
+            L[i,i] += np.random.random()
+    M = L @ L.T
+    return M
+
+
+def rand_diag_covar(N):
+    L = np.zeros((N,N))
+    for i in range(N):
+            L[i,i] += np.random.random()**2
+    return L
+
+
 # Dataset iterator
 def inf_train_gen(data, rng=None, batch_size=200):
     if rng is None:
@@ -133,12 +149,25 @@ def resample(Y, alpha = [], N = 10000):
     return Y_resample
 
 
-def sample_normal(N = 100, d = 2):
-    mu = np.zeros(d)
-    sigma = np.identity(d)
+def sample_normal(N = 100, d = 2, mu = [], sigma = []):
+    if not len(mu):
+        mu = np.zeros(d)
+    if not len(sigma):
+        sigma = np.identity(d)
     X_sample = np.random.multivariate_normal(mu, sigma, N)
     X_sample = X_sample.reshape(N,d)
     return X_sample
+
+
+def sample_mixtures(N, mu_vecs, sigma_vecs):
+    Nm = N//len(mu_vecs)
+    dm = len(mu_vecs[0])
+    samples = []
+
+    for mu,sigma in zip(mu_vecs, sigma_vecs):
+        samples.append(sample_normal(Nm, dm, mu, sigma))
+    return np.concatenate(samples).reshape(N,dm)
+
 
 def unif_square(N = 200):
     o1_vals = np.random.choice([-1.0, 1.0], size = N)
@@ -390,6 +419,7 @@ def geq_1d(tensor):
     elif len(tensor.shape) == 1:
         tensor = tensor.reshape(len(tensor), 1)
     return tensor
+
 
 def normal_density(X):
     return np.exp(-np.linalg.norm(geq_1d(X), axis = 0)**2)

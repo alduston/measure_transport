@@ -98,7 +98,7 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     size = 6
     s = [size for x in x]
     plt.scatter(x,y, s=s)
-    
+
     if range != None:
         x_left, x_right = range[0]
         y_bottom, y_top = range[1]

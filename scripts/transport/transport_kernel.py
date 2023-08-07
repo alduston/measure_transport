@@ -143,13 +143,13 @@ class TransportKernel(nn.Module):
         base_params['device'] = self.device
         self.params = base_params
 
-        self.X = torch.tensor(base_params['X'], device=self.device, dtype=self.dtype)
-        self.Y = torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype)
+        self.X = geq_1d(torch.tensor(base_params['X'], device=self.device, dtype=self.dtype))
+        self.Y = geq_1d(torch.tensor(base_params['Y'], device = self.device, dtype = self.dtype))
 
         self.test = False
         if 'Y_eta_test' in base_params.keys():
             self.test = True
-            self.Y_eta_test = torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype)
+            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
 
         self.N = len(self.X)
         self.n = len(self.Y)
@@ -271,15 +271,6 @@ class TransportKernel(nn.Module):
         target = self.Y
         map_vec = self.map(y_eta)
         return self.mmd(map_vec, target)
-        '''
-        plt.hist(map_vec.detach().cpu().numpy(), bins=40, range=[-1, 5])
-        plt.savefig('output_hist.png')
-        clear_plt()
-        if self.iters < 50:
-            plt.hist(target.detach().cpu().numpy(), bins=40, range=[-1, 5])
-            plt.savefig('target_hist.png')
-            clear_plt()
-        '''
 
 
     def loss(self):
