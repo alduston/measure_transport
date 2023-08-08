@@ -166,7 +166,7 @@ def sample_mixtures(N, mu_vecs, sigma_vecs):
 
     for mu,sigma in zip(mu_vecs, sigma_vecs):
         samples.append(sample_normal(Nm, dm, mu, sigma))
-    return np.concatenate(samples).reshape(N,dm)
+    return np.concatenate(samples)
 
 
 def unif_square(N = 200):
