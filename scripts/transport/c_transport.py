@@ -356,7 +356,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 6, f = .8):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 5, f = .8):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
