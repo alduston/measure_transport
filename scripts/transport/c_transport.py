@@ -348,7 +348,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
+                        'print_freq': 100, 'learning_rate': .002, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
