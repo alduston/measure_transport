@@ -558,8 +558,8 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 def run():
 
-    d = 6
-    n_mixtures = 6
+    d = 5
+    n_mixtures = 5
     ref_gen = lambda N: sample_normal(N, d)
 
     sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
