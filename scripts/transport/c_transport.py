@@ -533,7 +533,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     ref_gen = lambda n: sample_normal(n, Yd)
-    target_gen = lambda N: get_VL_data(N, Yd = Yd)
+    target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd))
 
     idx_dict = {'ref': list(range(Yd)),
                 'cond': [list(range(i + 4)) for i in range(Yd)],
