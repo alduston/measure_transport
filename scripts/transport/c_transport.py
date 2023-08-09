@@ -557,48 +557,6 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 
 def run():
-    ref_gen = sample_normal
-    process_funcs = []
-
-    target_gen = sample_spirals
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.15,
-                              exp_name='spiral_composed', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=process_funcs, skip_base=False)
-
-    target_gen = sample_rings
-    range = [[-3, 3], [-3, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.16,
-                              exp_name='rings_composed', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=process_funcs, skip_base=False)
-
-    target_gen = mgan1
-    range = [[-2.5, 2.5], [-1, 3]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.5,
-                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=process_funcs, skip_base=False)
-
-    target_gen = mgan2
-    range = [[-2.5, 2.5], [-1, 1]]
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=2,
-                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=process_funcs, skip_base=False)
-
-    target_gen = sample_elden_ring
-    range = [[-2.5, 2.5], [-1, 1]]
-    conditional_transport_exp(ref_gen, target_gen, N= 10000, n_iter=8001, slice_vals=[0], vmax=4.5,
-                              exp_name='elden_composed', plt_range=range, slice_range=[-1.1, 1.1],
-                              process_funcs=process_funcs, skip_base=False)
-
-
-'''
-    ref_gen = sample_normal
-    target_gen = sample_spirals()
-    range = [[-3, 3], [-3, 3]]
-
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=4001, slice_vals=[0], vmax=.15,
-                              exp_name='spiral_approx_test', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=[], skip_base=False, traj_hist=True)
 
     d = 8
     n_mixtures = 8
@@ -609,11 +567,9 @@ def run():
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=3001, slice_vals=[],
-                              exp_name='nd_mixtures', plt_range=[[-4,4], [-4,4]], slice_range=[],
+    conditional_transport_exp(ref_gen, target_gen, N=5001, n_iter=5001, slice_vals=[],
+                              exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
                               process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
-    '''
-
 
 
 if __name__=='__main__':
