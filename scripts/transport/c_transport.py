@@ -104,13 +104,23 @@ class CondTransportKernel(nn.Module):
         if self.X_mu.shape[1]==0:
             self.params['no_mu'] = True
 
+
+        self.Y_approx = self.Y_eta
+        self.params['approx'] = False
+        if len(base_params['Y_approx']):
+            self.Y_approx = geq_1d(torch.tensor(base_params['Y_approx'], device=self.device, dtype=self.dtype))
+            self.params['approx'] = True
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
+
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         if self.params['no_mu']:
             self.X = self.Y_eta
             self.Y = self.Y_mu
+
+        if self.params['approx']:
+            self.X = torch.concat([self.X, self.Y_approx], dim=1)
 
         self.Nx = len(self.X)
         self.Ny = len(self.Y)
@@ -127,13 +137,14 @@ class CondTransportKernel(nn.Module):
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
-        self.test = False
-        if 'Y_eta_test' in base_params.keys():
-            self.test = True
-            self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
-            self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
-            self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
-            self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
+        self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+        self.Y_approx_test = self.Y_eta_test
+        if len(base_params['Y_approx_test']):
+            self.Y_approx_test = geq_1d(torch.tensor(base_params['Y_approx_test'], device=self.device, dtype=self.dtype))
+
+        self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
+        self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
+        self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
@@ -197,7 +208,7 @@ class CondTransportKernel(nn.Module):
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
     def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_eta + self.Z], dim=1)
+        map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z], dim=1)
         target = self.Y
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -552,8 +563,8 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=10001, slice_vals=[-1,0,1], vmax=2,
-                              exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
+    conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=3001, slice_vals=[-1,0,1], vmax=2,
+                              exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
 
 

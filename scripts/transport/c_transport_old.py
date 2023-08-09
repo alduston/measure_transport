@@ -13,6 +13,7 @@ from lokta_voltera import get_VL_data,get_cond_VL_data
 from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
 
+
 def geq_1d(tensor):
     if not len(tensor.shape):
         tensor = tensor.reshape(1,1)
@@ -96,16 +97,14 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
 
-
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
 
         self.params['no_mu'] = False
-        if torch.max(self.X_mu)==0:
+        if self.X_mu.shape[1]==0:
             self.params['no_mu'] = True
 
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-
         self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
@@ -157,12 +156,13 @@ class CondTransportKernel(nn.Module):
     def map(self, x_mu, y_eta, no_x = False):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
-        w = torch.concat([x_mu, y_eta], dim=1)
         if self.params['no_mu']:
             w = y_eta
+        else:
+            w = torch.concat([x_mu, y_eta], dim=1)
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
-        if no_x:
+        if no_x or self.params['no_mu']:
             return z + y_eta
         return torch.concat([x_mu, z + y_eta], dim = 1)
 
@@ -237,7 +237,7 @@ class CondTransportKernel(nn.Module):
             plot_test(self, map_vec, target, x_mu, y_eta,
                       plt_range=[[-2.5, 2.5], [-1.05, 1.05]], vmax=2,
                       slice_vals=[0], slice_range=[-1.5, 1.5],
-                      exp_name='mgan2_composed3')
+                      exp_name='mgan2_composed2')
         except ValueError:
             pass
 
@@ -245,9 +245,10 @@ class CondTransportKernel(nn.Module):
 
 
     def loss(self):
-        loss_mmd = self.loss_mmd()
         if self.params['no_mu']:
             loss_mmd = self.loss_mmd_no_mu()
+        else:
+            loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
@@ -313,7 +314,7 @@ def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None
 def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
                    'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  100, 'learning_rate': .01, 'nugget': 1e-4}
+                   'print_freq':  100, 'learning_rate': .002, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     transport_kernel = TransportKernel(transport_params)
@@ -321,7 +322,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .7):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = .5):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -336,7 +337,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
                           Y_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .001, 'nugget': 1e-4}
+                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     if len(X_mu_test):
@@ -350,7 +351,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 3, f = .5):
+                               X_mu_test = [],Y_mu_test = [], n = 1, f = .7):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -372,92 +373,72 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
-                         cond_model_trainer = cond_kernel_transport, ref_idx_lists = [], target_idx_lists = []):
+                         cond_model_trainer = cond_kernel_transport, idx_dict = {}):
 
     ref_sample = ref_gen(N)
-    target_sample = zero_pad(target_gen(N))
+    target_sample = target_gen(N)
 
-    test_sample = ref_gen(5 * N)
-    test_target_sample = zero_pad(target_gen(5 * N))
+    N_test = min(10 * N, 15000)
+    test_sample = ref_gen(N_test)
+    test_target_sample = target_gen(N_test)
 
     if len(process_funcs):
         forward = process_funcs[0]
         target_sample = forward(target_sample)
 
-    ref_idx_tensors = get_idx_tensors(ref_idx_lists)
-    target_idx_tensors = get_idx_tensors(target_idx_lists)
-
+    ref_idx_tensors = idx_dict['ref']
+    target_idx_tensors = idx_dict['target']
+    cond_idx_tensors = idx_dict['cond']
     trained_models = []
 
     for i in range(len(ref_idx_tensors)):
-        X_mu = target_sample[:,  ref_idx_tensors[i]]
-        X_mu_test = test_target_sample[:, ref_idx_tensors[i]]
+        X_mu = target_sample[:,  cond_idx_tensors[i]]
+        X_mu_test = test_target_sample[:, cond_idx_tensors[i]]
 
         Y_mu = target_sample[:, target_idx_tensors[i]]
         Y_mu_test = test_target_sample[:, target_idx_tensors[i]]
 
+        Y_eta = ref_sample[:,ref_idx_tensors[i]]
+        Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
-        Y_eta = ref_sample[:,target_idx_tensors[i]-1]
-        Y_eta_test = test_sample[:, target_idx_tensors[i]-1]
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                                  Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
-
     return trained_models
 
 
-def compositional_gen(trained_models, ref_sample, cond_indexes):
+def compositional_gen(trained_models, ref_sample, idx_dict):
+    cond_indexes = idx_dict['cond']
+    ref_indexes = idx_dict['ref']
     ref_sample = geq_1d(ref_sample)
     X = geq_1d(ref_sample)
     for i in range(0, len(trained_models)):
         model = trained_models[i]
-        Y_eta = ref_sample[:, i]
-        try:
-            X = model.map(X[:, cond_indexes[i]], Y_eta)
-        except IndexError:
-            X = model.map(X[:, cond_indexes[i]-1], Y_eta)
-
+        X = model.map(X[:, cond_indexes[i]], ref_sample[:, ref_indexes[i]])
     return X
 
 
-def conditional_gen(trained_models, ref_sample, cond_sample, ref_idx_tensors):
-    X = geq_1d(cond_sample)
+#[[ 1.03982393]
+ #[-1.04414654]]
+#[0.44714918 0.43064544]
+#torch.Size([1000, 2])
+#tensor([[0],[0]])
+#[0.44714918 0.43064544]
+#torch.Size([1000, 2])
+
+
+def conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx):
+    idx_dict = {key: val[skip_idx:] for key,val in idx_dict.items()}
+    trained_models = trained_models[skip_idx:]
+    X = target_sample
+    ref_indexes = idx_dict['ref']
+    cond_indexes = idx_dict['cond']
+
     for i in range(0, len(trained_models)):
         model = trained_models[i]
-        Y_eta = ref_sample[:, ref_idx_tensors[i]]
-        X = model.map(X, Y_eta)
+        Y_eta = ref_sample[:, ref_indexes[i]]
+        X = model.map(X[:, cond_indexes[i]], Y_eta)
     return X
 
-
-
-def comp_gen_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, exp_name= 'exp', plt_range = None, vmax = None):
-    save_dir = f'../../data/kernel_transport/{exp_name}'
-    try:
-        os.mkdir(save_dir)
-    except OSError:
-        pass
-
-    l = l_scale(torch.tensor(ref_gen(N)[:, 1]))
-    mmd_params = {'name': 'r_quadratic', 'l': torch.exp(torch.tensor(-1.25)), 'alpha': 1}
-    fit_params = {'name': 'r_quadratic', 'l':  torch.exp(torch.tensor(-1.25)), 'alpha': 1}
-    exp_params = {'fit': mmd_params, 'mmd': fit_params}
-
-    Y_eta = ref_gen(N)
-    Y_eta_test = ref_gen(N)
-    Y_mu = target_gen(N)
-
-    comp_model = comp_base_kernel_transport(Y_eta, Y_mu, exp_params, n_iter, Y_eta_test=Y_eta_test, n=25, f=1)
-
-    Y_eta_plot = ref_gen(N)
-    Y_mu_plot = target_gen(N)
-    gen_sample = comp_model.map(torch.tensor(Y_eta_plot, device=comp_model.device))
-
-    sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d=2, range=plt_range)
-    sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=65, d=2, range=plt_range, vmax= vmax)
-
-    sample_scatter(Y_mu_plot, f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
-    sample_hmap(Y_mu_plot, f'{save_dir}/target_map.png', bins=65, d=2, range=plt_range, vmax= vmax)
-
-    return True
 
 def sode_hist(trajectories, savedir, save_name = 'traj_hist'):
     trajectories = torch.tensor(trajectories)
@@ -474,52 +455,50 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist'):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [], vmax = None,
                            exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = [],
-                           cond_model_trainer= comp_cond_kernel_transport,ref_idx_lists = [], target_idx_lists = [],
-                           skip_base  = 0, skip_idx = 0, traj_hist = False, plot_idx = []):
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
+                           skip_base  = 0, skip_idx = 1, traj_hist = False, plot_idx = []):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
      except OSError:
          pass
 
-     #l = l_scale(torch.tensor(ref_gen(N)))
-     nr = len(ref_gen(1)[0])
+     nr = len(ref_gen(2)[0])
 
      mmd_params = {'name': 'r_quadratic', 'l': torch.exp(torch.tensor(-1.25)), 'alpha': 1}
      fit_params = {'name': 'r_quadratic', 'l': torch.exp(torch.tensor(-1.25)), 'alpha': 1}
      exp_params = {'fit': mmd_params, 'mmd': fit_params}
 
+     if not len(idx_dict):
+         idx_dict = {'ref': [], 'cond': [[]], 'target': []}
+         for k in range(nr):
+             idx_dict['ref'].append([k])
+             idx_dict['cond'].append(list(range(k+1)))
+             idx_dict['target'].append([k])
 
-     if not len(ref_idx_lists):
-         ref_idx_lists = [[0]] + [list(range(k + 1))[1:] for k in range(nr)][1:]
-         target_idx_lists = [[k+1] for k in range(nr)]
 
+     idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
-                                           process_funcs, cond_model_trainer, ref_idx_lists, target_idx_lists)
-     ref_idx_tensors = get_idx_tensors(ref_idx_lists)
-
-
-     cond_idx_tensor =  get_idx_tensors(ref_idx_lists)[skip_idx]
-     cref_idx_tensors = get_idx_tensors(target_idx_lists)[skip_idx:]
-
-     cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensor]
-     eta_ref_sample = ref_gen(10 * N)
+                                           process_funcs, cond_model_trainer, idx_dict = idx_dict)
+     N_test = min(10 * N, 15000)
+     target_sample = target_gen(N_test)
+     ref_sample = ref_gen(N_test)
 
      if not skip_base:
-         gen_sample = compositional_gen(trained_models, ref_gen(10 * N),ref_idx_tensors)
+        gen_sample = compositional_gen(trained_models, ref_sample, idx_dict)
      else:
-         gen_sample = conditional_gen(trained_models[skip_idx+1:], eta_ref_sample, cond_ref_sample, cref_idx_tensors)
-
+         gen_sample = conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
      if traj_hist:
         sode_hist(gen_sample, save_dir, 'gen_traj_hist')
-        sode_hist(target_gen(10*N), save_dir, 'traj_hist')
+        sode_hist(target_gen(N_test), save_dir, 'traj_hist')
 
      hist_idx = 1
      if len(slice_vals):
          for slice_val in slice_vals:
-             ref_slice_sample = torch.tensor([slice_val for i in range(len(cond_ref_sample))],
-                                             device = trained_models[0].device).reshape(cond_ref_sample.shape)
-             slice_sample = conditional_gen(trained_models[skip_idx+1:], eta_ref_sample, ref_slice_sample, cref_idx_tensors)
+             ref_slice_sample = torch.zeros(target_sample.shape, device = trained_models[0].device)
+             ref_slice_sample += geq_1d(torch.tensor([slice_val for i in range(len(ref_sample))],
+                                             device = trained_models[0].device))
+             slice_sample = conditional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
              plt.hist(slice_sample[:, hist_idx].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
          plt.legend()
          plt.savefig(f'{save_dir}/conditional_hists.png')
@@ -532,7 +511,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      if not len(plot_idx):
         plot_idx = torch.tensor([0,1]).long()
      gen_sample = gen_sample[:, plot_idx]
-     target_sample = target_gen(10 * N)[:, plot_idx]
+     target_sample = target_sample[:, plot_idx]
 
      sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = 2, range = plt_range)
      sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=70, d=2, range=plt_range, vmax=vmax)
@@ -542,42 +521,57 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      return trained_models
 
 
+def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
+    ref_gen = lambda n: sample_normal(n, Yd)
+    target_gen = lambda N: get_VL_data(N, Yd = Yd)
 
-def lokta_vol_exp(N = 10000, n_iter = 10000):
-    d = 4
-    covar = rand_diag_covar(d)
-    mu = 3 * np.random.rand(d)
-    ref_gen = lambda n: sample_normal(n, d)
-    target_gen = lambda n: sample_normal(n, d, mu = mu, sigma = covar)
+    idx_dict = {'ref': list(range(Yd)),
+                'cond': [list(range(i + 4)) for i in range(Yd)],
+                'target': [[i + 4] for i in range(Yd)]}
 
-    ref_idx_lists = [[0],[0,1],[0,1,2]]
-    target_idx_list = [[1],[2],[3]]
-    skip_base = False
-
-    trained_models, eta_ref_sample, cref_idx_tensors, cond_idx_tensors = \
-        conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[], vmax=None,
-                              exp_name='covar_exp', plt_range=None, slice_range=None, process_funcs=[],
-                              cond_model_trainer=comp_cond_kernel_transport,
-                              ref_idx_lists=ref_idx_lists , target_idx_lists=target_idx_list,
-                              skip_base=skip_base, skip_idx=0, traj_hist=True)
-
-    #cond_sample = get_cond_VL_data(10 * N)[:, cond_idx_tensors]
-    #gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_sample, cref_idx_tensors)
-    #plt.hist(gen_sample[-1].detach().numpy())
-    #plt.savefig(f'../../data/kernel_transport/lk_exp/param_hist.png')
-    #return True
+    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[0], vmax=None,
+                              exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
+                              cond_model_trainer=comp_cond_kernel_transport,idx_dict= idx_dict,
+                              skip_base=True, skip_idx=1, traj_hist=True)
+    return True
 
 
-#At step 300: fit_loss = 0.000441, reg_loss = 3.1e-05, test loss = 0.000952
+def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
+    params = [-0.125, -3, -0.125, -3]
+
+    ref_gen = lambda n: sample_normal(n, 4)
+    target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=Yd))
+    ref_idx_lists = [list(range(Yd,))]
+    return True
+
+
 
 def run():
+
     ref_gen = sample_normal
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=10001, slice_vals=[-1, 0, 1], vmax=2,
-                              exp_name='mgan2_composed3', plt_range=range, slice_range=[-1.5, 1.5],
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=10001, slice_vals=[-1,0,1], vmax=2,
+                              exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
+
+
+    '''
+    d = 8
+    n_mixtures = 8
+    ref_gen = lambda N: sample_normal(N, d)
+
+    sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
+    mu_vecs  = [15 * np.random.random(d) for i in range(n_mixtures)]
+
+    #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
+    target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=3001, slice_vals=[],
+                              exp_name='nd_mixtures', plt_range=[[-4,4], [-4,4]], slice_range=[],
+                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
+    '''
+
 
 
 if __name__=='__main__':
