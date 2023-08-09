@@ -11,7 +11,7 @@ import numpy as np
 import random
 from lokta_voltera import get_VL_data,get_cond_VL_data
 from picture_to_dist import sample_elden_ring
-
+from datetime import datetime as dt
 
 def geq_1d(tensor):
     if not len(tensor.shape):
@@ -391,22 +391,12 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
         X_mu = target_sample[:,  ref_idx_tensors[i]]
         X_mu_test = test_target_sample[:, ref_idx_tensors[i]]
 
-        plt.hist(X_mu)
-        plt.savefig('X_mu_old.png')
-        clear_plt()
-
         Y_mu = target_sample[:, target_idx_tensors[i]]
         Y_mu_test = test_target_sample[:, target_idx_tensors[i]]
 
-        plt.hist(Y_mu)
-        plt.savefig('Y_mu_old.png')
-        clear_plt()
 
         Y_eta = ref_sample[:,target_idx_tensors[i]-1]
         Y_eta_test = test_sample[:, target_idx_tensors[i]-1]
-        plt.hist(Y_eta)
-        plt.savefig('Y_eta_old.png')
-        clear_plt()
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                                  Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
 
@@ -581,7 +571,7 @@ def run():
     target_gen = sample_spirals
     range = [[-3, 3], [-3, 3]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=100, n_iter=101, slice_vals=[0], vmax=.15,
+    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0], vmax=.15,
                               exp_name='spiral_composed3', plt_range=range, slice_range=[-3, 3],
                               process_funcs=[], skip_base=True, traj_hist=True)
 

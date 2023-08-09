@@ -11,6 +11,7 @@ import numpy as np
 import random
 from lokta_voltera import get_VL_data,get_cond_VL_data
 from picture_to_dist import sample_elden_ring
+from datetime import datetime as dt
 
 
 def geq_1d(tensor):
@@ -236,9 +237,10 @@ class CondTransportKernel(nn.Module):
 
 
     def loss(self):
-        loss_mmd = self.loss_mmd()
         if self.params['no_mu']:
             loss_mmd = self.loss_mmd_no_mu()
+        else:
+            loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
@@ -327,7 +329,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
                           Y_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
+                        'print_freq': 100, 'learning_rate': .005, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     if len(X_mu_test):
@@ -497,7 +499,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
          gen_sample = backward(gen_sample.cpu())
 
      if not len(plot_idx):
-        plot_idx = torch.tensor([0,1]).long()
+        plot_idx = torch.tensor([4,5]).long()
      gen_sample = gen_sample[:, plot_idx]
      target_sample = target_sample[:, plot_idx]
 
@@ -544,7 +546,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 def run():
     #lokta_vol_exp(2000,2000)
 
-    '''
+
     ref_gen = sample_normal
     target_gen = sample_spirals
     range = [[-3, 3], [-3, 3]]
@@ -552,23 +554,26 @@ def run():
     conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0], vmax=.15,
                               exp_name='spiral_composed2', plt_range=range, slice_range=[-3, 3],
                               process_funcs=[], skip_base=True, traj_hist=True)
+
+
+
     '''
 
 
 
-    d = 8
-    n_mixtures = 8
+    d = 6
+    n_mixtures = 6
     ref_gen = lambda N: sample_normal(N, d)
 
-    sigma_vecs = [rand_covar(d) for i in range(n_mixtures)]
+    sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
     mu_vecs  = [15 * np.random.random(d) for i in range(n_mixtures)]
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=5001, slice_vals=[],
-                              exp_name='mixture_exp', plt_range=[[-4,4], [-4,4]], slice_range=[],
-                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
-
+    conditional_transport_exp(ref_gen, target_gen, N=1200, n_iter=1201, slice_vals=[],
+                              exp_name='mixture_exp2', plt_range=[[-4,4], [-4,4]], slice_range=[],
+                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([4,5]).long())
+    '''
 
 
 

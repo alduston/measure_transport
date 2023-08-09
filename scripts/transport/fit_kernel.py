@@ -13,6 +13,7 @@ from picture_to_dist import sample_elden_ring, sample_bambdad, sample_twisted_ri
 #from kernel_geodesics import geo_diffs, boosted_geo_diffs
 from copy import deepcopy
 import random
+from datetime import datetime as dt
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -41,6 +42,7 @@ def prob_normalization(alpha):
 def train_kernel(kernel_model, n_iter = 100):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr= kernel_model.params['learning_rate'])
     Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'total': []}
+    kernel_model.train()
     if kernel_model.test:
         Loss_dict['test'] = []
     for i in range(n_iter):
@@ -52,11 +54,11 @@ def train_kernel(kernel_model, n_iter = 100):
             test_loss = kernel_model.loss_test().detach().cpu()
             print_str += f', test loss = {round(float(test_loss),6)}'
             print(print_str)
+            kernel_model.train()
     return kernel_model, Loss_dict
 
 
 def train_step(kernel_model, optimizer):
-    kernel_model.train()
     optimizer.zero_grad()
     loss, loss_dict = kernel_model.loss()
     loss.backward()
