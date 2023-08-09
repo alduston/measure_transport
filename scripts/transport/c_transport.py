@@ -115,14 +115,14 @@ class CondTransportKernel(nn.Module):
         self.Nx = len(self.X)
         self.Ny = len(self.Y)
 
-        self.params['fit_kernel_params']['l'] *= l_scale(self.X)
+        self.params['fit_kernel_params']['l'] *= l_scale(self.X).to(self.device)
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.fit_kXX = self.fit_kernel(self.X, self.X)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
         self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu)
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).to(self.device)
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
@@ -555,12 +555,7 @@ def run():
                               exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=True, traj_hist=True)
 
-
-
     '''
-
-
-
     d = 6
     n_mixtures = 6
     ref_gen = lambda N: sample_normal(N, d)
@@ -580,9 +575,6 @@ def run():
 
 if __name__=='__main__':
     run()
-
-#0.04841
-#0.007863
 
 
 
