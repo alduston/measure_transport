@@ -356,7 +356,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 3, f = .8):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .8):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -542,7 +542,7 @@ def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[0], vmax=None,
                               exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
                               cond_model_trainer=comp_cond_kernel_transport,idx_dict= idx_dict,
-                              skip_base=True, skip_idx=1, traj_hist=True)
+                              skip_base=True, skip_idx=1, traj_hist=True,plot_idx= torch.tensor([Yd-2,Yd-1]).long())
     return True
 
 
@@ -557,7 +557,9 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 
 def run():
+    lokta_vol_exp(5000,5000, Yd=5)
 
+    '''
     d = 5
     n_mixtures = 5
     ref_gen = lambda N: sample_normal(N, d)
@@ -565,12 +567,12 @@ def run():
     sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
     mu_vecs  = [15 * np.random.random(d) for i in range(n_mixtures)]
 
-    #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
+    #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=5))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
     conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=4001, slice_vals=[],
                               exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
                               process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([3,4]).long())
-
+    '''
 
 if __name__=='__main__':
     run()
