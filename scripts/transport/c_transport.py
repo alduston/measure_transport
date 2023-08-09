@@ -567,7 +567,7 @@ def run():
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=4001, n_iter=3001, slice_vals=[],
+    conditional_transport_exp(ref_gen, target_gen, N=4000, n_iter=3001, slice_vals=[],
                               exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
                               process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
 
