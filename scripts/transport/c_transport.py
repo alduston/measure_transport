@@ -329,7 +329,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
                           Y_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .005, 'nugget': 1e-4}
+                        'print_freq': 100, 'learning_rate': .002, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     if len(X_mu_test):
@@ -343,7 +343,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 3, f = .5):
+                               X_mu_test = [],Y_mu_test = [], n = 4, f = .7):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -487,7 +487,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      hist_idx = 1
      if len(slice_vals):
          for slice_val in slice_vals:
-             ref_slice_sample = torch.zeros(target_sample.shape)
+             ref_slice_sample = torch.zeros(target_sample.shape, device = trained_models[0].device)
              ref_slice_sample += geq_1d(torch.tensor([slice_val for i in range(len(ref_sample))],
                                              device = trained_models[0].device))
              slice_sample = conditional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
@@ -553,9 +553,10 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=9000, n_iter=9001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=3001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=True, traj_hist=True)
+
 
     '''
     d = 6
