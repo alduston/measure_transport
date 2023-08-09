@@ -7,12 +7,18 @@ from scipy.stats import norm
 
 
 def rand_covar(N):
-    L = np.zeros((N,N))
-    for i in range(N):
-        for j in range(i+1):
-            L[i,i] += np.random.random()
-    M = L @ L.T
-    return M
+    A = np.random.random((N,N))
+    return A @ A.T
+
+    #L = np.zeros((N,N))
+    #for i in range(N):
+        #for j in range(N):
+            #L[i,j] += np.random.random()
+            #L[j,i] += np.random.random()
+    #return L
+    #M = L @ L.T
+    #print(np.diag(M))
+    #return M
 
 
 def rand_diag_covar(N):

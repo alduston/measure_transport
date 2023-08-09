@@ -509,20 +509,18 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      return trained_models
 
 
-
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     ref_gen = lambda n: sample_normal(n, Yd)
     target_gen = lambda N: get_VL_data(N, Yd = Yd)
 
-    ref_idx_lists = [list(range(i + 4)) for i in range(Yd)]
-    target_idx_list = [[i + 5] for i in range(Yd)]
-    skip_base = True
+    idx_dict = {'ref': list(range(Yd)),
+                'cond': [list(range(i + 4)) for i in range(Yd)],
+                'target': [[i + 4] for i in range(Yd)]}
 
     conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[0], vmax=None,
                               exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
-                              cond_model_trainer=comp_cond_kernel_transport,
-                              ref_idx_lists=ref_idx_lists , target_idx_lists=target_idx_list,
-                              skip_base=skip_base, skip_idx=3, traj_hist=True)
+                              cond_model_trainer=comp_cond_kernel_transport,idx_dict= idx_dict,
+                              skip_base=True, skip_idx=1, traj_hist=True)
     return True
 
 
@@ -544,6 +542,9 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 
 def run():
+    #lokta_vol_exp(2000,2000)
+
+    '''
     ref_gen = sample_normal
     target_gen = sample_spirals
     range = [[-3, 3], [-3, 3]]
@@ -551,11 +552,12 @@ def run():
     conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0], vmax=.15,
                               exp_name='spiral_composed2', plt_range=range, slice_range=[-3, 3],
                               process_funcs=[], skip_base=True, traj_hist=True)
-
-
     '''
-    d = 4
-    n_mixtures = 5
+
+
+
+    d = 8
+    n_mixtures = 8
     ref_gen = lambda N: sample_normal(N, d)
 
     sigma_vecs = [rand_covar(d) for i in range(n_mixtures)]
@@ -563,10 +565,11 @@ def run():
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=500, n_iter=501, slice_vals=[],
-                              exp_name='mixture_exp2', plt_range=[[-5,5], [-5,5]], slice_range=[],
-                              process_funcs=[], skip_base=False, traj_hist=True)
-    '''
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=5001, slice_vals=[],
+                              exp_name='mixture_exp', plt_range=[[-4,4], [-4,4]], slice_range=[],
+                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
+
+
 
 
 
