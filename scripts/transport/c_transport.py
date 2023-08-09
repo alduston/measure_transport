@@ -553,14 +553,14 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=3001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=2000, n_iter=3001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=True, traj_hist=True)
 
 
     '''
-    d = 6
-    n_mixtures = 6
+    d = 8
+    n_mixtures = 8
     ref_gen = lambda N: sample_normal(N, d)
 
     sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
@@ -568,11 +568,10 @@ def run():
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=1200, n_iter=1201, slice_vals=[],
-                              exp_name='mixture_exp2', plt_range=[[-4,4], [-4,4]], slice_range=[],
-                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([4,5]).long())
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=3001, slice_vals=[],
+                              exp_name='nd_mixtures', plt_range=[[-4,4], [-4,4]], slice_range=[],
+                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
     '''
-
 
 
 
