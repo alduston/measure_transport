@@ -557,7 +557,15 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 
 def run():
+    ref_gen = sample_normal
+    target_gen = sample_spirals()
+    range = [[-3, 3], [-3, 3]]
 
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=4001, slice_vals=[0], vmax=.15,
+                              exp_name='spiral_approx_test', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=[], skip_base=False, traj_hist=True)
+
+    '''
     ref_gen = sample_normal
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
@@ -568,7 +576,6 @@ def run():
 
 
 
-    '''
     d = 8
     n_mixtures = 8
     ref_gen = lambda N: sample_normal(N, d)
