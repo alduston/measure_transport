@@ -558,8 +558,8 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 def run():
 
-    d = 8
-    n_mixtures = 8
+    d = 6
+    n_mixtures = 6
     ref_gen = lambda N: sample_normal(N, d)
 
     sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
@@ -569,7 +569,7 @@ def run():
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
     conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=6001, slice_vals=[],
                               exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
-                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
+                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([4,5]).long())
 
 
 if __name__=='__main__':
