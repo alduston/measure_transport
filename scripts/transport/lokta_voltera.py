@@ -111,10 +111,10 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20):
 
     X = torch.tensor(np.real(X)[:, :Xd])
     Y = torch.tensor(np.real(Y)[:,  :Yd])
-    return torch.concat([X,Y], dim = 1)
+    return torch.concat([X,Y], dim = 1).detach().numpy()
 
 
-def get_cond_VL_data(N = 5000, Xd = 0, Yd = 5, T = 20, x = []):
+def get_cond_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20, x = []):
     LV = DeterministicLotkaVolterra(T)
     if not len(x):
         x =  LV.sample_prior(1)

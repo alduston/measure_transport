@@ -356,16 +356,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .8):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .7):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
         n_iter = int(n_iter * f)
-
-        #Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        #Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
 
         Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -463,10 +460,10 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist'):
     clear_plt()
 
 
-def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slice_vals = [], vmax = None,
-                           exp_name= 'exp', plt_range = None, slice_range = None, process_funcs = [],
+def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
+                           exp_name= 'exp', plt_range = None,  process_funcs = [],
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_base  = 0, skip_idx = 1, traj_hist = False, plot_idx = []):
+                           skip_base  = 0, skip_idx = 1, plot_idx = []):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -498,21 +495,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
         gen_sample = compositional_gen(trained_models, ref_sample, idx_dict)
      else:
          gen_sample = conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
-     if traj_hist:
-        sode_hist(gen_sample, save_dir, 'gen_traj_hist')
-        sode_hist(target_gen(N_test), save_dir, 'traj_hist')
-
-     hist_idx = 1
-     if len(slice_vals):
-         for slice_val in slice_vals:
-             ref_slice_sample = torch.zeros(target_sample.shape, device = trained_models[0].device)
-             ref_slice_sample += geq_1d(torch.tensor([slice_val for i in range(len(ref_sample))],
-                                             device = trained_models[0].device))
-             slice_sample = conditional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
-             plt.hist(slice_sample[:, hist_idx].detach().cpu().numpy(), label = f'z  = {slice_val}', bins = 60, range=slice_range)
-         plt.legend()
-         plt.savefig(f'{save_dir}/conditional_hists.png')
-         clear_plt()
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -528,36 +510,63 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
 
      sample_scatter(target_sample, f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
      sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=70, d=2, range=plt_range, vmax=vmax)
-     return trained_models
+     return trained_models, idx_dict
 
 
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     ref_gen = lambda n: sample_normal(n, Yd)
-    target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd).detach().cpu().numpy())
+    target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd))
 
     idx_dict = {'ref': list(range(Yd)),
                 'cond': [list(range(i + 4)) for i in range(Yd)],
                 'target': [[i + 4] for i in range(Yd)]}
 
-    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, slice_vals=[0], vmax=None,
-                              exp_name='lk_exp', plt_range=None, slice_range=None, process_funcs=[],
+    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                              exp_name='lk_exp', plt_range=None,  process_funcs=[],
                               cond_model_trainer=comp_cond_kernel_transport,idx_dict= idx_dict,
-                              skip_base=True, skip_idx=1, traj_hist=True,plot_idx= torch.tensor([Yd-2,Yd-1]).long())
+                              skip_base=True, skip_idx=1, plot_idx= torch.tensor([Yd-2,Yd-1]).long())
     return True
 
 
-def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
-    params = [-0.125, -3, -0.125, -3]
+def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
     ref_gen = lambda n: sample_normal(n, 4)
-    target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=Yd))
-    ref_idx_lists = [list(range(Yd,))]
+    target_gen = lambda N: normalize(get_VL_data(N, Yd=Yd))
+    idx_dict = {'ref': [list(range(4))],
+                'cond': [list(range(4, 4 + Yd))],
+                'target': [list(range(4))]}
+
+
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                              exp_name='param_exp', plt_range=[[.5,1.5],[.02,.08]], process_funcs=[],
+                              cond_model_trainer=comp_cond_kernel_transport, idx_dict= idx_dict,
+                              skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
+
+    N_test = min(10 * N, 15000)
+    slice_val = np.asarray([0.92, .05, 1.50, 0.02])
+    ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
+    ref_sample = ref_gen(N_test)
+
+    slice_sample = conditional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
+
+    params_keys = ['alpha','beta','gamma','delta']
+    save_dir = f'../../data/kernel_transport/param_exp'
+    for i, key_i in enumerate(params_keys):
+        for j,key_j in enumerate(params_keys):
+            if i == j:
+                plot_sample = slice_sample[:, i].detach().cpu().numpy()
+                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1)
+                pass
+            elif i < j:
+                plot_sample = slice_sample[:,torch.tensor([i,j]).long()].detach().cpu().numpy()
+                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2)
+
     return True
 
 
 
 def run():
-    lokta_vol_exp(3000,3000, Yd=4)
+    param_infer_exp(N = 6000,N_iter = 6001)
 
     '''
     d = 5
