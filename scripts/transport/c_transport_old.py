@@ -552,7 +552,7 @@ def run():
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
     conditional_transport_exp(ref_gen, target_gen, N=4000, n_iter=5001, slice_vals=[-1, 0, 1], vmax=2,
-                              exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
+                              exp_name='approx_test2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
 
 
