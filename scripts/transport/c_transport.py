@@ -487,7 +487,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer, idx_dict = idx_dict)
-     N_test = min(10 * N, 15000)
+     N_test = N
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
@@ -542,7 +542,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
                               cond_model_trainer=comp_cond_kernel_transport, idx_dict= idx_dict,
                               skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
-    N_test = min(10 * N, 15000)
+    N_test = min(10 * N, 10000)
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
     ref_sample = ref_gen(N_test)
@@ -566,7 +566,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
 
 def run():
-    param_infer_exp(N = 6000,n_iter = 6001)
+    param_infer_exp(N = 5000,n_iter = 5001)
 
     '''
     d = 5
