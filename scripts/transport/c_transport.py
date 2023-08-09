@@ -64,17 +64,19 @@ class Comp_transport_model:
 
 
     def base_map(self, y):
+        y_approx = deepcopy(y)
         for submodel in self.submodels:
-            y = submodel.map(y).T
-        return y
+            y_approx = submodel.map(y, y_approx).T
+        return y_approx
 
 
     def c_map(self, x, y):
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
+        y_approx = deepcopy(y)
         for submodel in self.submodels:
-            y = submodel.map(x,y, no_x = True)
-        return torch.concat([x, y], dim = 1)
+            y_approx = submodel.map(x, y, y_approx, no_x = True)
+        return torch.concat([x, y_approx], dim = 1)
 
 
     def map(self, x = [], y = []):
@@ -171,13 +173,14 @@ class CondTransportKernel(nn.Module):
             w = y_eta
         else:
             w = torch.concat([x_mu, y_eta], dim=1)
+
+        if self.params['approx']:
+            y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
+            w = torch.concat([w, y_approx], dim = 1)
+        else:
+            y_approx = deepcopy(y_eta)
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
-
-        if len(y_approx):
-            y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
-        else:
-            y_approx = y_eta
 
         if no_x or self.params['no_mu']:
             return z + y_approx
@@ -249,17 +252,17 @@ class CondTransportKernel(nn.Module):
     def loss_test(self):
         x_mu = self.X_mu_test
         y_eta = self.Y_eta_test
+        y_approx = self.Y_approx_test
         target = self.Y_test
-        map_vec = self.map(x_mu, y_eta)
+        map_vec = self.map(x_mu, y_eta, y_approx)
 
         try:
-            plot_test(self, map_vec, target, x_mu, y_eta,
+            plot_test(self, map_vec, target, x_mu, y_eta, y_approx,
                       plt_range=[[-2.5, 2.5], [-1.05, 1.05]], vmax=2,
                       slice_vals=[0], slice_range=[-1.5, 1.5],
                       exp_name='mgan2_composed2')
         except ValueError:
             pass
-
         return self.mmd(map_vec, target)
 
 
@@ -277,13 +280,13 @@ class CondTransportKernel(nn.Module):
 
 
 
-def plot_test(model, map_vec, target, x_mu, y_eta, plt_range = None, vmax = None,
+def plot_test(model, map_vec, target, x_mu, y_eta, y_approx, plt_range = None, vmax = None,
               slice_vals= [0], slice_range = None, exp_name = 'exp', flip = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     for slice_val in slice_vals:
         x_slice = torch.full(x_mu.shape, slice_val, device=model.device)
-        y = model.map(x_slice, y_eta, no_x = True).detach().cpu().numpy()
-        plt.hist(y, bins=60, range=slice_range, label=f'z = {slice_val}')
+        y_approx = model.map(x_slice, y_eta, y_approx, no_x = True).detach().cpu().numpy()
+        plt.hist(y_approx, bins=60, range=slice_range, label=f'z = {slice_val}')
     plt.legend()
     plt.savefig(f'{save_dir}/slice_hist.png')
     clear_plt()
@@ -341,17 +344,6 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = .5):
-    models = []
-    for i in range(n):
-        model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
-        n_iter = int(n_iter * f)
-        Y_eta = model.map(model.X)
-        Y_eta_test = model.map(model.Y_eta_test)
-        models.append(model)
-    return Comp_transport_model(models, cond=False)
-
-
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
@@ -364,18 +356,19 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 1, f = .7):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 3, f = .7):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
         n_iter = int(n_iter * f)
-        Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
-        Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
 
-        #Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
-        #Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
+        #Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
+        #Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
+
+        Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
+        Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -569,7 +562,7 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=3001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=4001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
 
