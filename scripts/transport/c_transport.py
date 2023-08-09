@@ -356,7 +356,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 5, f = .8):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 3, f = .8):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -567,7 +567,7 @@ def run():
 
     #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=4))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=4000, n_iter=3001, slice_vals=[],
+    conditional_transport_exp(ref_gen, target_gen, N=4000, n_iter=6001, slice_vals=[],
                               exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
                               process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([6,7]).long())
 
