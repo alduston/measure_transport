@@ -557,7 +557,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 
 def run():
-    lokta_vol_exp(5000,5000, Yd=5)
+    lokta_vol_exp(3000,3000, Yd=5)
 
     '''
     d = 5
