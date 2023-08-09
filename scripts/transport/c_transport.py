@@ -356,7 +356,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 3, f = .7):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -388,7 +388,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = min(10 * N, 15000)
+    N_test = min(10 * N, 20000)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -490,7 +490,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer, idx_dict = idx_dict)
-     N_test = min(10 * N, 15000)
+     N_test = min(10 * N, 20000)
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
@@ -562,9 +562,10 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=4001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
+
 
 
     '''
