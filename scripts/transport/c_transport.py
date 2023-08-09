@@ -548,11 +548,11 @@ def run():
 
 
     ref_gen = sample_normal
-    target_gen = sample_spirals
-    range = [[-3, 3], [-3, 3]]
+    target_gen = mgan2
+    range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0], vmax=.15,
-                              exp_name='spiral_composed2', plt_range=range, slice_range=[-3, 3],
+    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=10001, slice_vals=[-1,0,1], vmax=2,
+                              exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=True, traj_hist=True)
 
 
