@@ -169,9 +169,9 @@ class CondTransportKernel(nn.Module):
         target = self.W_target
         map_vec = self.map(x_mu, y_eta)
         plot_test(self, map_vec, target, x_mu, y_eta,
-                  plt_range=[[-3, 3], [-3, 3]], vmax=.16,
-                  slice_vals=[0], slice_range=[-3, 3],
-                  exp_name='ring_exp')
+                  plt_range=[[-2.5, 2.5], [-1.05, 1.05]], vmax=2,
+                  slice_vals=[0], slice_range=[-1.5, 1.5],
+                  exp_name='mgan2_composed3')
         return self.mmd(map_vec, target)
 
 
