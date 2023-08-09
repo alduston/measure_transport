@@ -164,7 +164,7 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
-    def map(self, x_mu, y_eta, no_x = False):
+    def map(self, x_mu, y_eta, y_approx = [], no_x = False):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         if self.params['no_mu']:
@@ -173,9 +173,15 @@ class CondTransportKernel(nn.Module):
             w = torch.concat([x_mu, y_eta], dim=1)
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, w).T @ Lambda
+
+        if len(y_approx):
+            y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
+        else:
+            y_approx = y_eta
+
         if no_x or self.params['no_mu']:
-            return z + y_eta
-        return torch.concat([x_mu, z + y_eta], dim = 1)
+            return z + y_approx
+        return torch.concat([x_mu, z + y_approx], dim = 1)
 
 
     def mmd(self, map_vec, target):
@@ -192,8 +198,9 @@ class CondTransportKernel(nn.Module):
 
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
+
     def loss_mmd_no_mu(self):
-        map_vec = self.Y_eta + self.Z
+        map_vec = self.Y_approx + self.Z
         target = self.Y_mu
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -206,6 +213,7 @@ class CondTransportKernel(nn.Module):
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+
 
     def loss_mmd(self):
         map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z], dim=1)
@@ -344,32 +352,30 @@ def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = 
     return Comp_transport_model(models, cond=False)
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test = [], X_mu_test = [],
-                          Y_mu_test = []):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
+                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
-    if len(Y_eta_test):
-        transport_params['Y_eta_test'] = Y_eta_test
-    if len(X_mu_test):
-        transport_params['X_mu_test'] = X_mu_test
-    if len(Y_mu_test):
-        transport_params['Y_mu_test'] = Y_mu_test
-
+                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
+                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_eta_test = [],
-                               X_mu_test = [],Y_mu_test = [], n = 1, f = .7):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 1, f = .7):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
-                                                    X_mu_test = X_mu_test, Y_mu_test = Y_mu_test)
+                                      Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
+                                      Y_approx_test = Y_approx_test)
         n_iter = int(n_iter * f)
         Y_eta = model.map(model.X_mu, model.Y_eta, no_x = True)
         Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, no_x = True)
+
+        #Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
+        #Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
