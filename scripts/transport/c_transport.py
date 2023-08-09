@@ -534,7 +534,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
                               cond_model_trainer=comp_cond_kernel_transport, idx_dict= idx_dict,
                               skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
-    N_test = 100000
+    N_test = 5 * N
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
     ref_sample = ref_gen(N_test)
@@ -558,7 +558,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
 
 def run():
-    param_infer_exp(N = 50,n_iter = 51)
+    param_infer_exp(N = 5000,n_iter = 5001)
 
     '''
     d = 5
