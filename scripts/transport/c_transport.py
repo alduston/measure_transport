@@ -356,7 +356,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 6, f = .8):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -562,7 +562,7 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=5001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=False, traj_hist=True)
 
