@@ -498,14 +498,16 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
                                            process_funcs, cond_model_trainer, ref_idx_lists, target_idx_lists)
      ref_idx_tensors = get_idx_tensors(ref_idx_lists)
 
-     if not skip_base:
-        gen_sample = compositional_gen(trained_models, ref_gen(10 * N),ref_idx_tensors)
-     else:
-         cond_idx_tensor =  get_idx_tensors(ref_idx_lists)[skip_idx]
-         cref_idx_tensors = get_idx_tensors(target_idx_lists)[skip_idx:]
 
-         cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensor]
-         eta_ref_sample = ref_gen(10 * N)
+     cond_idx_tensor =  get_idx_tensors(ref_idx_lists)[skip_idx]
+     cref_idx_tensors = get_idx_tensors(target_idx_lists)[skip_idx:]
+
+     cond_ref_sample = target_gen(10 * N)[:, cond_idx_tensor]
+     eta_ref_sample = ref_gen(10 * N)
+
+     if not skip_base:
+         gen_sample = compositional_gen(trained_models, ref_gen(10 * N),ref_idx_tensors)
+     else:
          gen_sample = conditional_gen(trained_models[skip_idx+1:], eta_ref_sample, cond_ref_sample, cref_idx_tensors)
 
      if traj_hist:
