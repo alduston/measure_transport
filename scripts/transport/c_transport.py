@@ -558,14 +558,40 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
 
 def run():
     ref_gen = sample_normal
+    process_funcs = []
+
+    target_gen = sample_spirals
+    range = [[-3, 3], [-3, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.15,
+                              exp_name='spiral_composed', plt_range=range, slice_range=[-3, 3],
+                              process_funcs=process_funcs, skip_base=False)
+
+    target_gen = sample_rings
+    range = [[-3, 3], [-3, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.16,
+                              exp_name='rings_composed', plt_range=range, slice_range=[-3, 3],
+                              process_funcs=process_funcs, skip_base=False)
+
+    target_gen = mgan1
+    range = [[-2.5, 2.5], [-1, 3]]
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=.5,
+                              exp_name='mgan1_composed', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=process_funcs, skip_base=False)
+
     target_gen = mgan2
-    range = [[-2.5, 2.5], [-1.05, 1.05]]
+    range = [[-2.5, 2.5], [-1, 1]]
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=8001, slice_vals=[0], vmax=2,
+                              exp_name='mgan2_composed', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=process_funcs, skip_base=False)
 
-    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=4001, slice_vals=[-1,0,1], vmax=2,
-                              exp_name='approx_test', plt_range=range, slice_range=[-1.5, 1.5],
-                              process_funcs=[], skip_base=False, traj_hist=True)
+    target_gen = sample_elden_ring
+    range = [[-2.5, 2.5], [-1, 1]]
+    conditional_transport_exp(ref_gen, target_gen, N= 10000, n_iter=8001, slice_vals=[0], vmax=4.5,
+                              exp_name='elden_composed', plt_range=range, slice_range=[-1, 1],
+                              process_funcs=process_funcs, skip_base=False)
 
-    '''
+
+'''
     ref_gen = sample_normal
     target_gen = sample_spirals()
     range = [[-3, 3], [-3, 3]]
