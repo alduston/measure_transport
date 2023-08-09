@@ -319,7 +319,7 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
     return transport_kernel
 
 
-def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 3, f = .5):
+def comp_base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = [], n = 4, f = .7):
     models = []
     for i in range(n):
         model = base_kernel_transport(Y_eta, Y_mu, params, n_iter, Y_eta_test)
@@ -334,7 +334,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_eta_test 
                           Y_mu_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .01, 'nugget': 1e-4}
+                        'print_freq': 100, 'learning_rate': .001, 'nugget': 1e-4}
     if len(Y_eta_test):
         transport_params['Y_eta_test'] = Y_eta_test
     if len(X_mu_test):
@@ -568,13 +568,12 @@ def lokta_vol_exp(N = 10000, n_iter = 10000):
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_spirals
-    range = [[-3, 3], [-3, 3]]
+    target_gen = mgan2
+    range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=1000, n_iter=1001, slice_vals=[0], vmax=.15,
-                              exp_name='spiral_composed3', plt_range=range, slice_range=[-3, 3],
-                              process_funcs=[], skip_base=True, traj_hist=True)
-
+    conditional_transport_exp(ref_gen, target_gen, N=5000, n_iter=3001, slice_vals=[-1, 0, 1], vmax=2,
+                              exp_name='mgan2_composed3', plt_range=range, slice_range=[-1.5, 1.5],
+                              process_funcs=[], skip_base=False, traj_hist=True)
 
 
 if __name__=='__main__':
