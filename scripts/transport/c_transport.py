@@ -542,20 +542,11 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 6):
     ref_gen = lambda n: sample_normal(n, 4)
     target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=Yd))
     ref_idx_lists = [list(range(Yd,))]
+    return True
 
-    #cond_sample = get_cond_VL_data(10 * N)[:, cond_idx_tensors]
-    #gen_sample = conditional_gen(trained_models, eta_ref_sample, cond_sample, cref_idx_tensors)
-    #plt.hist(gen_sample[-1].detach().numpy())
-    #plt.savefig(f'../../data/kernel_transport/lk_exp/param_hist.png')
-    #return True
-
-
-#At step 300: fit_loss = 0.000441, reg_loss = 3.1e-05, test loss = 0.000952
 
 
 def run():
-    #lokta_vol_exp(2000,2000)
-
 
     ref_gen = sample_normal
     target_gen = mgan2
