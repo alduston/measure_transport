@@ -370,8 +370,9 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    test_sample = ref_gen(5 * N)
-    test_target_sample = target_gen(5 * N)
+    N_test = min(10 * N, 15000)
+    test_sample = ref_gen(N_test)
+    test_target_sample = target_gen(N_test)
 
     if len(process_funcs):
         forward = process_funcs[0]
@@ -471,8 +472,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
      idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer, idx_dict = idx_dict)
-     target_sample = target_gen(10 * N)
-     ref_sample = ref_gen(10 * N)
+     N_test = min(10 * N, 15000)
+     target_sample = target_gen(N_test)
+     ref_sample = ref_gen(N_test)
 
      if not skip_base:
         gen_sample = compositional_gen(trained_models, ref_sample, idx_dict)
@@ -480,7 +482,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
          gen_sample = conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
      if traj_hist:
         sode_hist(gen_sample, save_dir, 'gen_traj_hist')
-        sode_hist(target_gen(10*N), save_dir, 'traj_hist')
+        sode_hist(target_gen(N_test), save_dir, 'traj_hist')
 
      hist_idx = 1
      if len(slice_vals):
@@ -551,7 +553,7 @@ def run():
     target_gen = mgan2
     range = [[-2.5, 2.5], [-1.05, 1.05]]
 
-    conditional_transport_exp(ref_gen, target_gen, N=10000, n_iter=10001, slice_vals=[-1,0,1], vmax=2,
+    conditional_transport_exp(ref_gen, target_gen, N=9000, n_iter=9001, slice_vals=[-1,0,1], vmax=2,
                               exp_name='mgan2_composed2', plt_range=range, slice_range=[-1.5, 1.5],
                               process_funcs=[], skip_base=True, traj_hist=True)
 
