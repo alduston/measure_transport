@@ -232,13 +232,6 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta)
-
-        try:
-            plot_test(self, map_vec, target, x_mu, y_eta,
-                      exp_name='spiral_composed2', plt_range=[[-3, 3], [-3, 3]])
-        except ValueError:
-            pass
-
         return self.mmd(map_vec, target)
 
 
