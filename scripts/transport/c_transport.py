@@ -255,14 +255,6 @@ class CondTransportKernel(nn.Module):
         y_approx = self.Y_approx_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_approx)
-
-        try:
-            plot_test(self, map_vec, target, x_mu, y_eta, y_approx,
-                      plt_range=[[-2.5, 2.5], [-1.05, 1.05]], vmax=2,
-                      slice_vals=[0], slice_range=[-1.5, 1.5],
-                      exp_name='mgan2_composed2')
-        except ValueError:
-            pass
         return self.mmd(map_vec, target)
 
 
