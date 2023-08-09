@@ -501,7 +501,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, slic
          gen_sample = backward(gen_sample.cpu())
 
      if not len(plot_idx):
-        plot_idx = torch.tensor([4,5]).long()
+        plot_idx = torch.tensor([0,1]).long()
      gen_sample = gen_sample[:, plot_idx]
      target_sample = target_sample[:, plot_idx]
 
