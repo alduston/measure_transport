@@ -428,8 +428,9 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_
     return X
 
 
-def sode_hist(trajectories, savedir, save_name = 'traj_hist'):
+def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
     trajectories = torch.tensor(trajectories)
+    trajectories = trajectories[:,:n]
     N,n = trajectories.shape
     fig, axs = plt.subplots(n)
     for i in range(n):
