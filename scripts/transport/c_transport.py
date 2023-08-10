@@ -504,17 +504,18 @@ def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     return True
 
 
-def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
+def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
     ref_gen = lambda n: sample_normal(n, 4)
     target_gen = lambda N: normalize(get_VL_data(N, Yd=Yd))
     idx_dict = {'ref': [list(range(4))],
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [list(range(4))]}
+    print(idx_dict)
 
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                              exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                              exp_name='param_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
     N_test = 20000
@@ -541,7 +542,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
 
 def run():
-    param_infer_exp(N = 7000,n_iter = 1001)
+    param_infer_exp(N = 10000,n_iter = 1001)
 
     '''
     d = 3
