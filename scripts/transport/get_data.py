@@ -4,6 +4,7 @@ import sklearn.datasets
 from sklearn.utils import shuffle as util_shuffle
 #from ellipse import rand_ellipse
 from scipy.stats import norm
+import matplotlib.pyplot as plt
 
 
 def rand_covar(N):
@@ -416,6 +417,35 @@ def sample_spirals(N):
 
 def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
+
+
+def sample_torus(N, n_grid = 100, eps_scale = .03):
+    theta = np.linspace(0, 2. * np.pi, n_grid)
+    phi = np.linspace(0, 2. * np.pi, n_grid)
+    theta, phi = np.meshgrid(theta, phi)
+    c, a = 2, 1
+    x = ((c + a * np.cos(theta)) * np.cos(phi)).flatten()
+    y = ((c + a * np.cos(theta)) * np.sin(phi)).flatten()
+    z = (a * np.sin(theta)).flatten()
+    torus_grid =  np.stack([x,y,z]).T
+
+    torus_idx = np.asarray([i for i in range(len(torus_grid))])
+    torus_points = torus_grid[np.random.choice(torus_idx, N , replace= True), :]
+    noise = eps_scale * np.random.random(torus_points.shape)
+
+    return torus_points + noise
+
+
+def sample_x_torus(N, x = 0, eps_scale = .1, eps = .001):
+    sample = sample_torus(100 * N, eps_scale = .1)
+    sample = sample[np.abs(sample[:,0]-x) < eps]
+    while len(sample) < N:
+        new_sample = sample_torus(100 * N, eps_scale = .1)
+        new_sample = new_sample[np.abs(new_sample[:,0] - x) < eps]
+        sample = np.concatenate([sample, new_sample], axis  = 0)
+    return sample[:N]
+
+
 
 
 

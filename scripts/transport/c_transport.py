@@ -5,7 +5,7 @@ from fit_kernel import train_kernel, sample_scatter, sample_hmap
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
-    sample_swiss_roll,rand_covar, rand_diag_covar,sample_mixtures
+    sample_swiss_roll,rand_covar,sample_mixtures, sample_torus, sample_x_torus
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -445,7 +445,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_base  = 0, skip_idx = 1, plot_idx = []):
+                           skip_base  = 0, skip_idx = 1, plot_idx = [], plots_hists = False):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -474,15 +474,17 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      ref_sample = ref_gen(N_test)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
-     sode_hist(gen_sample,save_dir,save_name='marginal_hists')
-     sode_hist(target_sample, save_dir, save_name='target_marginal_hists')
+
+     if plots_hists:
+        sode_hist(gen_sample,save_dir,save_name='marginal_hists')
+        sode_hist(target_sample, save_dir, save_name='target_marginal_hists')
 
      if len(process_funcs):
          backward = process_funcs[1]
          gen_sample = backward(gen_sample.cpu())
 
      if not len(plot_idx):
-        plot_idx = torch.tensor([0,1]).long()
+        return trained_models, idx_dict
      gen_sample = gen_sample[:, plot_idx]
      target_sample = target_sample[:, plot_idx]
 
@@ -494,8 +496,32 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      return trained_models, idx_dict
 
 
+def taurus_exp(N = 5000, n_iter = 10000):
+    ref_gen =  sample_normal
+    target_gen = lambda N: normalize(sample_torus(N))
+
+    idx_dict = {'ref': [[0]],
+                'cond': [[1,2]],
+                'target': [[0]]}
+
+    plt_range = [[-1,1],[-1,1]]
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                               exp_name='taurus_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
+
+    N_test = 500
+    slice_vals = [-.5, 0, .5]
+    ref_sample = ref_gen(N_test)
+    save_dir = f'../../data/kernel_transport/taurus_exp'
+    for slice_val in slice_vals:
+        ref_slice_sample = normalize(sample_x_torus(N_test, x=slice_val))
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
+        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-1.5,1.5])
+    return True
+
+
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
-    ref_gen = lambda n: sample_normal(n, Yd)
+    ref_gen = lambda N: sample_normal(N, Yd)
     target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd))
 
     idx_dict = {'ref': list(range(Yd)),
@@ -529,6 +555,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
                                exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
 
+
     N_test = 12000
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
@@ -559,7 +586,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    param_infer_exp(N = 7500,n_iter = 1001)
+    taurus_exp(N = 8000,n_iter = 1001)
 
     '''
     d = 3
