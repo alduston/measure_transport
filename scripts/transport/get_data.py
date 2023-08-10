@@ -437,13 +437,22 @@ def sample_torus(N, n_grid = 100, eps_scale = .0001):
 
 
 def sample_x_torus(N, x = 0, eps_scale = .0001, eps = .001):
-    sample = sample_torus(100 * N, eps_scale = .1)
+    sample = sample_torus(100 * N, eps_scale = .0001)
     sample = sample[np.abs(sample[:,0]-x) < eps]
     while len(sample) < N:
         new_sample = sample_torus(100 * N, eps_scale = .1)
         new_sample = new_sample[np.abs(new_sample[:,0] - x) < eps]
         sample = np.concatenate([sample, new_sample], axis  = 0)
-    return sample[:N]
+    return sample[:N, :]
+
+
+def sample_torus_prior(N):
+    pass
+
+
+
+def torus_vec(N, x):
+    pass
 
 
 
