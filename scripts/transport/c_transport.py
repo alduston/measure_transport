@@ -70,18 +70,20 @@ class Comp_transport_model:
         return y_approx
 
 
-    def c_map(self, x, y):
+    def c_map(self, x, y, no_x = False):
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
         y_approx = deepcopy(y)
         for submodel in self.submodels:
             y_approx = submodel.map(x, y, y_approx, no_x = True)
+        if no_x:
+            return y_approx
         return torch.concat([x, y_approx], dim = 1)
 
 
-    def map(self, x = [], y = []):
+    def map(self, x = [], y = [], no_x = False):
         if self.cond:
-            return self.c_map(x,y)
+            return self.c_map(x,y, no_x = no_x)
         return self.base_map(x)
 
 
@@ -348,7 +350,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 8, f = 1):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = 1):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -405,37 +407,22 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     return trained_models
 
 
-def compositional_gen(trained_models, ref_sample, idx_dict):
-    cond_indexes = idx_dict['cond']
-    ref_indexes = idx_dict['ref']
-    ref_sample = geq_1d(ref_sample)
-    X = geq_1d(ref_sample)
-    for i in range(0, len(trained_models)):
-        model = trained_models[i]
-        X = model.map(X[:, cond_indexes[i]], ref_sample[:, ref_indexes[i]])
-    return X
-
-
-#[[ 1.03982393]
- #[-1.04414654]]
-#[0.44714918 0.43064544]
-#torch.Size([1000, 2])
-#tensor([[0],[0]])
-#[0.44714918 0.43064544]
-#torch.Size([1000, 2])
-
-
-def conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx):
+def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx):
     idx_dict = {key: val[skip_idx:] for key,val in idx_dict.items()}
     trained_models = trained_models[skip_idx:]
-    X = target_sample
     ref_indexes = idx_dict['ref']
     cond_indexes = idx_dict['cond']
+    target_indexes = idx_dict['target']
+
+    X =  geq_1d(0 * deepcopy(target_sample))
+    X[:, cond_indexes[0]] += deepcopy(target_sample)[:, cond_indexes[0]]
 
     for i in range(0, len(trained_models)):
         model = trained_models[i]
         Y_eta = ref_sample[:, ref_indexes[i]]
-        X = model.map(X[:, cond_indexes[i]], Y_eta)
+        target_shape =  X[:, target_indexes[i]].shape
+        X[:, target_indexes[i]] = model.map(X[:, cond_indexes[i]], Y_eta, no_x = True)\
+            .detach().cpu().numpy().reshape(target_shape)
     return X
 
 
@@ -479,14 +466,11 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer, idx_dict = idx_dict)
-     N_test = N
+     N_test = min(10 * N, 20000)
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
-     if not skip_base:
-        gen_sample = compositional_gen(trained_models, ref_sample, idx_dict)
-     else:
-         gen_sample = conditional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
+     gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -531,25 +515,25 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                               exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                              idx_dict= idx_dict, skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
+                              idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
     N_test = 5 * N
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
     ref_sample = ref_gen(N_test)
 
-    slice_sample = conditional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
+    slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
 
     params_keys = ['alpha','beta','gamma','delta']
     save_dir = f'../../data/kernel_transport/param_exp'
     for i, key_i in enumerate(params_keys):
         for j,key_j in enumerate(params_keys):
             if i == j:
-                plot_sample = slice_sample[:, i].detach().cpu().numpy()
+                plot_sample = slice_sample[:, i]
                 sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1)
                 pass
             elif i < j:
-                plot_sample = slice_sample[:,torch.tensor([i,j]).long()].detach().cpu().numpy()
+                plot_sample = slice_sample[:,torch.tensor([i,j]).long()]
                 sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=[[-2,2], [-2,2]])
 
     return True
@@ -559,21 +543,21 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 def run():
     param_infer_exp(N = 8000,n_iter = 1001)
 
-
     '''
-    d = 5
-    n_mixtures = 5
+    d = 3
+    n_mixtures = 3
     ref_gen = lambda N: sample_normal(N, d)
 
     sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
     mu_vecs  = [15 * np.random.random(d) for i in range(n_mixtures)]
 
-    #target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=5))
+    target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=5))
     target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=3000, n_iter=4001, slice_vals=[],
-                              exp_name='nd_mixtures2', plt_range=[[-4,4], [-4,4]], slice_range=[],
-                              process_funcs=[], skip_base=False, traj_hist=True, plot_idx= torch.tensor([3,4]).long())
+    conditional_transport_exp(ref_gen, target_gen, N=30, n_iter=101, skip_idx=1,
+                              exp_name='nd_mixtures3', plt_range=[[-4,4], [-4,4]],
+                              process_funcs=[], skip_base=True, plot_idx= torch.tensor([1,2]).long())
     '''
+
 
 if __name__=='__main__':
     run()
