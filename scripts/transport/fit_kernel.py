@@ -67,6 +67,15 @@ def train_step(kernel_model, optimizer):
     return loss, loss_dict
 
 
+def three_d_scatter(x,y,z, saveloc):
+    fig = plt.figure()
+    ax = plt.axes(projection="3d")
+    ax.scatter3D(x, y, z, color="green")
+    plt.savefig(saveloc)
+    return True
+
+
+
 def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cmap = None):
     try:
         sample = sample.detach().cpu()

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
-from fit_kernel import train_kernel, sample_scatter, sample_hmap
+from fit_kernel import train_kernel, sample_scatter, sample_hmap,three_d_scatter
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
@@ -524,22 +524,32 @@ def taurus_exp(N = 5000, n_iter = 10000):
 def taurus_exp2(N = 5000, n_iter = 1001):
     ref_gen =  lambda N: sample_normal(N, d = 3)
     target_gen = lambda N: normalize(sample_torus(N))
-    skip_idx = 1
+    skip_idx = 0 #1
 
-    idx_dict = {'ref': [[0], [1,2]],
-                'cond': [[], [0]],
-                'target': [[0], [1,2]]}
+    idx_dict = {'ref': [[0,1,2]], #[[0], [1,2]],
+                'cond': [[]], #[[], [0]],
+                'target': [[0,1,2]]} #[[0], [1,2]]}
 
     plt_range = [[-2,2],[-2.5,2.5]]
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= torch.tensor([1,2]).long(), plt_range = plt_range)
 
+
     N_test = min(10 * N, 10000)
-    slice_vals = [-.5, 0, .5, 1, 1.5]
+    slice_vals = [] #[-.5, 0, .5, 1, 1.5]
     ref_sample = ref_gen(N_test)
     target_sample = target_gen(N_test)
     save_dir = f'../../data/kernel_transport/taurus_exp2'
+
+
+    x,y,z = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx).T
+    three_d_scatter(x,y,z, f'{save_dir}/gen_scatter.png')
+
+    x,y,z = target_sample.T
+    three_d_scatter(x, y, z, f'{save_dir}/target_scatter.png')
+
+
     for slice_val in slice_vals:
 
         ref_slice_sample = deepcopy(target_sample)

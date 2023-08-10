@@ -448,7 +448,6 @@ def sample_x_torus(N, x = 0, eps_scale = .0001, eps = .001):
 
 
 
-
 def geq_1d(tensor):
     if not len(tensor.shape):
         tensor = tensor.reshape(1,1)
