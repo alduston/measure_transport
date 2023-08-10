@@ -554,7 +554,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    param_infer_exp(N = 8,n_iter = 1001)
+    param_infer_exp(N = 8000,n_iter = 1001)
 
     '''
     d = 3
