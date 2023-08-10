@@ -352,7 +352,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 13, f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 15, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -524,16 +524,16 @@ def taurus_exp(N = 5000, n_iter = 10000):
 def taurus_exp2(N = 5000, n_iter = 1001):
     ref_gen =  lambda N: sample_normal(N, d = 3)
     target_gen = lambda N: normalize(sample_torus(N))
-    skip_idx = 0 #1
+    skip_idx = 1
 
-    idx_dict = {'ref': [[0,1,2]], #[[0], [1,2]],
-                'cond': [[]], #[[], [0]],
-                'target': [[0,1,2]]} #[[0], [1,2]]}
+    idx_dict = {'ref':  [[0], [1,2]], #[[0,1,2]],
+                'cond': [[], [0]],
+                'target': [[0], [1,2]]} #[[0,1,2]]}
 
     plt_range = [[-2.5,2.5],[-2.5,2.5]]
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= torch.tensor([1,2]).long(), plt_range = plt_range)
+                               idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= [], plt_range = plt_range)
 
 
     N_test = min(10 * N, 10000)
@@ -543,16 +543,9 @@ def taurus_exp2(N = 5000, n_iter = 1001):
     save_dir = f'../../data/kernel_transport/taurus_exp2'
 
     for slice_val in slice_vals:
-        slice_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
-        slice_sample = slice_sample[np.abs(slice_sample[:,0]-slice_val) < .01]
-
-        while len(slice_sample) < N_test:
-            ref_sample = ref_gen(N_test)
-            new_slice_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
-            new_slice_sample = new_slice_sample[np.abs(new_slice_sample[:, 0] - slice_val) < .01]
-            slice_sample = np.concatenate([slice_sample,new_slice_sample], axis  = 0)
-
-        gen_slice_sample = slice_sample
+        ref_slice_sample = deepcopy(target_sample)
+        ref_slice_sample[:, 0] = slice_val
+        gen_slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
         target_slice_sample = sample_x_torus(N_test, x=slice_val)
 
         sample_hmap(gen_slice_sample[:,1:], f'{save_dir}/x={slice_val}_gen_map.png', bins=60, d=2, range=plt_range)
@@ -626,8 +619,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    #taurus_exp(N = 8000,n_iter = 1001)
-    taurus_exp2(N = 50, n_iter = 101)
+    taurus_exp2(N = 8000,n_iter = 1001)
 
     '''
     d = 3
