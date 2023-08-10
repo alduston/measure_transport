@@ -540,13 +540,13 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
         for j,key_j in enumerate(params_keys):
             if i == j:
                 plot_sample = slice_sample[:, i]
-                range = ranges[key_i]
-                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1, range=range)
+                plt_range = ranges[key_i]
+                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1, range=plt_range)
                 pass
             elif i < j:
-                range = [ranges[key_i], ranges[key_j]]
+                plt_range = [ranges[key_i], ranges[key_j]]
                 plot_sample = slice_sample[:,torch.tensor([i,j]).long()]
-                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=range)
+                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=plt_range)
 
     return True
 
@@ -554,7 +554,6 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 def run():
     param_infer_exp(N = 8000,n_iter = 1001)
-
 
     '''
     d = 3
