@@ -352,13 +352,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 15, f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
-        n_iter = max(int(n_iter * f), 201)
+        n_iter = max(int(n_iter * f), 401)
 
         Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -535,7 +535,6 @@ def taurus_exp2(N = 5000, n_iter = 1001):
                                exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= [], plt_range = plt_range)
 
-
     N_test = min(10 * N, 10000)
     slice_vals = [0, .3, .65, 1.5, 1.9]
     ref_sample = ref_gen(N_test)
@@ -551,8 +550,6 @@ def taurus_exp2(N = 5000, n_iter = 1001):
         sample_hmap(gen_slice_sample[:,1:], f'{save_dir}/x={slice_val}_gen_map.png', bins=60, d=2, range=plt_range)
         sample_hmap(target_slice_sample[:, 1:], f'{save_dir}/x={slice_val}_target_map.png', bins=60, d=2, range=plt_range)
     return True
-
-
 
 
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
