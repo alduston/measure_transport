@@ -419,7 +419,7 @@ def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
 
 
-def sample_torus(N, n_grid = 100, eps_scale = .0001):
+def sample_torus(N, n_grid = 333, eps_scale = .0001):
     theta = np.linspace(0, 2. * np.pi, n_grid)
     phi = np.linspace(0, 2. * np.pi, n_grid)
     theta, phi = np.meshgrid(theta, phi)
