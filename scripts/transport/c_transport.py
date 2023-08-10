@@ -29,15 +29,17 @@ def replace_zeros(array, eps = 1e-5):
     return array
 
 
-def normalize(array, keep_axes=[]):
+def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     normal_array = deepcopy(array)
     if len(keep_axes):
         norm_axes = np.asarray([axis for axis in range(len(array.shape)) if (axis not in keep_axes)])
         keep_array = deepcopy(normal_array)[:, keep_axes]
         normal_array = normal_array[:, norm_axes]
-    normal_array = normal_array - np.mean(normal_array, axis = 0)
+    if not just_var:
+        normal_array = normal_array - np.mean(normal_array, axis = 0)
     std_vec = replace_zeros(np.std(normal_array, axis = 0))
-    normal_array = normal_array/std_vec
+    if not just_mean:
+        normal_array = normal_array/std_vec
     if len(keep_axes):
         normal_array = np.concatenate([normal_array, keep_array], axis = 1)
     return normal_array
@@ -532,23 +534,27 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
 
     params_keys = ['alpha','beta','gamma','delta']
+    ranges = {'alpha': [.5,1.2], 'beta': [.02,.08], 'gamma':[.7,1.5], 'detla':[.03,.07]}
     save_dir = f'../../data/kernel_transport/param_exp'
     for i, key_i in enumerate(params_keys):
         for j,key_j in enumerate(params_keys):
             if i == j:
                 plot_sample = slice_sample[:, i]
-                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1)
+                range = ranges[key_i]
+                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1, range=range)
                 pass
             elif i < j:
+                range = [ranges[key_i], ranges[key_j]]
                 plot_sample = slice_sample[:,torch.tensor([i,j]).long()]
-                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=[[-2,2], [-2,2]])
+                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=range)
 
     return True
 
 
 
 def run():
-    param_infer_exp(N = 7000,n_iter = 1001)
+    param_infer_exp(N = 8000,n_iter = 1001)
+
 
     '''
     d = 3
