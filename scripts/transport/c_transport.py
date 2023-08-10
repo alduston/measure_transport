@@ -356,7 +356,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_appro
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
-        n_iter = int(n_iter * f)
+        n_iter = max(int(n_iter * f), 201)
 
         Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
