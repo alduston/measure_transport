@@ -475,6 +475,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
      sode_hist(gen_sample,save_dir,save_name='marginal_hists')
+     sode_hist(target_sample, save_dir, save_name='target_marginal_hists')
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -534,6 +535,9 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
+
+    save_dir = f'../../data/kernel_transport/param_exp'
+    sode_hist(slice_sample, save_dir, save_name='slice_marginal_hists')
 
     params_keys = ['alpha','beta','gamma','delta']
     ranges = {'alpha': [0,2], 'beta': [-.5,.5], 'gamma':[0,2], 'delta':[-.5,.5]}
