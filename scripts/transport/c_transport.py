@@ -352,7 +352,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 13, f = .5):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -537,35 +537,26 @@ def taurus_exp2(N = 5000, n_iter = 1001):
 
 
     N_test = min(10 * N, 10000)
-    slice_vals = [] #[-.5, 0, .5, 1, 1.5]
+    slice_vals = [0]#, .3, .65, 1.5, 1.9]
     ref_sample = ref_gen(N_test)
     target_sample = target_gen(N_test)
     save_dir = f'../../data/kernel_transport/taurus_exp2'
 
-
-    plot_idx = {'x': 0, 'y': 1, 'z': 2}
-    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
-
-
-    for key1, val1 in plot_idx.items():
-        for key2, val2 in plot_idx.items():
-            if val1 < val2:
-                map_idx = np.asarray([val1, val2])
-
-                sample_hmap(gen_sample[:,  map_idx], f'{save_dir}/{key1}{key2}_gen_map.png',
-                            bins=60, d=2, range = plt_range)
-                sample_hmap(target_sample[:, map_idx], f'{save_dir}/{key1}{key2}_target_map.png',
-                            bins=60, d=2, range=plt_range)
-            else:
-                pass
-
     for slice_val in slice_vals:
+        slice_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
+        slice_sample = slice_sample[np.abs(slice_sample[:,0]-slice_val) < .01]
 
-        ref_slice_sample = deepcopy(target_sample)
-        ref_slice_sample[:, idx_dict['cond'][skip_idx]] = slice_val
+        while len(slice_sample) < N_test:
+            ref_sample = ref_gen(N_test)
+            new_slice_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
+            new_slice_sample = new_slice_sample[np.abs(new_slice_sample[:, 0] - slice_val) < .01]
+            slice_sample = np.concatenate([slice_sample,new_slice_sample], axis  = 0)
 
+        gen_slice_sample = slice_sample
+        #ref_slice_sample = deepcopy(target_sample)
+        #ref_slice_sample[:, idx_dict['cond'][skip_idx]] = slice_val
         target_slice_sample = normalize(sample_x_torus(N_test, x=slice_val))
-        gen_slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
+        #gen_slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
 
         sample_hmap(gen_slice_sample[:,1:], f'{save_dir}/x={slice_val}_gen_map.png', bins=60, d=2, range=plt_range)
         sample_hmap(target_slice_sample[:, 1:], f'{save_dir}/x={slice_val}_target_map.png', bins=60, d=2, range=plt_range)
