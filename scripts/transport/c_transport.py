@@ -515,7 +515,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                              exp_name='param_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                              exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
     N_test = 20000
