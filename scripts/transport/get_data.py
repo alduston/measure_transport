@@ -458,6 +458,7 @@ def sample_torus(N, n_grid = 333, eps_scale = .01):
     return torus_points + noise
 
 
+
 def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
     target_gen = lambda N: normalize(sample_torus(N, eps_scale=eps_scale))
     sample = target_gen(N)
@@ -469,14 +470,28 @@ def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
     return slice_sample[:N]
 
 
-def sample_torus_prior(N):
-    pass
+def sample_sphere_prior(N):
+    return sample_uniform(N,d = 1, l = 0, h = 1)
 
 
+def sphere_vec(x, n = 10):
+    thetas = np.linspace(start = 0, stop = 2*np.pi, num = n)
+    r = np.sqrt(1 - (x ** 2))
+    z = r * np.sin(thetas)
+    y = r * np.cos(thetas)
+    v = np.zeros(2*len(y))
+    v[::2] += z
+    v[1::2] += y
+    return v
 
-def torus_vec(N, x):
-    pass
 
+def sample_sphere(N, n = 10, X = []):
+    if not len(X):
+        X = sample_sphere_prior(N)
+
+    Y = np.asarray([sphere_vec(x, n = n) for x in X])
+    sample = np.concatenate([X, Y], axis = 1)
+    return sample
 
 
 
@@ -504,10 +519,12 @@ def banana_density(X):
 
 
 def run():
-    x,y,z = sample_x_torus(10000, x=1, eps_scale=.0001, eps=.001).T
-    plt.hist2d(y,z, bins = 50, range = [[-3,3],[-1.5,1.5]])
-    plt.savefig('taurus_hist.png')
-
+    sphere_sample = sample_sphere(10)[0]
+    print(sphere_sample[0])
+    y = sphere_sample[1:][::2]
+    z = sphere_sample[1:][1::2]
+    plt.scatter(y,z)
+    plt.savefig('sphere_vec.png')
 
 
 

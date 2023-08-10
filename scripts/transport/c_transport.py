@@ -5,7 +5,7 @@ from fit_kernel import train_kernel, sample_scatter, sample_hmap,three_d_scatter
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
-    sample_swiss_roll,rand_covar,sample_mixtures, sample_torus, sample_x_torus
+    sample_swiss_roll,rand_covar,sample_mixtures, sample_torus, sample_x_torus, sample_sphere
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -488,40 +488,46 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      gen_sample = gen_sample[:, plot_idx]
      target_sample = target_sample[:, plot_idx]
 
-     sample_scatter(gen_sample, f'{save_dir}/gen_scatter.png', bins=25, d = 2, range = plt_range)
-     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=70, d=2, range=plt_range, vmax=vmax)
+     try:
+        d = len(gen_sample[0])
+     except TypeError:
+         d = 1
 
-     sample_scatter(target_sample, f'{save_dir}/target.png', bins=25, d=2, range=plt_range)
-     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=70, d=2, range=plt_range, vmax=vmax)
+     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
+
      return trained_models, idx_dict
 
 
-def taurus_exp(N = 5000, n_iter = 10000):
-    ref_gen =  sample_normal
-    target_gen = lambda N: normalize(sample_torus(N))
+def sphere_exp(N = 5000, n_iter = 10000):
+    n = 10
+    ref_gen =  lambda N: sample_normal(N = N, d = 1)
+    target_gen = lambda N: normalize(sample_sphere(N = N, n = n))
 
     idx_dict = {'ref': [[0]],
-                'cond': [[1,2]],
+                'cond': [list(range(1, 1 + (2*n)))],
                 'target': [[0]]}
 
-    plt_range = None
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                               exp_name='taurus_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
+    plt_range = [-1.1,1.1]
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
+                               exp_name='sphere_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               idx_dict= idx_dict, plot_idx= torch.tensor([0]).long(), plt_range = plt_range)
 
-    N_test = 10000
-    slice_vals = [0]
-    ref_sample = ref_gen(N_test)
-    save_dir = f'../../data/kernel_transport/taurus_exp'
+    N_test = min(10 * N, 10000)
+    slice_vals = [.05,.5, .95]
+
+    save_dir = f'../../data/kernel_transport/sphere_exp'
+
     for slice_val in slice_vals:
-        ref_slice_sample = normalize(sample_x_torus(N_test, x=slice_val))
-        sample_hmap(slice_sample[:, 1:], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=None)
+        ref_sample = ref_gen(N_test)
+        X = geq_1d(np.full(N_test, slice_val))
+        ref_slice_sample = normalize(sample_sphere(N = N_test, n = n, X = X))
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
-        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=None)
+        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-.05, 1.05])
     return True
 
 
-def taurus_exp2(N = 5000, n_iter = 1001):
+def taurus_exp(N = 5000, n_iter = 1001):
     ref_gen =  lambda N: sample_normal(N, d = 3)
     target_gen = lambda N: normalize(sample_torus(N))
     skip_idx = 1
@@ -616,7 +622,9 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    taurus_exp2(N = 8000,n_iter = 1001)
+    sphere_exp(N = 8000, n_iter = 1001)
+
+    #taurus_exp(N = 8000,n_iter = 1001)
 
     '''
     d = 3
