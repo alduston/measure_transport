@@ -473,6 +473,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      ref_sample = ref_gen(N_test)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
+     sode_hist(gen_sample,save_dir,save_name='marginal_hists')
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -553,7 +554,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    param_infer_exp(N = 8000,n_iter = 1001)
+    param_infer_exp(N = 8,n_iter = 1001)
 
     '''
     d = 3
