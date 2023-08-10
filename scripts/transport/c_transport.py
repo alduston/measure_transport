@@ -527,7 +527,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
                               exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
-    N_test = 10000
+    N_test = 12000
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
     ref_sample = ref_gen(N_test)
@@ -535,7 +535,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
 
     params_keys = ['alpha','beta','gamma','delta']
-    ranges = {'alpha': [.5,1.2], 'beta': [.02,.08], 'gamma':[.7,1.5], 'detla':[.03,.07]}
+    ranges = {'alpha': [.5,1.2], 'beta': [.02,.08], 'gamma':[.7,1.5], 'delta':[.03,.07]}
     save_dir = f'../../data/kernel_transport/param_exp'
     for i, key_i in enumerate(params_keys):
         for j,key_j in enumerate(params_keys):
