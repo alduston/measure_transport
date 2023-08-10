@@ -547,7 +547,7 @@ def taurus_exp2(N = 5000, n_iter = 1001):
         slice_sample = slice_sample[np.abs(slice_sample[:,0]-slice_val) < .01]
 
         target_slice_sample = target_gen(N_test)
-
+        target_slice_sample = target_slice_sample[np.abs(target_slice_sample[:, 0] - slice_val) < .01]
 
         while len(slice_sample) < N_test:
             ref_sample = ref_gen(N_test)
