@@ -511,7 +511,6 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
     idx_dict = {'ref': [list(range(4))],
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [list(range(4))]}
-    print(idx_dict)
 
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
@@ -542,7 +541,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    param_infer_exp(N = 10000,n_iter = 1001)
+    param_infer_exp(N = 7000,n_iter = 1001)
 
     '''
     d = 3
