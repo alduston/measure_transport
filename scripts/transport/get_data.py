@@ -473,7 +473,10 @@ def banana_density(X):
 
 
 def run():
-    data = inf_train_gen("swissroll")
+    x,y,z = sample_x_torus(10000, x=1, eps_scale=.0001, eps=.001).T
+    plt.hist2d(y,z, bins = 50, range = [[-3,3],[-1.5,1.5]])
+    plt.savefig('taurus_hist.png')
+
 
 
 

@@ -521,6 +521,40 @@ def taurus_exp(N = 5000, n_iter = 10000):
     return True
 
 
+def taurus_exp2(N = 5000, n_iter = 1001):
+    ref_gen =  lambda N: sample_normal(N, d = 3)
+    target_gen = lambda N: normalize(sample_torus(N))
+    skip_idx = 1
+
+    idx_dict = {'ref': [[0], [1,2]],
+                'cond': [[], [0]],
+                'target': [[0], [1,2]]}
+
+    plt_range = [[-3,3],[-1.5,1.5]]
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                               exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= torch.tensor([1,2]).long(), plt_range = plt_range)
+
+    N_test = 5000
+    slice_vals = [-.5, 0, .5, 1, 1.5]
+    ref_sample = ref_gen(N_test)
+    target_sample = target_gen(N_test)
+    save_dir = f'../../data/kernel_transport/taurus_exp2'
+    for slice_val in slice_vals:
+
+        ref_slice_sample = deepcopy(target_sample)
+        ref_slice_sample[:, idx_dict['cond'][skip_idx]] = slice_val
+
+        target_slice_sample = normalize(sample_x_torus(N_test, x=slice_val))
+        gen_slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
+
+        sample_hmap(gen_slice_sample[:,1:], f'{save_dir}/x={slice_val}_gen_map.png', bins=60, d=2, range=plt_range)
+        sample_hmap(target_slice_sample[:, 1:], f'{save_dir}/x={slice_val}_target_map.png', bins=60, d=2, range=plt_range)
+    return True
+
+
+
+
 def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
     ref_gen = lambda N: sample_normal(N, Yd)
     target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd))
@@ -587,7 +621,8 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    taurus_exp(N = 8000,n_iter = 1001)
+    #taurus_exp(N = 8000,n_iter = 1001)
+    taurus_exp2(N = 5000, n_iter = 1001)
 
     '''
     d = 3
