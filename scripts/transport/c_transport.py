@@ -348,7 +348,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = 1):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 8, f = 1):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -530,9 +530,8 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
 
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                              exp_name='param_exp', plt_range=[[.5,1.5],[.02,.08]], process_funcs=[],
-                              cond_model_trainer=comp_cond_kernel_transport, idx_dict= idx_dict,
-                              skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
+                              exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                              idx_dict= idx_dict, skip_base=True, skip_idx=0, plot_idx= torch.tensor([0,1]).long())
 
     N_test = 5 * N
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
@@ -551,14 +550,14 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 10):
                 pass
             elif i < j:
                 plot_sample = slice_sample[:,torch.tensor([i,j]).long()].detach().cpu().numpy()
-                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2)
+                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=[[-2,2], [-2,2]])
 
     return True
 
 
 
 def run():
-    param_infer_exp(N = 4000,n_iter = 1001)
+    param_infer_exp(N = 8000,n_iter = 1001)
 
 
     '''
