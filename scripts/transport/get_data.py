@@ -5,7 +5,29 @@ from sklearn.utils import shuffle as util_shuffle
 #from ellipse import rand_ellipse
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+from copy import deepcopy
 
+
+def replace_zeros(array, eps = 1e-5):
+    for i,val in enumerate(array):
+        if np.abs(val) < eps:
+            array[i] = 1.0
+    return array
+
+def normalize(array, keep_axes=[], just_var = False, just_mean = False):
+    normal_array = deepcopy(array)
+    if len(keep_axes):
+        norm_axes = np.asarray([axis for axis in range(len(array.shape)) if (axis not in keep_axes)])
+        keep_array = deepcopy(normal_array)[:, keep_axes]
+        normal_array = normal_array[:, norm_axes]
+    if not just_var:
+        normal_array = normal_array - np.mean(normal_array, axis = 0)
+    std_vec = replace_zeros(np.std(normal_array, axis = 0))
+    if not just_mean:
+        normal_array = normal_array/std_vec
+    if len(keep_axes):
+        normal_array = np.concatenate([normal_array, keep_array], axis = 1)
+    return normal_array
 
 def rand_covar(N):
     A = np.random.random((N,N))
@@ -419,7 +441,7 @@ def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
 
 
-def sample_torus(N, n_grid = 333, eps_scale = .0001):
+def sample_torus(N, n_grid = 333, eps_scale = .01):
     theta = np.linspace(0, 2. * np.pi, n_grid)
     phi = np.linspace(0, 2. * np.pi, n_grid)
     theta, phi = np.meshgrid(theta, phi)
@@ -436,14 +458,15 @@ def sample_torus(N, n_grid = 333, eps_scale = .0001):
     return torus_points + noise
 
 
-def sample_x_torus(N, x = 0, eps_scale = .0001, eps = .001):
-    sample = sample_torus(100 * N, eps_scale = .0001)
-    sample = sample[np.abs(sample[:,0]-x) < eps]
-    while len(sample) < N:
-        new_sample = sample_torus(100 * N, eps_scale = .1)
-        new_sample = new_sample[np.abs(new_sample[:,0] - x) < eps]
-        sample = np.concatenate([sample, new_sample], axis  = 0)
-    return sample[:N, :]
+def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
+    target_gen = lambda N: normalize(sample_torus(N, eps_scale=eps_scale))
+    sample = target_gen(N)
+    slice_sample = sample [np.abs(sample[:, 0] - x) < eps]
+    while len(slice_sample) < N:
+        new_slice_sample = target_gen(N)
+        new_slice_sample  = new_slice_sample [np.abs(new_slice_sample [:, 0] - x) < eps]
+        slice_sample = np.concatenate([slice_sample, new_slice_sample], axis=0)
+    return slice_sample[:N]
 
 
 def sample_torus_prior(N):
