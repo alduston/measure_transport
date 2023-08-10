@@ -530,14 +530,14 @@ def taurus_exp2(N = 5000, n_iter = 1001):
                 'cond': [[]], #[[], [0]],
                 'target': [[0,1,2]]} #[[0], [1,2]]}
 
-    plt_range = [[-2,2],[-2.5,2.5]]
+    plt_range = [[-2.5,2.5],[-2.5,2.5]]
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= torch.tensor([1,2]).long(), plt_range = plt_range)
 
 
     N_test = min(10 * N, 10000)
-    slice_vals = [0]#, .3, .65, 1.5, 1.9]
+    slice_vals = [0, .3, .65, 1.5, 1.9]
     ref_sample = ref_gen(N_test)
     target_sample = target_gen(N_test)
     save_dir = f'../../data/kernel_transport/taurus_exp2'
