@@ -536,7 +536,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
 
     params_keys = ['alpha','beta','gamma','delta']
-    ranges = {'alpha': [.5,1.2], 'beta': [.02,.08], 'gamma':[.7,1.5], 'delta':[.03,.07]}
+    ranges = {'alpha': [0,2], 'beta': [-.5,.5], 'gamma':[0,2], 'delta':[-.5,.5]}
     save_dir = f'../../data/kernel_transport/param_exp'
     for i, key_i in enumerate(params_keys):
         for j,key_j in enumerate(params_keys):
