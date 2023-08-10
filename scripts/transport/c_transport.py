@@ -504,19 +504,20 @@ def taurus_exp(N = 5000, n_iter = 10000):
                 'cond': [[1,2]],
                 'target': [[0]]}
 
-    plt_range = [[-1,1],[-1,1]]
+    plt_range = None
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                exp_name='taurus_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
 
-    N_test = 500
-    slice_vals = [-.5, 0, .5]
+    N_test = 10000
+    slice_vals = [0]
     ref_sample = ref_gen(N_test)
     save_dir = f'../../data/kernel_transport/taurus_exp'
     for slice_val in slice_vals:
         ref_slice_sample = normalize(sample_x_torus(N_test, x=slice_val))
+        sample_hmap(slice_sample[:, 1:], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=None)
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
-        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-1.5,1.5])
+        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=None)
     return True
 
 
