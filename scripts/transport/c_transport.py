@@ -543,12 +543,21 @@ def taurus_exp2(N = 5000, n_iter = 1001):
     save_dir = f'../../data/kernel_transport/taurus_exp2'
 
 
-    x,y,z = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx).T
-    three_d_scatter(x,y,z, f'{save_dir}/gen_scatter.png')
+    plot_idx = {'x': 0, 'y': 1, 'z': 2}
+    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, skip_idx)
 
-    x,y,z = target_sample.T
-    three_d_scatter(x, y, z, f'{save_dir}/target_scatter.png')
 
+    for key1, val1 in plot_idx.items():
+        for key2, val2 in plot_idx.items():
+            if val1 < val2:
+                map_idx = np.asarray([val1, val2])
+
+                sample_hmap(gen_sample[:,  map_idx], f'{save_dir}/{key1}{key2}_gen_map.png',
+                            bins=60, d=2, range = plt_range)
+                sample_hmap(target_sample[:, map_idx], f'{save_dir}/{key1}{key2}_target_map.png',
+                            bins=60, d=2, range=plt_range)
+            else:
+                pass
 
     for slice_val in slice_vals:
 
