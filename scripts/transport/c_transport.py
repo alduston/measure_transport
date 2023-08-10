@@ -506,8 +506,15 @@ def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
 
 def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
+    def get_normal_VL(N, Yd):
+        vl_data = get_VL_data(N, Yd=Yd)
+        params = vl_data[:, :4]
+        data = vl_data[:, 4:]
+        data = normalize(data)
+        return np.concatenate([params,data], axis = 1)
+
     ref_gen = lambda n: sample_normal(n, 4)
-    target_gen = lambda N: normalize(get_VL_data(N, Yd=Yd))
+    target_gen = lambda N: get_normal_VL(N, Yd) #normalize(get_VL_data(N, Yd=Yd))
     idx_dict = {'ref': [list(range(4))],
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [list(range(4))]}
