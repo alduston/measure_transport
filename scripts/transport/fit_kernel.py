@@ -128,7 +128,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
 
         plt.subplot(1, 2, 2)
         kdeplot(data = x, fill=True, bw_adjust=0.25)
-        plt.xlim(range[0][0], range[0][1])
+        plt.xlim(range[0], range[0])
     plt.savefig(save_loc)
     clear_plt()
     return True
