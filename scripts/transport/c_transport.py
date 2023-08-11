@@ -554,7 +554,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
     N_test = min(10 * N, 10000)
-    slice_vals = np.asarray([[1,.05] ,[1,.5], [1,.95]])
+    slice_vals = np.asarray([[1,0], [1,.05],[1,.25], [1,.5], [1,.8]])
 
     save_dir = f'../../data/kernel_transport/spheres_exp'
 
@@ -670,7 +670,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    spheres_exp(N = 7000, n_iter = 1001)
+    spheres_exp(N = 7500, n_iter = 1001)
 
 
     '''
