@@ -501,7 +501,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 def sphere_exp(N = 5000, n_iter = 10000):
     n = 10
     ref_gen =  lambda N: sample_normal(N = N, d = 1)
-    target_gen = lambda N: normalize(sample_sphere(N = N, n = n))
+    target_gen = lambda N: sample_sphere(N = N, n = n)
 
     idx_dict = {'ref': [[0]],
                 'cond': [list(range(1, 1 + (2*n)))],
