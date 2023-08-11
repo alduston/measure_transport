@@ -188,6 +188,12 @@ def sample_normal(N = 100, d = 2, mu = [], sigma = []):
     return X_sample
 
 
+def sample_base_mixtures(N, d = 1, n = 2):
+    mu_vecs = [np.full(d, i) for i in range(n)]
+    sigma_vecs = [np.identity(d) for in in range(n)]
+    return normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
+
+
 def sample_mixtures(N, mu_vecs, sigma_vecs):
     Nm = N//len(mu_vecs)
     dm = len(mu_vecs[0])
@@ -474,7 +480,7 @@ def sample_sphere_prior(N):
     return sample_uniform(N, d = 1, l = -1, h = 1)
 
 
-def sphere_vec(x, n = 10, eps_scale = .15):
+def sphere_vec(x, n = 10, eps_scale = .075):
     thetas = np.linspace(start = 0, stop = 2*np.pi, num = n+1)[:-1]
     r = np.sqrt(1 - (x ** 2))
     z = r * np.sin(thetas)

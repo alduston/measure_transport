@@ -5,7 +5,7 @@ from fit_kernel import train_kernel, sample_scatter, sample_hmap,three_d_scatter
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
-    sample_swiss_roll,rand_covar,sample_mixtures, sample_torus, sample_x_torus, sample_sphere
+    sample_swiss_roll,rand_covar,sample_mixtures, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -502,6 +502,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 def sphere_exp(N = 5000, n_iter = 10000):
     n = 10
     ref_gen =  lambda N: sample_normal(N = N, d = 1)
+    #ref_gen = lambda N: sample_base_mixtures(N = N, d = 5)
     target_gen = lambda N: sample_sphere(N = N, n = n)
 
     idx_dict = {'ref': [[0]],
