@@ -622,7 +622,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    sphere_exp(N = 8000, n_iter = 1001)
+    sphere_exp(N = 5000, n_iter = 1001)
 
     #taurus_exp(N = 8000,n_iter = 1001)
 
