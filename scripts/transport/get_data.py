@@ -474,8 +474,8 @@ def sample_sphere_prior(N):
     return sample_uniform(N, d = 1, l = -1, h = 1)
 
 
-def sphere_vec(x, n = 10, eps_scale = .25):
-    thetas = np.linspace(start = 0, stop = 2*np.pi, num = n)
+def sphere_vec(x, n = 10, eps_scale = .15):
+    thetas = np.linspace(start = 0, stop = 2*np.pi, num = n+1)[:-1]
     r = np.sqrt(1 - (x ** 2))
     z = r * np.sin(thetas)
     y = r * np.cos(thetas)

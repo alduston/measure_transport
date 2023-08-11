@@ -163,7 +163,8 @@ class CondTransportKernel(nn.Module):
 
 
     def init_Z(self):
-        return torch.zeros(self.Y_mu.shape, device=self.device, dtype=self.dtype)
+        Z = torch.randn(self.Y_mu.shape, device=self.device, dtype=self.dtype)
+        return Z
 
 
     def get_Lambda(self):
@@ -509,23 +510,24 @@ def sphere_exp(N = 5000, n_iter = 10000):
 
     plt_range = [-1.1,1.1]
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
-                               exp_name='sphere_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               exp_name='sphere_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= torch.tensor([0]).long(), plt_range = plt_range)
 
     N_test = min(10 * N, 10000)
-    slice_vals = [.05,.5, .95]
+    slice_vals = [.05 ,.5, .95]
 
-    save_dir = f'../../data/kernel_transport/sphere_exp'
+    save_dir = f'../../data/kernel_transport/sphere_exp2'
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
         X = geq_1d(np.full(N_test, slice_val))
         ref_slice_sample = sample_sphere(N = N_test, n = n, X = X)
 
-        Y = ref_slice_sample[:, 1:][1::2]
-        Z = ref_slice_sample[:, 1:][::2]
-        sample_hmap(np.concat([Y,Z], axis =1), f'{save_dir}/x={slice_val}_input_data.png',
-                    bins=60, d=1, range=[-1, 1])
+        Y = ref_slice_sample[:, 1:][:, 1::2]
+        Z = ref_slice_sample[:, 1:][:, ::2]
+
+        sample_hmap(np.stack([Y.flatten(),Z.flatten()], axis = 1), f'{save_dir}/x={slice_val}_input_data.png',
+                    bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
         sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-.05, 1.05])
