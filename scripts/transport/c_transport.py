@@ -163,7 +163,7 @@ class CondTransportKernel(nn.Module):
 
 
     def init_Z(self):
-        Z = torch.randn(self.Y_mu.shape, device=self.device, dtype=self.dtype) * self.params['fit_kernel_params']['l']
+        Z = torch.zeros(self.Y_mu.shape, device=self.device, dtype=self.dtype)
         return Z
 
 
