@@ -484,7 +484,7 @@ def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
     return slice_sample[:N]
 
 def sample_spheres_prior(N):
-    R = sample_uniform(N, d=1, l=.75, h=1.25)
+    R = sample_uniform(N, d=1, l=.65, h=1.35)
     X = np.asarray([sample_uniform(1, d=1, l=(.9 * -r), h=(.9*r))[0] for r in R])
     return np.concatenate([R,X], axis = 1)
 
@@ -504,7 +504,7 @@ def sphere_vec(x, n = 10, eps_scale = .1):
     noise = eps_scale * np.random.randn(*v.shape)
     return v + noise
 
-def spheres_vec(x, R = 1, n = 10, eps_scale = .15):
+def spheres_vec(x, R = 1, n = 10, eps_scale = .1):
     thetas = np.linspace(start = 0, stop = 2*np.pi, num = n+1)[:-1]
     r = np.sqrt(R - (x ** 2))
     z = r * np.sin(thetas)

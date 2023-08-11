@@ -355,13 +355,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = .66):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
-        n_iter = max(int(n_iter * f), 501)
+        n_iter = max(int(n_iter * f), 301)
 
         Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -547,7 +547,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
                 'cond': [list(range(2, 2 + (2*n)))],
                 'target': [[0,1]]}
 
-    plt_range = [[0,1.5],[-1,1.5]]
+    plt_range = [[.5,1.5],[-1.5,1.5]]
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
                                exp_name='spheres_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
@@ -570,7 +570,8 @@ def spheres_exp(N = 5000, n_iter = 10000):
                     bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
-        sample_hmap(slice_sample[:,np.asarray([0,1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2, range=plt_range)
+        sample_hmap(slice_sample[:,np.asarray([0,1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2,
+                    range=plt_range)
     return True
 
 
@@ -669,7 +670,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    spheres_exp(N = 7500, n_iter = 1001)
+    spheres_exp(N = 8000, n_iter = 1001)
 
 
     '''
