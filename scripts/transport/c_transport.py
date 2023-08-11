@@ -580,17 +580,11 @@ def run():
     two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
 
-    two_d_exp(sample_normal, mgan1, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+    two_d_exp(sample_normal, mgan1, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1, 3]],
               slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed2', skip_idx=1, vmax=.5)
 
-    two_d_exp(sample_normal, sample_swiss_roll, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='swiss_roll_composed2', skip_idx=1, vmax=.25)
-
     two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
-
-    two_d_exp(sample_elden_ring, mgan1, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='elden_composed2', skip_idx=0, vmax=4.5)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
 
 
 
