@@ -474,7 +474,7 @@ def sample_sphere_prior(N):
     return sample_uniform(N,d = 1, l = 0, h = 1)
 
 
-def sphere_vec(x, n = 10):
+def sphere_vec(x, n = 10, eps_scale = .1):
     thetas = np.linspace(start = 0, stop = 2*np.pi, num = n)
     r = np.sqrt(1 - (x ** 2))
     z = r * np.sin(thetas)
@@ -482,7 +482,8 @@ def sphere_vec(x, n = 10):
     v = np.zeros(2*len(y))
     v[::2] += z
     v[1::2] += y
-    return v
+    noise = eps_scale * np.random.random(v.shape)
+    return v + noise
 
 
 def sample_sphere(N, n = 10, X = []):

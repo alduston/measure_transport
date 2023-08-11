@@ -358,7 +358,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_appro
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
-        n_iter = max(int(n_iter * f), 401)
+        n_iter = max(int(n_iter * f), 501)
 
         Y_approx = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -487,7 +487,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
         return trained_models, idx_dict
      gen_sample = gen_sample[:, plot_idx]
      target_sample = target_sample[:, plot_idx]
-
      try:
         d = len(gen_sample[0])
      except TypeError:
@@ -521,7 +520,8 @@ def sphere_exp(N = 5000, n_iter = 10000):
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
         X = geq_1d(np.full(N_test, slice_val))
-        ref_slice_sample = normalize(sample_sphere(N = N_test, n = n, X = X))
+        ref_slice_sample = sample_sphere(N = N_test, n = n, X = X)
+
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
         sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-.05, 1.05])
     return True
