@@ -670,7 +670,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    spheres_exp(N = 8000, n_iter = 1001)
+    spheres_exp(N = 7000, n_iter = 1001)
 
 
     '''
