@@ -521,7 +521,6 @@ def banana_density(X):
 
 def run():
     sphere_sample = sample_sphere(10)[0]
-    print(sphere_sample[0])
     y = sphere_sample[1:][::2]
     z = sphere_sample[1:][1::2]
     plt.scatter(y,z)

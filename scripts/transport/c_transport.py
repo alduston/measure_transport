@@ -530,7 +530,7 @@ def sphere_exp(N = 5000, n_iter = 10000):
                     bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
-        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-.05, 1.05])
+        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-1.1, 1.1])
     return True
 
 
@@ -629,7 +629,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    sphere_exp(N = 5000, n_iter = 1001)
+    sphere_exp(N = 400, n_iter = 101)
 
 
     '''
