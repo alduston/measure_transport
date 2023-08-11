@@ -190,7 +190,7 @@ def sample_normal(N = 100, d = 2, mu = [], sigma = []):
 
 def sample_base_mixtures(N, d = 1, n = 2):
     mu_vecs = [np.full(d, i) for i in range(n)]
-    sigma_vecs = [np.identity(d) for in in range(n)]
+    sigma_vecs = [np.identity(d) for i in range(n)]
     return normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
 
 
