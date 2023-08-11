@@ -554,7 +554,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
     N_test = min(10 * N, 10000)
-    slice_vals = np.asarray([[1,0], [1,.05],[1,.25], [1,.5], [1,.8]])
+    slice_vals = np.asarray([ [1,.05],[1,.25], [1,.5], [1,.65], [1,.8],[1,.85]])
 
     save_dir = f'../../data/kernel_transport/spheres_exp'
 
@@ -566,8 +566,8 @@ def spheres_exp(N = 5000, n_iter = 10000):
         Y = ref_slice_sample[:, 2:][:, 1::2]
         Z = ref_slice_sample[:, 2:][:, ::2]
 
-        sample_hmap(np.stack([Y.flatten(),Z.flatten()], axis = 1), f'{save_dir}/x={slice_val[1]}_input_data.png',
-                    bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
+        #sample_hmap(np.stack([Y.flatten(),Z.flatten()], axis = 1), f'{save_dir}/x={slice_val[1]}_input_data.png',
+                    #bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
         sample_hmap(slice_sample[:,np.asarray([0,1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2,
