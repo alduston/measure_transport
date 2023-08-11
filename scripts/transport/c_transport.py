@@ -163,7 +163,7 @@ class CondTransportKernel(nn.Module):
 
 
     def init_Z(self):
-        Z = torch.randn(self.Y_mu.shape, device=self.device, dtype=self.dtype)* self.params['mmd_kernel_params']['l']
+        Z = torch.randn(self.Y_mu.shape, device=self.device, dtype=self.dtype) * self.params['fit_kernel_params']['l']
         return Z
 
 
@@ -629,7 +629,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    sphere_exp(N = 5000, n_iter = 1001)
+    sphere_exp(N = 5000, n_iter = 1501)
 
 
     '''
