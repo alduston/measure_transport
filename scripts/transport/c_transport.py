@@ -5,7 +5,7 @@ from fit_kernel import train_kernel, sample_scatter, sample_hmap,seaborne_hmap
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
-    rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres
+    rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,16 +17,15 @@ from seaborn import kdeplot
 
 
 def shuffle(tensor):
-    if len((geq_1d(tensor).shape)) <=1:
+    if geq_1d(tensor).shape[1] <=1:
         return tensor
     else:
-        #return tensor
         return tensor[torch.randperm(len(tensor))]
 
 
 def geq_1d(tensor):
     if not len(tensor.shape):
-        tensor = tensor.reshape(1,1)
+        tensor = tensor.reshape(1)
     elif len(tensor.shape) == 1:
         tensor = tensor.reshape(len(tensor), 1)
     return tensor
@@ -310,7 +309,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 2, f = .66):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 9, f = .66):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -495,14 +494,14 @@ def spheres_exp(N = 5000, n_iter = 10000):
 
     plt_range = [[.5,1.5],[-1.5,1.5]]
     plot_idx = torch.tensor([0, 1]).long()
-    exp_name = spheres_exp
+    exp_name = 'spheres_exp'
     skip_idx = 0
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=skip_idx,
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
     N_test =  min(10 * N, 15000)
-    slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.8]])
+    slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
@@ -520,7 +519,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
 def vl_exp(N = 10000, n_iter = 10000, Yd = 18):
 
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, Yd= Yd, normal=True)
+    target_gen = lambda N: get_VL_data(N, Yd= Yd, normal=False)
 
     idx_dict = {'ref': [[0,1,2,3]],
                 'cond': [list(range(4, 4 + Yd))],
@@ -535,7 +534,7 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18):
     slice_val = np.asarray([.8,.041,1.07,.04])
 
     X = np.full((N_test,4), slice_val)
-    ref_slice_sample = normalize(get_VL_data(N_test, X=X,  Yd= Yd, normal=True))
+    ref_slice_sample = normalize(get_VL_data(N_test, X=X,  Yd= Yd, normal=False))
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
@@ -574,16 +573,29 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
+    spheres_exp(8000, 2001)
+
+    vl_exp(8000, 2001)
+
     two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
 
+    two_d_exp(sample_normal, mgan1, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed2', skip_idx=1, vmax=.5)
+
+    two_d_exp(sample_normal, sample_swiss_roll, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='swiss_roll_composed2', skip_idx=1, vmax=.25)
+
+    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
+
+    two_d_exp(sample_elden_ring, mgan1, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='elden_composed2', skip_idx=0, vmax=4.5)
 
 
 
 if __name__=='__main__':
     run()
-
-
 
 
 
