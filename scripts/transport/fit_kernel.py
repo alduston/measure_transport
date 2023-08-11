@@ -14,6 +14,7 @@ from picture_to_dist import sample_elden_ring, sample_bambdad, sample_twisted_ri
 from copy import deepcopy
 import random
 from datetime import datetime as dt
+from seaborn import kdeplot
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -87,6 +88,8 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
         y = np.asarray(y)
         plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax, cmap = cmap)
         plt.colorbar()
+
+        kdeplot(x=x, y=y, fill=True,bw_adjust=0.5)
     elif d == 1:
         x =  sample
         x = np.asarray(x)
@@ -94,6 +97,26 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
     plt.savefig(save_loc)
     clear_plt()
     return True
+
+
+from seaborn import kdeplot
+
+def plot_dist_2d(data,title=None):
+    plt.figure(figsize=(10,4))
+    plt.subplot(1,2,1)
+    plt.hist2d(data[:,0],data[:,1],20,cmap=plt.cm.jet)
+    if title is not None:
+        plt.title(title)
+    plt.xticks(np.arange(0,1.01,0.1))
+    plt.yticks(np.arange(-4,4.1,0.5))
+    plt.subplot(1,2,2)
+    kdeplot(
+        x=data[:,0],
+        y=data[:,1],
+        fill=True,
+        bw_adjust=0.5
+    )
+    plt.show()
 
 
 def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):

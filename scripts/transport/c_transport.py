@@ -355,7 +355,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 10, f = .66):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 9, f = .66):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -501,45 +501,10 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      return trained_models, idx_dict
 
 
-def sphere_exp(N = 5000, n_iter = 10000):
-    n = 10
-    ref_gen =  lambda N: sample_normal(N = N, d = 1)
-    #ref_gen = lambda N: sample_base_mixtures(N = N, d = 1, n = 2)
-    target_gen = lambda N: sample_sphere(N = N, n = n)
-
-    idx_dict = {'ref': [[0]],
-                'cond': [list(range(1, 1 + (2*n)))],
-                'target': [[0]]}
-
-    plt_range = [-1.1,1.1]
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
-                               exp_name='sphere_exp3', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, plot_idx= torch.tensor([0]).long(), plt_range = plt_range)
-
-    N_test = min(10 * N, 10000)
-    slice_vals = [.05 ,.5, .95]
-
-    save_dir = f'../../data/kernel_transport/sphere_exp3'
-
-    for slice_val in slice_vals:
-        ref_sample = ref_gen(N_test)
-        X = geq_1d(np.full(N_test, slice_val))
-        ref_slice_sample = sample_sphere(N = N_test, n = n, X = X)
-
-        Y = ref_slice_sample[:, 1:][:, 1::2]
-        Z = ref_slice_sample[:, 1:][:, ::2]
-
-        sample_hmap(np.stack([Y.flatten(),Z.flatten()], axis = 1), f'{save_dir}/x={slice_val}_input_data.png',
-                    bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
-
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
-        sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-1.1, 1.1])
-    return True
-
 def spheres_exp(N = 5000, n_iter = 10000):
     n = 10
-    ref_gen =  lambda N: sample_normal(N = N, d = 2)
-    #ref_gen = lambda N: sample_base_mixtures(N = N, d = 1, n = 2)
+    #ref_gen =  lambda N: sample_normal(N = N, d = 2)
+    ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
 
 
@@ -550,74 +515,22 @@ def spheres_exp(N = 5000, n_iter = 10000):
     plt_range = [[.5,1.5],[-1.5,1.5]]
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
-                               exp_name='spheres_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               exp_name='spheres_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
-    N_test = min(10 * N, 10000)
-    slice_vals = np.asarray([ [1,.05],[1,.25], [1,.5], [1,.65], [1,.8],[1,.85]])
+    N_test =  10000
+    slice_vals = np.asarray([ [1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.8]])
 
-    save_dir = f'../../data/kernel_transport/spheres_exp'
+    save_dir = f'../../data/kernel_transport/spheres_exp2'
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
         RX = np.full((N_test,2), slice_val)
         ref_slice_sample = sample_spheres(N = N_test, n = n, RX = RX)
 
-        Y = ref_slice_sample[:, 2:][:, 1::2]
-        Z = ref_slice_sample[:, 2:][:, ::2]
-
-        #sample_hmap(np.stack([Y.flatten(),Z.flatten()], axis = 1), f'{save_dir}/x={slice_val[1]}_input_data.png',
-                    #bins=50, d=2, range=[[-1.5, 1.5],[-1.5,1.5]])
-
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
         sample_hmap(slice_sample[:,np.asarray([0,1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2,
                     range=plt_range)
-    return True
-
-
-def taurus_exp(N = 5000, n_iter = 1001):
-    ref_gen =  lambda N: sample_normal(N, d = 3)
-    target_gen = lambda N: normalize(sample_torus(N))
-    skip_idx = 1
-
-    idx_dict = {'ref':  [[0], [1,2]], #[[0,1,2]],
-                'cond': [[], [0]],
-                'target': [[0], [1,2]]} #[[0,1,2]]}
-
-    plt_range = [[-2.5,2.5],[-2.5,2.5]]
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                               exp_name='taurus_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict,  skip_idx= skip_idx, plot_idx= [], plt_range = plt_range)
-
-    N_test = min(10 * N, 10000)
-    slice_vals = [0, .3, .65, 1.5, 1.9]
-    ref_sample = ref_gen(N_test)
-    target_sample = target_gen(N_test)
-    save_dir = f'../../data/kernel_transport/taurus_exp2'
-
-    for slice_val in slice_vals:
-        ref_slice_sample = deepcopy(target_sample)
-        ref_slice_sample[:, 0] = slice_val
-        gen_slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, skip_idx)
-        target_slice_sample = sample_x_torus(N_test, x=slice_val)
-
-        sample_hmap(gen_slice_sample[:,1:], f'{save_dir}/x={slice_val}_gen_map.png', bins=60, d=2, range=plt_range)
-        sample_hmap(target_slice_sample[:, 1:], f'{save_dir}/x={slice_val}_target_map.png', bins=60, d=2, range=plt_range)
-    return True
-
-
-def lokta_vol_exp(N = 10000, n_iter = 10000, Yd = 4):
-    ref_gen = lambda N: sample_normal(N, Yd)
-    target_gen = lambda N: normalize(get_VL_data(N, Yd = Yd))
-
-    idx_dict = {'ref': list(range(Yd)),
-                'cond': [list(range(i + 4)) for i in range(Yd)],
-                'target': [[i + 4] for i in range(Yd)]}
-
-    conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                              exp_name='lk_exp', plt_range=None,  process_funcs=[],
-                              cond_model_trainer=comp_cond_kernel_transport,idx_dict= idx_dict,
-                              skip_base=True, skip_idx=1, plot_idx= torch.tensor([Yd-2,Yd-1]).long())
     return True
 
 
@@ -670,7 +583,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    spheres_exp(N = 7500, n_iter = 1001)
+    spheres_exp(N = 8000, n_iter = 1001)
 
 
     '''
