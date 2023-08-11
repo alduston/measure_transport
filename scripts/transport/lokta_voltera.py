@@ -4,6 +4,29 @@ from scipy.stats import lognorm
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 import torch
+from copy import deepcopy
+
+def replace_zeros(array, eps = 1e-5):
+    for i,val in enumerate(array):
+        if np.abs(val) < eps:
+            array[i] = 1.0
+    return array
+
+def normalize(array, keep_axes=[], just_var = False, just_mean = False):
+    normal_array = deepcopy(array)
+    if len(keep_axes):
+        norm_axes = np.asarray([axis for axis in range(len(array.shape)) if (axis not in keep_axes)])
+        keep_array = deepcopy(normal_array)[:, keep_axes]
+        normal_array = normal_array[:, norm_axes]
+    if not just_var:
+        normal_array = normal_array - np.mean(normal_array, axis = 0)
+    std_vec = replace_zeros(np.std(normal_array, axis = 0))
+    if not just_mean:
+        normal_array = normal_array/std_vec
+    if len(keep_axes):
+        normal_array = np.concatenate([normal_array, keep_array], axis = 1)
+    return normal_array
+
 
 class DeterministicLotkaVolterra:
     def __init__(self, T):
@@ -103,31 +126,17 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
-def get_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20):
+def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
     LV = DeterministicLotkaVolterra(T)
-    X = LV.sample_prior(N)
+    if not len(X):
+        X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
-
+    if normal:
+        Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
     Y = torch.tensor(np.real(Y)[:,  :Yd])
     return torch.concat([X,Y], dim = 1).detach().numpy()
-
-
-def get_cond_VL_data(N = 5000, Xd = 4, Yd = 5, T = 20, x = []):
-    LV = DeterministicLotkaVolterra(T)
-    if not len(x):
-        x =  LV.sample_prior(1)
-    X = np.stack([x for i in range(N)]).reshape(LV.sample_prior(N).shape)
-    Y,_ = LV.sample_data(X)
-
-    X = torch.tensor(np.real(X)[:, :Xd])
-    Y = torch.tensor(np.real(Y)[:, :Yd])
-    if not Xd:
-        return Y.detach().numpy()
-    return torch.concat([X, Y], dim=1).detach().numpy()
-
-
 
 
 if __name__ == '__main__':

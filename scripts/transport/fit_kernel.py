@@ -76,8 +76,32 @@ def three_d_scatter(x,y,z, saveloc):
     return True
 
 
+def seaborne_hmap(sample, save_loc,  d = 2, range = None, scmap = 'Blues'):
+    try:
+        sample = sample.detach().cpu()
+    except AttributeError:
+        pass
+    if d == 2:
+        x, y = sample.T
+        x = np.asarray(x)
+        y = np.asarray(y)
 
-def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cmap = None):
+        kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap=scmap)
+        plt.xlim(range[0][0], range[0][1])
+        plt.ylim(range[1][0], range[1][1])
+
+    elif d == 1:
+        kdeplot(data=x, bw_adjust=0.25)
+        plt.xlim(range[0][0], range[0][1])
+    plt.savefig(save_loc)
+    clear_plt()
+    return True
+
+
+
+
+def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
+                cmap = None, scmap = 'Blues'):
     try:
         sample = sample.detach().cpu()
     except AttributeError:
@@ -92,7 +116,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
         plt.colorbar()
 
         plt.subplot(1, 2, 2)
-        kdeplot(x=x, y=y, fill=True,bw_adjust=0.25, cmap="Blues")
+        kdeplot(x=x, y=y, fill=True,bw_adjust=0.25, cmap=scmap)
         plt.xlim(range[0][0],range[0][1])
         plt.ylim(range[1][0], range[1][1])
 

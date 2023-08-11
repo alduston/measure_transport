@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
-from fit_kernel import train_kernel, sample_scatter, sample_hmap,three_d_scatter
+from fit_kernel import train_kernel, sample_scatter, sample_hmap,seaborne_hmap
 import os
 from copy import deepcopy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
@@ -10,9 +10,10 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from lokta_voltera import get_VL_data,get_cond_VL_data
+from lokta_voltera import get_VL_data
 from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
+from seaborn import kdeplot
 
 
 def geq_1d(tensor):
@@ -519,7 +520,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
     N_test =  12000
-    slice_vals = np.asarray([ [1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.8]])
+    slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.8]])
 
     save_dir = f'../../data/kernel_transport/spheres_exp2'
 
@@ -534,71 +535,66 @@ def spheres_exp(N = 5000, n_iter = 10000):
     return True
 
 
-def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
+def VL_exp(N = 10000, n_iter = 10000, Yd = 18):
 
-    def get_normal_VL(N, Yd):
-        vl_data = get_VL_data(N, Yd=Yd)
-        params = vl_data[:, :4]
-        data = vl_data[:, 4:]
-        data = normalize(data)
-        return np.concatenate([params,data], axis = 1)
+    ref_gen = lambda N: sample_normal(N, 4)
+    target_gen = lambda N: get_VL_data(N, Yd= Yd, normal=True)
 
-    ref_gen = lambda n: sample_normal(n, 4)
-    target_gen = lambda N: get_normal_VL(N, Yd) #normalize(get_VL_data(N, Yd=Yd))
-    idx_dict = {'ref': [list(range(4))],
+    idx_dict = {'ref': [[0,1,2,3]],
                 'cond': [list(range(4, 4 + Yd))],
-                'target': [list(range(4))]}
+                'target': [[0,1,2,3]]}
 
-    plt_range = [[0,2.5],[0,.15]]
+
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
+                               idx_dict= idx_dict, skip_idx=0, plot_idx= [], plt_range = None)
 
-    N_test = 12000
-    slice_val = np.asarray([0.92, .05, 1.50, 0.02])
-    ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
+    N_test = 1000
+    slice_val = np.asarray([.8,.041,1.07,.04])
+
+    X = np.full((N_test,4), slice_val)
+    ref_slice_sample = normalize(get_VL_data(N_test, X=X,  Yd= Yd, normal=True))
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
 
-    save_dir = f'../../data/kernel_transport/param_exp'
-    sode_hist(slice_sample, save_dir, save_name='slice_marginal_hists')
-
     params_keys = ['alpha','beta','gamma','delta']
-    ranges = {'alpha': [0,2], 'beta': [-.5,.5], 'gamma':[0,2], 'delta':[-.5,.5]}
-    save_dir = f'../../data/kernel_transport/param_exp'
+    ranges = {'alpha': [.5,1.4], 'beta': [.02,.07], 'gamma':[.7,1.5], 'delta':[0,.07]}
+
+    fig = plt.figure(figsize=(20,20))
+
     for i, key_i in enumerate(params_keys):
         for j,key_j in enumerate(params_keys):
-            if i == j:
-                plot_sample = slice_sample[:, i]
-                plt_range = ranges[key_i]
-                sample_hmap(plot_sample, f'{save_dir}/{key_i}_map.png', bins=60, d=1, range=plt_range)
-                pass
-            elif i < j:
-                plt_range = [ranges[key_i], ranges[key_j]]
-                plot_sample = slice_sample[:,torch.tensor([i,j]).long()]
-                sample_hmap( plot_sample, f'{save_dir}/{key_i}_{key_j}_map.png', bins=60, d=2,  range=plt_range)
+            if i <= j:
+                plt.subplot(4, 4, 1 + (4*j + i))
+
+                if i<j:
+                    x,y  = slice_sample[:, torch.tensor([i, j]).long()].T
+                    plt_range = [ranges[key_i], ranges[key_j]]
+                    kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
+                    plt.scatter(x=slice_val[i], y=slice_val[j], s=20, color = 'red')
+                    plt.xlim(plt_range[0][0], plt_range[0][1])
+                    plt.ylim(plt_range[1][0], plt_range[1][1])
+
+                else:
+                    x = slice_sample[:, i]
+                    plt_range = ranges[key_i]
+                    plt.hist(x, bins = 50, range = plt_range)
+                    plt.axvline(slice_val[i], color='red', linewidth=5)
+                    plt.xlim(plt_range[0], plt_range[1])
+
+                if not i:
+                    plt.xlabel(params_keys[i])
+                if not j:
+                    plt.ylabel(params_keys[j])
+
+    plt.savefig('../../data/kernel_transport/param_exp/posterior_samples.png')
     return True
 
 
 def run():
-    spheres_exp(N = 8000, n_iter = 2001)
+    VL_exp(N = 8000, n_iter=2001)
 
-
-    '''
-    d = 3
-    n_mixtures = 3
-    ref_gen = lambda N: sample_normal(N, d)
-
-    sigma_vecs = [.5 * rand_covar(d) for i in range(n_mixtures)]
-    mu_vecs  = [15 * np.random.random(d) for i in range(n_mixtures)]
-
-    target_gen = lambda N: normalize(get_cond_VL_data(N, Yd=5))
-    target_gen = lambda N: normalize(sample_mixtures(N, mu_vecs, sigma_vecs))
-    conditional_transport_exp(ref_gen, target_gen, N=30, n_iter=101, skip_idx=1,
-                              exp_name='nd_mixtures3', plt_range=[[-4,4], [-4,4]],
-                              process_funcs=[], skip_base=True, plot_idx= torch.tensor([1,2]).long())
-    '''
 
 
 if __name__=='__main__':
