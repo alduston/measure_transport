@@ -8,6 +8,14 @@ import matplotlib.pyplot as plt
 from copy import deepcopy
 
 
+def clear_plt():
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    return True
+
+
 def replace_zeros(array, eps = 1e-5):
     for i,val in enumerate(array):
         if np.abs(val) < eps:
@@ -475,12 +483,17 @@ def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
         slice_sample = np.concatenate([slice_sample, new_slice_sample], axis=0)
     return slice_sample[:N]
 
+def sample_spheres_prior(N):
+    R = geq_1d(.5 + np.abs(np.random.normal(size = N, loc = 0, scale = .25)))
+    X = np.asarray([sample_uniform(1, d=1, l=(.95 * -r), h=(.95*r))[0] for r in R])
+    return np.concatenate([R,X], axis = 1)
+
 
 def sample_sphere_prior(N):
     return sample_uniform(N, d = 1, l = -1, h = 1)
 
 
-def sphere_vec(x, n = 10, eps_scale = .075):
+def sphere_vec(x, n = 10, eps_scale = .1):
     thetas = np.linspace(start = 0, stop = 2*np.pi, num = n+1)[:-1]
     r = np.sqrt(1 - (x ** 2))
     z = r * np.sin(thetas)
@@ -490,6 +503,25 @@ def sphere_vec(x, n = 10, eps_scale = .075):
     v[1::2] += y
     noise = eps_scale * np.random.randn(*v.shape)
     return v + noise
+
+def spheres_vec(x, R = 1, n = 10, eps_scale = .1):
+    thetas = np.linspace(start = 0, stop = 2*np.pi, num = n+1)[:-1]
+    r = np.sqrt(R - (x ** 2))
+    z = r * np.sin(thetas)
+    y = r * np.cos(thetas)
+    v = np.zeros(2*len(y))
+    v[::2] += z
+    v[1::2] += y
+    noise = eps_scale * np.random.randn(*v.shape)
+    return v + noise
+
+
+def sample_spheres(N, n = 10, RX = []):
+    if not len(RX):
+        RX = sample_spheres_prior(N)
+    Y = np.asarray([spheres_vec(x, R = r, n=n) for (r,x) in RX])
+    sample = np.concatenate([RX, Y], axis=1)
+    return sample
 
 
 def sample_sphere(N, n = 10, X = []):
