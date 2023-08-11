@@ -82,41 +82,32 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
         sample = sample.detach().cpu()
     except AttributeError:
         pass
+    plt.figure(figsize=(10, 4))
     if d == 2:
+        plt.subplot(1, 2, 1)
         x, y = sample.T
         x = np.asarray(x)
         y = np.asarray(y)
         plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax, cmap = cmap)
         plt.colorbar()
 
-        kdeplot(x=x, y=y, fill=True,bw_adjust=0.5)
+        plt.subplot(1, 2, 2)
+        kdeplot(x=x, y=y, fill=True,bw_adjust=0.25, cmap="Blues")
+        plt.xlim(range[0][0],range[0][1])
+        plt.ylim(range[1][0], range[1][1])
+
     elif d == 1:
+        plt.subplot(1, 2, 1)
         x =  sample
         x = np.asarray(x)
         plt.hist(x, bins = bins, range = range)
+
+        plt.subplot(1, 2, 2)
+        kdeplot(data = x, fill=True, bw_adjust=0.25)
+        plt.xlim(range[0][0], range[0][1])
     plt.savefig(save_loc)
     clear_plt()
     return True
-
-
-from seaborn import kdeplot
-
-def plot_dist_2d(data,title=None):
-    plt.figure(figsize=(10,4))
-    plt.subplot(1,2,1)
-    plt.hist2d(data[:,0],data[:,1],20,cmap=plt.cm.jet)
-    if title is not None:
-        plt.title(title)
-    plt.xticks(np.arange(0,1.01,0.1))
-    plt.yticks(np.arange(-4,4.1,0.5))
-    plt.subplot(1,2,2)
-    kdeplot(
-        x=data[:,0],
-        y=data[:,1],
-        fill=True,
-        bw_adjust=0.5
-    )
-    plt.show()
 
 
 def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):

@@ -518,7 +518,7 @@ def spheres_exp(N = 5000, n_iter = 10000):
                                exp_name='spheres_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
 
-    N_test =  10000
+    N_test =  12000
     slice_vals = np.asarray([ [1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.8]])
 
     save_dir = f'../../data/kernel_transport/spheres_exp2'
@@ -554,7 +554,6 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
                                exp_name='param_exp', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, skip_idx=0, plot_idx= torch.tensor([0,1]).long(), plt_range = plt_range)
 
-
     N_test = 12000
     slice_val = np.asarray([0.92, .05, 1.50, 0.02])
     ref_slice_sample = normalize(get_cond_VL_data(N_test, Yd=Yd, x=slice_val))
@@ -583,7 +582,7 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 
 def run():
-    spheres_exp(N = 8000, n_iter = 1001)
+    spheres_exp(N = 8000, n_iter = 2001)
 
 
     '''
