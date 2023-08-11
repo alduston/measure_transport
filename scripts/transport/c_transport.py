@@ -522,6 +522,11 @@ def sphere_exp(N = 5000, n_iter = 10000):
         X = geq_1d(np.full(N_test, slice_val))
         ref_slice_sample = sample_sphere(N = N_test, n = n, X = X)
 
+        Y = ref_slice_sample[:, 1:][1::2]
+        Z = ref_slice_sample[:, 1:][::2]
+        sample_hmap(np.concat([Y,Z], axis =1), f'{save_dir}/x={slice_val}_input_data.png',
+                    bins=60, d=1, range=[-1, 1])
+
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, 0)
         sample_hmap(slice_sample[:,0], f'{save_dir}/x={slice_val}_map.png', bins=60, d=1, range=[-.05, 1.05])
     return True
@@ -623,8 +628,6 @@ def param_infer_exp(N = 10000, n_iter = 10000, Yd = 18):
 
 def run():
     sphere_exp(N = 5000, n_iter = 1001)
-
-    #taurus_exp(N = 8000,n_iter = 1001)
 
     '''
     d = 3
