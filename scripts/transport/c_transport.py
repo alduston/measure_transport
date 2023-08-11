@@ -502,7 +502,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 def sphere_exp(N = 5000, n_iter = 10000):
     n = 10
     ref_gen =  lambda N: sample_normal(N = N, d = 1)
-    #ref_gen = lambda N: sample_base_mixtures(N = N, d = 5)
+    #ref_gen = lambda N: sample_base_mixtures(N = N, d = 1, n = 2)
     target_gen = lambda N: sample_sphere(N = N, n = n)
 
     idx_dict = {'ref': [[0]],
@@ -511,13 +511,13 @@ def sphere_exp(N = 5000, n_iter = 10000):
 
     plt_range = [-1.1,1.1]
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=0,
-                               exp_name='sphere_exp2', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
+                               exp_name='sphere_exp3', process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= torch.tensor([0]).long(), plt_range = plt_range)
 
     N_test = min(10 * N, 10000)
     slice_vals = [.05 ,.5, .95]
 
-    save_dir = f'../../data/kernel_transport/sphere_exp2'
+    save_dir = f'../../data/kernel_transport/sphere_exp3'
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
