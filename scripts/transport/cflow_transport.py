@@ -157,7 +157,6 @@ class CondTransportKernel(nn.Module):
         if self.X_mu.shape[1]==0:
             self.params['no_mu'] = True
 
-
         self.Y_approx = self.Y_eta
         self.params['approx'] = False
         if len(base_params['Y_approx']):
@@ -180,10 +179,10 @@ class CondTransportKernel(nn.Module):
 
         self.params['fit_kernel_params']['l'] *= l_scale(self.X).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
-        self.fit_kXX = self.fit_kernel(self.X, self.X)
+        #self.fit_kXX = self.fit_kernel(self.X, self.X)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
-        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
+        self.fit_kXX_inv = torch.linalg.inv(self.fit_kernel(self.X, self.X) + self.nugget_matrix)
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
@@ -632,7 +631,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(9000, 101, exp_name = 'vl_exp2')
+    vl_exp(10000, 101, exp_name = 'vl_exp2')
 
 if __name__=='__main__':
     run()
