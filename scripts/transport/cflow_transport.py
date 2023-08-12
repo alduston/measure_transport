@@ -103,7 +103,7 @@ class Comp_transport_model:
         z = fit_kernel(X, w).T @ Lambda
         Z = fit_kernel(W, W).T @ Lambda
 
-        y_eta = .95 * shuffle(y_eta) #.985 * shuffle(y_eta)
+        y_eta = .985 * shuffle(y_eta) #.985 * shuffle(y_eta)
         temp_param_dict['Y_eta'] = shuffle(Y_eta)
         temp_param_dict['Y_approx'] = Z + Y_approx
         self.temp_param_dict = temp_param_dict
@@ -349,8 +349,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
-        Y_eta *= .95#.985
-        Y_eta_test *= .95#.985
+        Y_eta *= .985
+        Y_eta_test *= .985
         iters = model.iters
     return Comp_transport_model(model_params)
 
@@ -574,7 +574,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=2)
+                                                         plt_range=None, n_transports=150)
 
     N_test = min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -586,7 +586,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
-    ranges = {'alpha': [.5, 1.4], 'beta': [.02, .07], 'gamma': [.7, 1.5], 'delta': [0, .07]}
+    ranges = {'alpha': [0, 1.6], 'beta': [.0, .08], 'gamma': [0, 2], 'delta': [0, .08]}
 
     for i, key_i in enumerate(params_keys):
         for j, key_j in enumerate(params_keys):
@@ -598,28 +598,28 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                     plt_range = [ranges[key_i], ranges[key_j]]
                     kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
                     plt.scatter(x=slice_val[i], y=slice_val[j], s=20, color='red')
-                    #plt.xlim(plt_range[0][0], plt_range[0][1])
-                    #plt.ylim(plt_range[1][0], plt_range[1][1])
+                    plt.xlim(plt_range[0][0], plt_range[0][1])
+                    plt.ylim(plt_range[1][0], plt_range[1][1])
 
                 else:
                     x = slice_sample[:, i]
                     plt_range = ranges[key_i]
                     plt.hist(x, bins=50, range=plt_range)
                     plt.axvline(slice_val[i], color='red', linewidth=5)
-                    #plt.xlim(plt_range[0], plt_range[1])
+                    plt.xlim(plt_range[0], plt_range[1])
 
-                if not i:
-                    plt.xlabel(params_keys[i])
-                if not j:
-                    plt.ylabel(params_keys[j])
+            if not i:
+                plt.xlabel(params_keys[i])
+            if not j:
+                plt.ylabel(params_keys[j])
 
     plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples.png')
     return True
 
 
 def run():
-    elden_exp(N = 5000, n_iter=101)
-    #vl_exp(4000, 101, exp_name='vl_exp2')
+    vl_exp(8000, 101, exp_name='vl_exp')
+
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
