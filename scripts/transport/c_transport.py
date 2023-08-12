@@ -573,10 +573,6 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True):
 
 
 def run():
-    spheres_exp(8000, 2001)
-
-    vl_exp(8000, 2001)
-
     two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
 
@@ -585,6 +581,10 @@ def run():
 
     two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
+
+    vl_exp(8000, 2001)
+
+    spheres_exp(8000, 2001)
 
 
 if __name__=='__main__':
