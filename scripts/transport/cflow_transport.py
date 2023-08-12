@@ -67,6 +67,12 @@ class Comp_transport_model:
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
+
+        n = len(self.submodel_params['Lambda'])
+        eps = .01
+        self.noise_shrink_c = np.exp(np.log(eps)/n)
+
+
         if device:
             self.device = device
         else:
@@ -74,6 +80,7 @@ class Comp_transport_model:
                 self.device = 'cuda'
             else:
                 self.device = 'cpu'
+
 
 
     def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
@@ -103,7 +110,7 @@ class Comp_transport_model:
         z = fit_kernel(X, w).T @ Lambda
         Z = fit_kernel(W, W).T @ Lambda
 
-        y_eta = .98 * shuffle(y_eta) #.985 * shuffle(y_eta)
+        y_eta = self.noise_shrink_c * shuffle(y_eta) #.985 * shuffle(y_eta)
         temp_param_dict['Y_eta'] = shuffle(Y_eta)
         temp_param_dict['Y_approx'] = Z + Y_approx
         self.temp_param_dict = temp_param_dict
@@ -114,6 +121,7 @@ class Comp_transport_model:
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
         y_approx = []
+
         for step_idx in range(len(self.submodel_params['Lambda'])):
             y_approx,y = self.param_map(y_eta = y, step_idx = step_idx,
                                         y_approx = y_approx, x_mu = x)
@@ -331,6 +339,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
+
+    eps = .01
+    noise_shrink_c = np.exp(np.log(eps) / n)
+
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
@@ -349,8 +361,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
-        Y_eta *= .98
-        Y_eta_test *= .98
+        Y_eta *= noise_shrink_c
+        Y_eta_test *= noise_shrink_c
         iters = model.iters
     return Comp_transport_model(model_params)
 
@@ -625,37 +637,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(8000, 101, exp_name='vl_exp1')
-
-    #ref_gen = sample_normal
-    #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
-
-
-    '''
-              
-    two_d_exp(sample_normal, mgan2, N=8000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
-
-
-    two_d_exp(sample_normal, mgan1, N=8000, n_iter=101, plt_range=[[-2.5, 2.5], [-1, 3]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed3', skip_idx=1, vmax=.5)
-    
-
-    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
-
-
-    two_d_exp(sample_normal, sample_swiss_roll, N=5000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_roll_composed3', skip_idx=1, vmax=.25)
-    
-
-    vl_exp(8000, 601, exp_name='vl_exp2')
-
-
-    spheres_exp(8000, 601,  exp_name='spheres_exp2')
-    '''
-
+    vl_exp(8000, 101, exp_name='vl_exp2')
 
 if __name__=='__main__':
     run()
