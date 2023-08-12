@@ -103,7 +103,7 @@ class Comp_transport_model:
         z = fit_kernel(X, w).T @ Lambda
         Z = fit_kernel(W, W).T @ Lambda
 
-        y_eta = shuffle(y_eta)
+        y_eta = .99 * shuffle(y_eta)
         temp_param_dict['Y_eta'] = shuffle(Y_eta)
         temp_param_dict['Y_approx'] = Z + Y_approx
         self.temp_param_dict = temp_param_dict
@@ -349,6 +349,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
+        Y_eta *= .99
+        Y_eta_test *= .99
         iters = model.iters
     return Comp_transport_model(model_params)
 
@@ -601,7 +603,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    two_d_exp(sample_normal, mgan2, N=2000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+    two_d_exp(sample_normal, mgan2, N=2000, n_iter=1201, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
 
