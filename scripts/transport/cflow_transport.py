@@ -319,14 +319,14 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .005, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
+                        'print_freq': 100, 'learning_rate': .006, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test, 'iters': iters}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 150, Y_approx = [],
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 200, Y_approx = [],
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
@@ -359,7 +359,7 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
-                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 150):
+                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 200):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -426,7 +426,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 150):
+                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 200):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -597,11 +597,10 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-
-    two_d_exp(sample_normal, sample_spirals, N=5000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],n_transports = 200,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
+    spheres_exp(8000, 101, exp_name='spheres_exp3')
 
     '''
+              
     two_d_exp(sample_normal, mgan2, N=8000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
