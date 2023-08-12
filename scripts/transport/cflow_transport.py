@@ -61,6 +61,59 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
+
+class Comp_transport_model_param:
+    def __init__(self, submodels_params, device = None):
+        self.submodel_params = submodels_params
+        self.dtype = submodels_params['X'][0].dtype
+        if device:
+            self.device = device
+        else:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
+
+
+    def param_map(self, y_eta,  param_dict, model_idx,y_approx = [], x_mu = []):
+        X = param_dict['X'][model_idx]
+        Lambda = param_dict['Lambda'][model_idx]
+        fit_kernel = param_dict['fit_kernel'][model_idx]
+
+        y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
+        if len(x_mu):
+            x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
+            w = torch.concat([x_mu, y_eta], dim=1)
+
+        if len(y_approx):
+            y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
+            w = torch.concat([w, y_approx], dim = 1)
+        else:
+            y_approx = deepcopy(y_eta)
+
+        z = fit_kernel(X, w).T @ Lambda
+        y_eta = shuffle(y_eta)
+        return (z + y_approx, y_eta)
+
+
+    def c_map(self, x, y, no_x = False):
+        x = geq_1d(torch.tensor(x, device = self.device))
+        y = geq_1d(torch.tensor(y, device = self.device))
+        y_approx = []
+        for model_idx in range(len(self.submodel_params['X'])):
+            y_approx,y = self.param_map(y_eta = y, model_idx = model_idx,
+                                        param_dict = self.submodel_params,
+                                        y_approx = y_approx, x_mu = x)
+        if no_x:
+            return y_approx
+        return torch.concat([x, y_approx], dim = 1)
+
+
+    def map(self, x = [], y = [], no_x = False):
+        return self.c_map(x,y, no_x = no_x)
+
+
+
 class Comp_transport_model:
     def __init__(self, submodels, cond = False, device = None):
         self.submodels = submodels
@@ -309,17 +362,25 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 9, f = .66):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 25, f = .66):
     models = []
+    model_params = {'X': [], 'fit_kernel': [], 'Lambda': []}
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test)
-        n_iter = max(int(n_iter * f), 401)
+
+        model_params['X'].append(model.X)
+        model_params['Lambda'].append(model.get_Lambda())
+        model_params['fit_kernel'].append(model.fit_kernel)
+
+
+        n_iter = max(int(n_iter * f), 301)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
         models.append(model)
+    #return Comp_transport_model_param(model_params)
     return Comp_transport_model(models, cond=True)
 
 
@@ -467,8 +528,8 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
-                                                         exp_name='mgan2_composed2', plt_range=plt_range,plot_idx=plot_idx,
-                                                         process_funcs=process_funcs, skip_idx=skip_idx)
+                                                         exp_name=exp_name, plt_range=plt_range,
+                                                         plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
     N_test = min(10 * N, 15000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
@@ -568,11 +629,15 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True):
                 if not j:
                     plt.ylabel(params_keys[j])
 
-    plt.savefig('../../data/kernel_transport/vl_exp/posterior_samples.png')
+    plt.savefig('../../data/kernel_transport/param_exp/posterior_samples.png')
     return True
 
 
 def run():
+    two_d_exp(sample_normal, mgan2, N=1000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
+
+    '''
     spheres_exp(8000, 2001)
 
     vl_exp(8000, 2001)
@@ -585,11 +650,8 @@ def run():
 
     two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
+    '''
 
 
 if __name__=='__main__':
     run()
-
-
-
-
