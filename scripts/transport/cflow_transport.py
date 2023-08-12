@@ -103,7 +103,7 @@ class Comp_transport_model:
         z = fit_kernel(X, w).T @ Lambda
         Z = fit_kernel(W, W).T @ Lambda
 
-        y_eta = .995 * shuffle(y_eta)
+        y_eta = .985 * shuffle(y_eta)
         temp_param_dict['Y_eta'] = shuffle(Y_eta)
         temp_param_dict['Y_approx'] = Z + Y_approx
         self.temp_param_dict = temp_param_dict
@@ -349,8 +349,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
-        Y_eta *= .995
-        Y_eta_test *= .995
+        Y_eta *= .985
+        Y_eta_test *= .985
         iters = model.iters
     return Comp_transport_model(model_params)
 
