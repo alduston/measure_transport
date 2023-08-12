@@ -583,15 +583,15 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                     plt_range = [ranges[key_i], ranges[key_j]]
                     kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
                     plt.scatter(x=slice_val[i], y=slice_val[j], s=20, color='red')
-                    plt.xlim(plt_range[0][0], plt_range[0][1])
-                    plt.ylim(plt_range[1][0], plt_range[1][1])
+                    #plt.xlim(plt_range[0][0], plt_range[0][1])
+                    #plt.ylim(plt_range[1][0], plt_range[1][1])
 
                 else:
                     x = slice_sample[:, i]
                     plt_range = ranges[key_i]
                     plt.hist(x, bins=50, range=plt_range)
                     plt.axvline(slice_val[i], color='red', linewidth=5)
-                    plt.xlim(plt_range[0], plt_range[1])
+                    #plt.xlim(plt_range[0], plt_range[1])
 
                 if not i:
                     plt.xlabel(params_keys[i])
@@ -603,9 +603,10 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n= 2)
-    two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
+    vl_exp(4000, 601, exp_name='vl_exp2')
+    #ref_gen = sample_normal
+    #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
 
     '''
