@@ -610,8 +610,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
                 else:
                     x = slice_sample[:, i]
-                    plt_range = [-2,2] #ranges[key_i]
-                    plt.hist(x, bins=50, range=plt_range)
+                    #plt_range = ranges[key_i]
+                    plt.hist(x, bins=50, range= None) #plt_range)
                     plt.axvline(slice_val[i], color='red', linewidth=3)
                     #plt.xlim(plt_range[0], plt_range[1])
 
