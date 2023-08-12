@@ -84,7 +84,7 @@ class Comp_transport_model:
 
 
     def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
-        temp_param_dict = self.temp_param_dict
+        #temp_param_dict = self.temp_param_dict
         #X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
         #Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
         #Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
@@ -113,7 +113,7 @@ class Comp_transport_model:
         y_eta = self.noise_shrink_c * shuffle(y_eta) #.985 * shuffle(y_eta)
         #temp_param_dict['Y_eta'] = shuffle(Y_eta)
         #temp_param_dict['Y_approx'] = Z + Y_approx
-        self.temp_param_dict = temp_param_dict
+        #self.temp_param_dict = temp_param_dict
         return (z + y_approx, y_eta)
 
 
@@ -131,7 +131,7 @@ class Comp_transport_model:
 
 
     def map(self, x = [], y = [], no_x = False):
-        self.temp_param_dict = {key: deepcopy(self.submodel_params[key]) for key in self.param_keys}
+        #self.temp_param_dict = {key: deepcopy(self.submodel_params[key]) for key in self.param_keys}
         return self.c_map(x,y, no_x = no_x)
 
 
@@ -587,7 +587,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=70)
+                                                         plt_range=None, n_transports=4)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -632,7 +632,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(8500, 101, exp_name = 'vl_exp2')
+    vl_exp(8800, 101, exp_name = 'vl_exp2')
 
 if __name__=='__main__':
     run()
