@@ -62,7 +62,7 @@ def flip_2tensor(tensor):
 
 
 
-class Comp_transport_model_param:
+class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
         self.dtype = submodels_params['X'][0].dtype
@@ -112,43 +112,6 @@ class Comp_transport_model_param:
     def map(self, x = [], y = [], no_x = False):
         return self.c_map(x,y, no_x = no_x)
 
-
-
-class Comp_transport_model:
-    def __init__(self, submodels, cond = False, device = None):
-        self.submodels = submodels
-        self.cond = cond
-        if device:
-            self.device = device
-        else:
-            if torch.cuda.is_available():
-                self.device = 'cuda'
-            else:
-                self.device = 'cpu'
-
-
-    def base_map(self, y):
-        y_approx = deepcopy(y)
-        for submodel in self.submodels:
-            y_approx,y = submodel.map(y, y_approx).T
-        return y_approx
-
-
-    def c_map(self, x, y, no_x = False):
-        x = geq_1d(torch.tensor(x, device = self.device))
-        y = geq_1d(torch.tensor(y, device = self.device))
-        y_approx = deepcopy(y)
-        for submodel in self.submodels:
-            y_approx,y = submodel.map(x, y, y_approx, no_x = True)
-        if no_x:
-            return y_approx
-        return torch.concat([x, y_approx], dim = 1)
-
-
-    def map(self, x = [], y = [], no_x = False):
-        if self.cond:
-            return self.c_map(x,y, no_x = no_x)
-        return self.base_map(x)
 
 
 class CondTransportKernel(nn.Module):
@@ -363,7 +326,6 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 25, f = .66):
-    #models = []
     model_params = {'X': [], 'fit_kernel': [], 'Lambda': []}
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -379,9 +341,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_appro
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
-        #models.append(model)
-    return Comp_transport_model_param(model_params)
-    #return Comp_transport_model(models, cond=True)
+    return Comp_transport_model(model_params)
 
 
 def get_idx_tensors(idx_lists):
@@ -632,6 +592,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
+
     two_d_exp(sample_normal, mgan2, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
@@ -647,6 +608,7 @@ def run():
     vl_exp(8000, 2001, exp_name='vl_exp2')
 
     spheres_exp(8000, 2001,  exp_name='spheres_exp2')
+    '''
 
 if __name__=='__main__':
     run()
