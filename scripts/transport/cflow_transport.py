@@ -507,7 +507,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 10000, exp_name = 'spheres_exp'):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 250):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -522,7 +522,7 @@ def spheres_exp(N = 5000, n_iter = 10000, exp_name = 'spheres_exp'):
     skip_idx = 0
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=skip_idx,
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
+                               idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
     N_test =  min(10 * N, 15000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
