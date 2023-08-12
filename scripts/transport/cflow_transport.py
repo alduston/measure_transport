@@ -588,7 +588,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=3)
+                                                         plt_range=None, n_transports=2)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -632,9 +632,9 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
 
-            plt.tight_layout(pad=0.3)
-            plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
-            clear_plt()
+    plt.tight_layout(pad=0.3)
+    plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
+    clear_plt()
     return True
 
 
