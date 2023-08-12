@@ -17,7 +17,7 @@ from seaborn import kdeplot
 
 
 def shuffle(tensor):
-    if geq_1d(tensor).shape[1] <=1:
+    if geq_1d(tensor).shape[0] <=1:
         return tensor
     else:
         return tensor[torch.randperm(len(tensor))]
@@ -601,7 +601,11 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(2000, 1201, exp_name='spheres_exp3')
+    #spheres_exp(2000, 1201, exp_name='spheres_exp3')
+
+    t = torch.tensor([[1],[2]])
+
+    print(shuffle(t))
 
 
     '''
