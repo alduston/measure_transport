@@ -84,6 +84,7 @@ class Comp_transport_model:
 
         Lambda = self.submodel_params['Lambda'][step_idx]
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
+        X = self.submodel_params['X'][step_idx]
 
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         if len(x_mu):
@@ -99,7 +100,7 @@ class Comp_transport_model:
             y_approx = deepcopy(y_eta)
             Y_approx = deepcopy(Y_eta)
 
-        z = fit_kernel(W, w).T @ Lambda
+        z = fit_kernel(X, w).T @ Lambda
         Z = fit_kernel(W, W).T @ Lambda
 
         y_eta = shuffle(y_eta)
@@ -336,13 +337,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                       Y_approx_test = Y_approx_test, iters = iters)
         model_params['Lambda'].append(model.get_Lambda())
         model_params['fit_kernel'].append(model.fit_kernel)
+        model_params['X'].append(model.X)
+
 
         if i==0:
             model_params['X_mu']= X_mu
             model_params['Y_eta']= Y_eta
             model_params['Y_approx'] = 0 * Y_mu
 
-        n_iter = max(int(n_iter * f), 301)
+        n_iter = max(int(n_iter * f), 101)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -360,7 +363,7 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
-                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 50):
+                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 40):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -427,7 +430,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 50):
+                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 40):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -484,7 +487,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
 
 def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[],
-              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 50):
+              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 40):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -508,7 +511,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 50):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 40):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
