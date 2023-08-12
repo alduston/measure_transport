@@ -317,7 +317,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_appro
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters=iters)
-        n_iter = max(int(n_iter * f), 401)
+        n_iter = max(int(n_iter * f), 101)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -434,11 +434,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      ref_sample = ref_gen(N_test)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-
-     gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-     test_mmd = trained_models[-1].submodels[0].mmd(torch.tensor(gen_sample, dtype=torch.float32),
-                                                    torch.tensor(target_sample, dtype=torch.float32))
-     print(f'test mmd is {test_mmd}')
 
 
      if plots_hists:

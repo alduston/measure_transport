@@ -319,15 +319,15 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .006, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
+                        'print_freq': 100, 'learning_rate': .004, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test, 'iters': iters}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 200, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50, Y_approx = [],
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
     for i in range(n):
@@ -342,6 +342,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 200
             model_params['Y_eta']= Y_eta
             model_params['Y_approx'] = 0 * Y_mu
 
+        n_iter = max(int(n_iter * f), 301)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -359,7 +360,7 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
-                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 200):
+                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 50):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -426,7 +427,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 200):
+                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 50):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -483,7 +484,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
 
 def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[],
-              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 200):
+              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 50):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -507,7 +508,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 250):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 50):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -597,7 +598,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(8000, 101, exp_name='spheres_exp3')
+    spheres_exp(8000, 2001, exp_name='spheres_exp3')
 
     '''
               
