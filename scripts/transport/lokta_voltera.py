@@ -133,7 +133,7 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
     Y, _ = LV.sample_data(X)
     if normal:
         X_mean = np.asarray([-.125, -3, -0.125, -3])
-        X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])
+        X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])**.5
         X -= X_mean
         X /= X_var
         Y = normalize(Y)

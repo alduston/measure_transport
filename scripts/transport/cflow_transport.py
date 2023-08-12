@@ -577,7 +577,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal)
 
     X_mean = np.asarray([-.125,-3,-0.125,-3])
-    X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])
+    X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])**.5
 
     idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
