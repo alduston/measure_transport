@@ -132,8 +132,10 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
         X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
     if normal:
-        mu_mean = np.asarray([-.125, -3, -0.125, -3])
-        X -= mu_mean
+        X_mean = np.asarray([-.125, -3, -0.125, -3])
+        X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])
+        X -= X_mean
+        X /= X_var
         Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
@@ -142,9 +144,10 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
 
 
 if __name__ == '__main__':
-    X,Y = get_VL_data(4, 5)
+    LV = DeterministicLotkaVolterra(20)
+    #X,Y = get_VL_data(4, 5)
 
-    for i in range(50):
-        plt.plot(Y[i])
-    plt.savefig('sample_trajectories.png')
+    #for i in range(50):
+        #plt.plot(Y[i])
+    #plt.savefig('sample_trajectories.png')
 
