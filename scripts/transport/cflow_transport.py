@@ -576,10 +576,10 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=150)
+                                                         plt_range=None, n_transports=10)
 
     N_test = N #min(10 * N, 15000)
-    slice_val = np.asarray([.8, .041, 1.07, .04])- mu_mean
+    slice_val = np.asarray([.8, .041, 1.07, .04]) - mu_mean
 
     X = np.full((N_test, 4), slice_val)
     ref_slice_sample = normalize(get_VL_data(N_test, X=X, Yd=Yd, normal=normal))
@@ -624,7 +624,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(6000, 101, exp_name='vl_exp')
+    vl_exp(6000, 101, exp_name='vl_exp1')
 
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],

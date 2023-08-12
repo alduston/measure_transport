@@ -132,7 +132,8 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
         X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
     if normal:
-        X = normalize(X, just_mean = True)
+        mu_mean = np.asarray([-.125, -3, -0.125, -3])
+        X -= mu_mean
         Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
