@@ -588,7 +588,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=85)
+                                                         plt_range=None, n_transports=3)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -603,34 +603,38 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
-    ranges = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
 
-    for i, key_i in enumerate(params_keys):
-        for j, key_j in enumerate(params_keys):
-            if i <= j:
-                plt.subplot(4, 4, 1 + (4 * j + i))
-                if not i:
-                    plt.ylabel(params_keys[j])
-                if j == 3:
-                    plt.xlabel(params_keys[i])
+    ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
+    ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
 
-                if i < j:
-                    x, y = slice_sample[:, torch.tensor([i, j]).long()].T
-                    plt_range = [ranges[key_i], ranges[key_j]]
-                    kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
-                    plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
-                    plt.xlim(plt_range[0][0], plt_range[0][1])
-                    plt.ylim(plt_range[1][0], plt_range[1][1])
+    for range_idx,ranges in enumerate([ranges1, ranges2]):
+        for i, key_i in enumerate(params_keys):
+            for j, key_j in enumerate(params_keys):
+                if i <= j:
+                    plt.subplot(4, 4, 1 + (4 * j + i))
+                    if not i:
+                        plt.ylabel(params_keys[j])
+                    if j == 3:
+                        plt.xlabel(params_keys[i])
 
-                else:
-                    x = slice_sample[:, i]
-                    plt_range = ranges[key_i]
-                    plt.hist(x, bins=50, range = plt_range)
-                    plt.axvline(slice_val[i], color='red', linewidth=3)
+                    if i < j:
+                        x, y = slice_sample[:, torch.tensor([i, j]).long()].T
+                        plt_range = [ranges[key_i], ranges[key_j]]
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
+                        plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
+                        plt.xlim(plt_range[0][0], plt_range[0][1])
+                        plt.ylim(plt_range[1][0], plt_range[1][1])
+
+                    else:
+                        x = slice_sample[:, i]
+                        plt_range = ranges[key_i]
+                        plt.hist(x, bins=50, range = plt_range)
+                        plt.axvline(slice_val[i], color='red', linewidth=3)
 
 
-        plt.tight_layout(pad=0.3)
-        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples.png')
+            plt.tight_layout(pad=0.3)
+            plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
+            clear_plt()
     return True
 
 
