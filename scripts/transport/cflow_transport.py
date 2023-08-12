@@ -399,7 +399,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = N #min(10 * N, 10000)
+    N_test = N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -636,22 +636,6 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True):
 def run():
     two_d_exp(sample_normal, mgan2, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
-
-    '''
-    spheres_exp(8000, 2001)
-
-    vl_exp(8000, 2001)
-
-    two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
-
-    two_d_exp(sample_normal, mgan1, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1, 3]],
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed2', skip_idx=1, vmax=.5)
-
-    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
-    '''
-
 
 if __name__=='__main__':
     run()

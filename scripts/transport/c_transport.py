@@ -467,7 +467,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
-                                                         exp_name='mgan2_composed2', plt_range=plt_range,plot_idx=plot_idx,
+                                                         exp_name=exp_name, plt_range=plt_range,plot_idx=plot_idx,
                                                          process_funcs=process_funcs, skip_idx=skip_idx)
     N_test = min(10 * N, 15000)
     for slice_val in slice_vals:
