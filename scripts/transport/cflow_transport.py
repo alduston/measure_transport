@@ -545,6 +545,21 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                     range=plt_range)
     return True
 
+def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
+    ref_gen = sample_normal
+    target_gen = sample_elden_ring
+    idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
+    skip_idx = 0
+    plt_range = [[-1,1],[-1,1]]
+    plot_idx = torch.tensor([0,1]).long()
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                                                         exp_name=exp_name, process_funcs=[],
+                                                         cond_model_trainer=comp_cond_kernel_transport,
+                                                         idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=plot_idx,
+                                                         plt_range=plt_range, n_transports=200)
+    return True
+
+
 
 def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
@@ -559,7 +574,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=200)
+                                                         plt_range=None, n_transports=2)
 
     N_test = min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -603,7 +618,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(4000, 101, exp_name='vl_exp2')
+    elden_exp(N = 7000, n_iter=101)
+    #vl_exp(4000, 101, exp_name='vl_exp2')
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
