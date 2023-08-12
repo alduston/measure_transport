@@ -591,34 +591,37 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     for i, key_i in enumerate(params_keys):
         for j, key_j in enumerate(params_keys):
             if i <= j:
-                plt.subplot(4, 4, 1 + (4 * j + i))
+                #plt.subplot(4, 4, 1 + (4 * j + i))
 
                 if i < j:
                     x, y = slice_sample[:, torch.tensor([i, j]).long()].T
-                    plt_range = [ranges[key_i], ranges[key_j]]
+                    #plt_range = [ranges[key_i], ranges[key_j]]
                     kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
                     plt.scatter(x=slice_val[i], y=slice_val[j], s=20, color='red')
-                    plt.xlim(plt_range[0][0], plt_range[0][1])
-                    plt.ylim(plt_range[1][0], plt_range[1][1])
+                    #plt.xlim(plt_range[0][0], plt_range[0][1])
+                    #plt.ylim(plt_range[1][0], plt_range[1][1])
 
                 else:
-                    x = slice_sample[:, i]
+                    #x = slice_sample[:, i]
                     plt_range = ranges[key_i]
-                    plt.hist(x, bins=50, range=plt_range)
+                    plt.hist(x, bins=50)#, range=None)
                     plt.axvline(slice_val[i], color='red', linewidth=5)
                     plt.xlim(plt_range[0], plt_range[1])
 
-            if not i:
-                plt.xlabel(params_keys[i])
-            if not j:
-                plt.ylabel(params_keys[j])
+            #if not i:
+                #plt.xlabel(params_keys[i])
+            #if not j:
+                #plt.ylabel(params_keys[j])
 
-    plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples.png')
+            plt.xlabel(params_keys[i])
+            plt.ylabel(params_keys[j])
+            plt.savefig(f'../../data/kernel_transport/{exp_name}/{key_i}_{key_j}_samples.png')
+            clear_plt()
     return True
 
 
 def run():
-    vl_exp(7000, 151, exp_name='vl_exp')
+    vl_exp(7500, 151, exp_name='vl_exp')
 
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
