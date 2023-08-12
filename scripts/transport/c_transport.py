@@ -582,6 +582,9 @@ def run():
     two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
 
+    two_d_exp(sample_normal, sample_swiss_roll, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_roll_composed2', skip_idx=1, vmax=.25)
+
     vl_exp(8000, 2001)
 
     spheres_exp(8000, 2001)
