@@ -363,7 +363,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 25, f = .66):
-    models = []
+    #models = []
     model_params = {'X': [], 'fit_kernel': [], 'Lambda': []}
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -379,9 +379,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_appro
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
-        models.append(model)
-    #return Comp_transport_model_param(model_params)
-    return Comp_transport_model(models, cond=True)
+        #models.append(model)
+    return Comp_transport_model_param(model_params)
+    #return Comp_transport_model(models, cond=True)
 
 
 def get_idx_tensors(idx_lists):
@@ -634,7 +634,7 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True):
 
 
 def run():
-    two_d_exp(sample_normal, mgan2, N=1000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+    two_d_exp(sample_normal, mgan2, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
     '''
