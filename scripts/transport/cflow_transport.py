@@ -592,7 +592,6 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
 
-
     X = np.full((N_test, 4), slice_val - mu_mean)
     ref_slice_sample = normalize(get_VL_data(N_test, X=X, Yd=Yd, normal=normal))
     ref_sample = ref_gen(N_test)
@@ -625,18 +624,15 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                     plt_range = ranges[key_i]
                     plt.hist(x, bins=50, range = plt_range)
                     plt.axvline(slice_val[i], color='red', linewidth=3)
-                    #plt.xlim(plt_range[0], plt_range[1])
 
 
-            #plt.xlabel(params_keys[i])
-            #plt.ylabel(params_keys[j])
         plt.tight_layout(pad=0.3)
         plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples.png')
     return True
 
 
 def run():
-    vl_exp(10000, 101, exp_name='vl_exp2')
+    vl_exp(9000, 101, exp_name = 'vl_exp2')
 
 if __name__=='__main__':
     run()
