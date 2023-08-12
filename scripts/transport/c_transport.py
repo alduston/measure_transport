@@ -543,7 +543,7 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
 
     params_keys = ['alpha','beta','gamma','delta']
-    ranges = {'alpha': [.5,1.4], 'beta': [.02,.07], 'gamma':[.7,1.5], 'delta':[0,.07]}
+    ranges = {'alpha': [.5,1.1], 'beta': [-.26,.34], 'gamma':[.77,1.37], 'delta':[-.26,.34]}
 
 
     for i, key_i in enumerate(params_keys):
