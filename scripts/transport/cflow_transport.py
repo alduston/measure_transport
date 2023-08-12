@@ -603,8 +603,9 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    two_d_exp(sample_normal, sample_spirals, N=3000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
+    ref_gen = lambda N: sample_base_mixtures(N=N, d=1, n=2)
+    two_d_exp(ref_gen, mgan2, N=5000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spiral_composed3', skip_idx=1, vmax=.2)
 
 
     '''
