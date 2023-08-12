@@ -487,7 +487,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
 
 def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[],
-              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 40):
+              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 100):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -601,11 +601,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    #spheres_exp(2000, 1201, exp_name='spheres_exp3')
-
-    t = torch.tensor([[1],[2]])
-
-    print(shuffle(t))
+    two_d_exp(sample_normal, mgan2, N=2000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+             slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
 
     '''
