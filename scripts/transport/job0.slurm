@@ -19,4 +19,4 @@
 
 # Your programs to run.
 source activate /mmfs1/gscratch/dynamicsai/ald6fd/SindyTorch
-python c_transport.py
+python cflow_transport.py
