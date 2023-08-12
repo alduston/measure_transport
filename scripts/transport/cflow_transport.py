@@ -588,26 +588,26 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=60)
+                                                         plt_range=None, n_transports=25)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
 
     X = np.full((N_test, 4), slice_val)
-    ref_slice_sample = get_VL_data(N_test, X=X, Yd=Yd, normal=normal)
+    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal)
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-    slice_sample[:,:4] += X_mean
     slice_sample[:, :4] *= X_std
-
+    slice_sample[:,:4] += X_mean
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
     ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
     ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
+    ranges3 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
-    for range_idx,ranges in enumerate([ranges1, ranges2]):
+    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
@@ -622,12 +622,15 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                         plt_range = [ranges[key_i], ranges[key_j]]
                         kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
-                        plt.xlim(plt_range[0][0], plt_range[0][1])
-                        plt.ylim(plt_range[1][0], plt_range[1][1])
+                        if plt_range[0][0]!= None:
+                            plt.xlim(plt_range[0][0], plt_range[0][1])
+                            plt.ylim(plt_range[1][0], plt_range[1][1])
 
                     else:
                         x = slice_sample[:, i]
                         plt_range = ranges[key_i]
+                        if plt_range[0] == None:
+                            plt_range = None
                         plt.hist(x, bins=50, range = plt_range)
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
@@ -639,7 +642,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(9000, 101, exp_name = 'vl_exp3')
+    vl_exp(90, 101, exp_name = 'vl_exp3')
 
 if __name__=='__main__':
     run()
