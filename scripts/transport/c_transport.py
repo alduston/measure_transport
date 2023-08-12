@@ -164,7 +164,7 @@ class CondTransportKernel(nn.Module):
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
-        self.iters = 0
+        self.iters = deepcopy(self.params['iters'])
 
 
     def p_vec(self, n):
@@ -298,27 +298,30 @@ def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
-                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
+                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 100, 'learning_rate': .002, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
-                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test}
+                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
+                         'iters': iters}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .66):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 2, f = 1):
     models = []
+    iters = 0
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
-                                      Y_approx_test = Y_approx_test)
+                                      Y_approx_test = Y_approx_test, iters=iters)
         n_iter = max(int(n_iter * f), 401)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
+        iters = model.iters
         models.append(model)
     return Comp_transport_model(models, cond=True)
 
@@ -432,6 +435,12 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
 
+     gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
+     test_mmd = trained_models[-1].submodels[0].mmd(torch.tensor(gen_sample, dtype=torch.float32),
+                                                    torch.tensor(target_sample, dtype=torch.float32))
+     print(f'test mmd is {test_mmd}')
+
+
      if plots_hists:
         sode_hist(gen_sample,save_dir,save_name='marginal_hists')
         sode_hist(target_sample, save_dir, save_name='target_marginal_hists')
@@ -527,12 +536,14 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
                                exp_name= exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, skip_idx=skip_idx, plot_idx= [], plt_range = None)
 
+
     N_test = min(10 * N, 15000)
     slice_val = np.asarray([.8,.041,1.07,.04])
 
     X = np.full((N_test,4), slice_val)
     ref_slice_sample = normalize(get_VL_data(N_test, X=X,  Yd= Yd, normal=normal))
     ref_sample = ref_gen(N_test)
+
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
 
@@ -570,8 +581,9 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
 
 
 def run():
-    two_d_exp(sample_normal, sample_spirals, N=500, n_iter=1600, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=0, vmax=.15)
+    two_d_exp(sample_normal, sample_spirals, N=300, n_iter=601, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[0], slice_range=[-3, 3], skip_idx=1, vmax=.15)
+
 
     '''
     two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],

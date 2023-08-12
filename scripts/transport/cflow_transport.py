@@ -65,7 +65,8 @@ def flip_2tensor(tensor):
 class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
-        self.dtype = submodels_params['X'][0].dtype
+        self.dtype = torch.float32
+        self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
         if device:
             self.device = device
         else:
@@ -75,24 +76,36 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
 
-    def param_map(self, y_eta,  param_dict, model_idx,y_approx = [], x_mu = []):
-        X = param_dict['X'][model_idx]
-        Lambda = param_dict['Lambda'][model_idx]
-        fit_kernel = param_dict['fit_kernel'][model_idx]
+    def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
+        temp_param_dict = self.temp_param_dict
+        X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
+        Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
+        Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
+
+        Lambda = self.submodel_params['Lambda'][step_idx]
+        fit_kernel = self.submodel_params['fit_kernel'][step_idx]
 
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         if len(x_mu):
             x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
             w = torch.concat([x_mu, y_eta], dim=1)
+            W = torch.concat([X_mu, Y_eta], dim=1)
 
         if len(y_approx):
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
+            W = torch.concat([W, Y_approx], dim = 1)
         else:
             y_approx = deepcopy(y_eta)
+            Y_approx = deepcopy(Y_eta)
 
-        z = fit_kernel(X, w).T @ Lambda
+        z = fit_kernel(W, w).T @ Lambda
+        Z = fit_kernel(W, W).T @ Lambda
+
         y_eta = shuffle(y_eta)
+        temp_param_dict['Y_eta'] = shuffle(Y_eta)
+        temp_param_dict['Y_approx'] = Z + Y_approx
+        self.temp_param_dict = temp_param_dict
         return (z + y_approx, y_eta)
 
 
@@ -100,9 +113,8 @@ class Comp_transport_model:
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
         y_approx = []
-        for model_idx in range(len(self.submodel_params['X'])):
-            y_approx,y = self.param_map(y_eta = y, model_idx = model_idx,
-                                        param_dict = self.submodel_params,
+        for step_idx in range(len(self.submodel_params['Lambda'])):
+            y_approx,y = self.param_map(y_eta = y, step_idx = step_idx,
                                         y_approx = y_approx, x_mu = x)
         if no_x:
             return y_approx
@@ -110,6 +122,7 @@ class Comp_transport_model:
 
 
     def map(self, x = [], y = [], no_x = False):
+        self.temp_param_dict = {key: deepcopy(self.submodel_params[key]) for key in self.param_keys}
         return self.c_map(x,y, no_x = no_x)
 
 
@@ -180,7 +193,7 @@ class CondTransportKernel(nn.Module):
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
-        self.iters = 0
+        self.iters = deepcopy(self.params['iters'])
 
 
     def p_vec(self, n):
@@ -302,45 +315,37 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
-    transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
-                   'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  100, 'learning_rate': .002, 'nugget': 1e-4}
-    if len(Y_eta_test):
-        transport_params['Y_eta_test'] = Y_eta_test
-    transport_kernel = TransportKernel(transport_params)
-    train_kernel(transport_kernel, n_iter=n_iter)
-    return transport_kernel
-
-
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
-                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
+                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 100, 'learning_rate': .002, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
-                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test}
+                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test, 'iters': iters}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 40, f = 1):
-    model_params = {'X': [], 'fit_kernel': [], 'Lambda': []}
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 100):
+    model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
+    iters = 0
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
-                                      Y_approx_test = Y_approx_test)
-
-        model_params['X'].append(model.X)
+                                      Y_approx_test = Y_approx_test, iters = iters)
         model_params['Lambda'].append(model.get_Lambda())
         model_params['fit_kernel'].append(model.fit_kernel)
 
+        if i==0:
+            model_params['X_mu']= X_mu
+            model_params['Y_eta']= Y_eta
+            model_params['Y_approx'] = 0 * Y_mu
 
-        n_iter = max(int(n_iter * f), 601)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
+        iters = model.iters
     return Comp_transport_model(model_params)
 
 
@@ -593,30 +598,32 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 def run():
 
-    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=601, plt_range=[[-3, 3], [-3, 3]],
+    two_d_exp(sample_normal, sample_spirals, N=5000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
 
-
-    two_d_exp(sample_normal, mgan2, N=8000, n_iter=601, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+    '''
+    two_d_exp(sample_normal, mgan2, N=8000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
 
 
-    two_d_exp(sample_normal, mgan1, N=8000, n_iter=601, plt_range=[[-2.5, 2.5], [-1, 3]],
+    two_d_exp(sample_normal, mgan1, N=8000, n_iter=101, plt_range=[[-2.5, 2.5], [-1, 3]],
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed3', skip_idx=1, vmax=.5)
     
 
-    two_d_exp(sample_normal, sample_spirals, N=601, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
 
 
-    two_d_exp(sample_normal, sample_swiss_roll, N=601, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
+    two_d_exp(sample_normal, sample_swiss_roll, N=5000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_roll_composed3', skip_idx=1, vmax=.25)
     
 
     vl_exp(8000, 601, exp_name='vl_exp2')
 
+
     spheres_exp(8000, 601,  exp_name='spheres_exp2')
-    
+    '''
+
 
 if __name__=='__main__':
     run()
