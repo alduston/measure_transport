@@ -310,7 +310,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 2, f = 1):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 1, f = 1):
     models = []
     iters = 0
     for i in range(n):
@@ -581,8 +581,9 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
 
 
 def run():
-    two_d_exp(sample_normal, sample_spirals, N=300, n_iter=601, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], skip_idx=1, vmax=.15)
+    spheres_exp(2000, 20001, exp_name='spheres_exp3')
+    #two_d_exp(sample_normal, sample_spirals, N=300, n_iter=601, plt_range=[[-3, 3], [-3, 3]],
+              #slice_vals=[0], slice_range=[-3, 3], skip_idx=1, vmax=.15)
 
 
     '''
