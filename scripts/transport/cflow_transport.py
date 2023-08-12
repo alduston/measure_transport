@@ -586,7 +586,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
-    ranges = {'alpha': [0, 1.6], 'beta': [.0, .08], 'gamma': [0, 2], 'delta': [0, .08]}
+    ranges = {'alpha': [.5,1.1], 'beta': [-.26,.34], 'gamma':[.77,1.37], 'delta':[-.26,.34]}
 
     for i, key_i in enumerate(params_keys):
         for j, key_j in enumerate(params_keys):
@@ -607,7 +607,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
                 else:
                     x = slice_sample[:, i]
-                    plt_range = ranges[key_i]
+                    plt_range = [-2,2] #ranges[key_i]
                     plt.hist(x, bins=50, range=plt_range)
                     plt.axvline(slice_val[i], color='red', linewidth=3)
                     #plt.xlim(plt_range[0], plt_range[1])
