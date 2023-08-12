@@ -598,7 +598,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(8000, 1001, exp_name='spheres_exp3')
+    spheres_exp(2000, 1201, exp_name='spheres_exp3')
 
 
     '''
