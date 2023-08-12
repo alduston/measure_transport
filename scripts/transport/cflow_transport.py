@@ -576,7 +576,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=55)
+                                                         plt_range=None, n_transports=65)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -590,7 +590,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     slice_sample[:,:4] += mu_mean
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
-    ranges = {'alpha': [0,1.2], 'beta': [0,.3], 'gamma':[.75,1.75], 'delta':[0,.3]}
+    ranges = {'alpha': [0,1.4], 'beta': [-.1,.33], 'gamma':[.5,1.75], 'delta':[-.1,.33]}
 
     for i, key_i in enumerate(params_keys):
         for j, key_j in enumerate(params_keys):
@@ -625,7 +625,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(7500, 101, exp_name='vl_exp1')
+    vl_exp(8000, 101, exp_name='vl_exp1')
 
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
