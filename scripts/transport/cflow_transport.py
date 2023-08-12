@@ -576,8 +576,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal)
 
-    X_mean = np.asarray([-.125,-3,-0.125,-3])
-    X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])**.5
+    X_mean = np.asarray([1, 0.0564, 1, 0.0564])
+    X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
 
     idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
@@ -588,7 +588,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=3)
+                                                         plt_range=None, n_transports=85)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])

@@ -132,8 +132,8 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
         X = LV.sample_prior(N)
     Y, _ = LV.sample_data(X)
     if normal:
-        X_mean = np.asarray([-.125, -3, -0.125, -3])
-        X_var = np.asarray([0.285055, 0.000902, 0.281787, 0.000903])**.5
+        X_mean = np.asarray([1, 0.0564, 1, 0.0564])
+        X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
         X -= X_mean
         X /= X_var
         Y = normalize(Y)
@@ -145,6 +145,17 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
 
 if __name__ == '__main__':
     LV = DeterministicLotkaVolterra(20)
+    X = LV.sample_prior(1000000)
+
+    X_mean = np.asarray([1, 0.0564, 1, 0.0564])
+    X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
+
+    X -= X_mean
+    X /= X_var
+
+    print(np.mean(X, axis = 0))
+    print(np.var(X, axis=0))
+
     #X,Y = get_VL_data(4, 5)
 
     #for i in range(50):
