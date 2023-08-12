@@ -309,7 +309,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 9, f = .66):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 4, f = .66):
     models = []
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -570,6 +570,10 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
 
 
 def run():
+    two_d_exp(sample_normal, sample_spirals, N=500, n_iter=1600, plt_range=[[-3, 3], [-3, 3]],
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=0, vmax=.15)
+
+    '''
     two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
               slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
 
@@ -585,6 +589,7 @@ def run():
     vl_exp(8000, 2001)
 
     spheres_exp(8000, 2001)
+    '''
 
 
 if __name__=='__main__':
