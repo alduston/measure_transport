@@ -608,7 +608,6 @@ def run():
     vl_exp(8000, 2001, exp_name='vl_exp2')
 
     spheres_exp(8000, 2001,  exp_name='spheres_exp2')
-    '''
 
 if __name__=='__main__':
     run()
