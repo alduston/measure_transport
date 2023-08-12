@@ -54,6 +54,10 @@ def train_kernel(kernel_model, n_iter = 100):
             test_loss = kernel_model.loss_test().detach().cpu()
             print_str += f', test loss = {round(float(test_loss),6)}'
             print(print_str)
+            if torch.cuda.is_available():
+                free_mem, total_mem = torch.cuda.mem_get_info()
+                print(f'Using {100*(1-(free_mem/total_mem))}% GPU mem')
+
             kernel_model.train()
     return kernel_model, Loss_dict
 

@@ -85,34 +85,34 @@ class Comp_transport_model:
 
     def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
         temp_param_dict = self.temp_param_dict
-        X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
-        Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
-        Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
+        #X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
+        #Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
+        #Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
 
-        Lambda = self.submodel_params['Lambda'][step_idx]
+        Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
-        X = self.submodel_params['X'][step_idx]
+        X = torch.tensor(self.submodel_params['X'][step_idx],device=self.device, dtype=self.dtype)
 
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         if len(x_mu):
             x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
             w = torch.concat([x_mu, y_eta], dim=1)
-            W = torch.concat([X_mu, Y_eta], dim=1)
+            #W = torch.concat([X_mu, Y_eta], dim=1)
 
         if len(y_approx):
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
-            W = torch.concat([W, Y_approx], dim = 1)
+            #W = torch.concat([W, Y_approx], dim = 1)
         else:
             y_approx = deepcopy(y_eta)
-            Y_approx = deepcopy(Y_eta)
+            #Y_approx = deepcopy(Y_eta)
 
         z = fit_kernel(X, w).T @ Lambda
-        Z = fit_kernel(W, W).T @ Lambda
+        #Z = fit_kernel(W, W).T @ Lambda
 
         y_eta = self.noise_shrink_c * shuffle(y_eta) #.985 * shuffle(y_eta)
-        temp_param_dict['Y_eta'] = shuffle(Y_eta)
-        temp_param_dict['Y_approx'] = Z + Y_approx
+        #temp_param_dict['Y_eta'] = shuffle(Y_eta)
+        #temp_param_dict['Y_approx'] = Z + Y_approx
         self.temp_param_dict = temp_param_dict
         return (z + y_approx, y_eta)
 
@@ -345,15 +345,16 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters)
-        model_params['Lambda'].append(model.get_Lambda())
+        model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
-        model_params['X'].append(model.X)
+        model_params['X'].append(model.X.detach().cpu().numpy())
 
 
         if i==0:
-            model_params['X_mu']= X_mu
-            model_params['Y_eta']= Y_eta
-            model_params['Y_approx'] = 0 * Y_mu
+            pass
+            #model_params['X_mu']= X_mu
+            #model_params['Y_eta']= Y_eta
+            #model_params['Y_approx'] = 0 * Y_mu
 
         n_iter = max(int(n_iter * f), 101)
 
@@ -631,7 +632,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(9000, 101, exp_name = 'vl_exp2')
+    vl_exp(8500, 101, exp_name = 'vl_exp2')
 
 if __name__=='__main__':
     run()
