@@ -603,7 +603,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    two_d_exp(sample_normal, sample_spirals, N=2000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
+    two_d_exp(sample_normal, sample_spirals, N=3000, n_iter=101, plt_range=[[-3, 3], [-3, 3]],
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed3', skip_idx=1, vmax=.15)
 
 
