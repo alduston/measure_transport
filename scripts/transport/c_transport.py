@@ -578,7 +578,7 @@ def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp
 def run():
     ref_gen = lambda N: sample_base_mixtures(N=N, d=1, n=2)
     two_d_exp(ref_gen, mgan2, N=4000, n_iter=15001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
 
 
     '''
