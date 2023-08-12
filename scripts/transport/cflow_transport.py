@@ -559,7 +559,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None)
+                                                         plt_range=None, n_transports=200)
 
     N_test = min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
