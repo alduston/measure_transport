@@ -603,7 +603,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(4000, 601, exp_name='vl_exp2')
+    vl_exp(4000, 101, exp_name='vl_exp2')
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, mgan2, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed3', skip_idx=1, vmax=2)
