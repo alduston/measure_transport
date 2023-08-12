@@ -153,9 +153,6 @@ if __name__ == '__main__':
     X -= X_mean
     X /= X_var
 
-    print(np.mean(X, axis = 0))
-    print(np.var(X, axis=0))
-
     #X,Y = get_VL_data(4, 5)
 
     #for i in range(50):

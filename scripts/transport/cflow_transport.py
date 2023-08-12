@@ -577,7 +577,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
-    X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
+    X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
 
     idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
@@ -593,13 +593,13 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
 
-    X = np.full((N_test, 4), (slice_val - X_mean)/X_var)
-    ref_slice_sample = normalize(get_VL_data(N_test, X=X, Yd=Yd, normal=normal))
+    X = np.full((N_test, 4), slice_val)
+    ref_slice_sample = get_VL_data(N_test, X=X, Yd=Yd, normal=normal)
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
     slice_sample[:,:4] += X_mean
-    slice_sample[:, :4] *= X_var
+    slice_sample[:, :4] *= X_std
 
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
