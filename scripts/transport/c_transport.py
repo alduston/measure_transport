@@ -297,7 +297,6 @@ class CondTransportKernel(nn.Module):
 
     def loss_reg(self):
         Z = self.Z
-        Z1 = self.Z1
         return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 
