@@ -371,7 +371,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .95):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     eps = .01
@@ -393,7 +393,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
             #model_params['Y_eta']= Y_eta
             #model_params['Y_approx'] = 0 * Y_mu
 
-        n_iter = max(int(n_iter * f), 101)
+        n_iter = max(int(n_iter * f), 10)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
