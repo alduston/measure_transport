@@ -133,6 +133,10 @@ class CondTransportKernel(nn.Module):
         if self.params['no_mu']:
             self.X = self.Y_eta
             self.Y = self.Y_mu
+            self.X1 = torch.concat([self.X_mu, self.Y_approx], dim=1)
+        else:
+            self.X1 = self.X_mu
+
 
         if self.params['approx']:
             self.X = torch.concat([self.X, self.Y_approx], dim=1)
@@ -143,13 +147,17 @@ class CondTransportKernel(nn.Module):
         self.params['fit_kernel_params']['l'] *= l_scale(self.X).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
         self.fit_kXX = self.fit_kernel(self.X, self.X)
+        self.fit_kXX1 = self.fit_kernel(self.X1, self.X1)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
         self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
+        self.fit_kXX1_inv = torch.linalg.inv(self.fit_kXX1 + self.nugget_matrix)
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
+        self.Z1 = nn.Parameter(self.init_Z(), requires_grad=True)
+
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
@@ -180,21 +188,35 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXX_inv @ self.Z
 
 
+    def get_Lambda1(self):
+        return self.fit_kXX1_inv @ self.Z1
+
+
     def map(self, x_mu, y_eta, y_approx = [], no_x = False):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         if self.params['no_mu']:
             w = y_eta
+            w1 = torch.empty()
         else:
             w = torch.concat([x_mu, y_eta], dim=1)
+            w1 = x_mu
 
         if self.params['approx']:
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
+
         else:
             y_approx = deepcopy(y_eta)
+
+        w1 = torch.concat([w1, y_approx], dim=1)
+
         Lambda = self.get_Lambda()
+        Lambda1 = self.get_Lambda1()
+
         z = self.fit_kernel(self.X, w).T @ Lambda
+        z1 = self.fit_kernel(self.X1, w1).T @ Lambda1
+
 
         y_eta = shuffle(y_eta)
         if no_x or self.params['no_mu']:
@@ -218,7 +240,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd_no_mu(self):
-        map_vec = self.Y_approx + self.Z
+        map_vec = self.Y_approx + self.Z + self.Z1
         target = self.Y_mu
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -234,7 +256,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z], dim=1)
+        map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z + self.Z1], dim=1)
         target = self.Y
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -251,7 +273,10 @@ class CondTransportKernel(nn.Module):
 
     def loss_reg(self):
         Z = self.Z
-        return  self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
+        Z1 = self.Z1
+        reg_1 = self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
+        reg_2 = self.params['reg_lambda'] * torch.trace(Z1.T @ self.fit_kXX1_inv @ Z1)
+        return  reg_1 + reg_2
 
 
     def prob_add(self, t_1, t_2, p = .001):
