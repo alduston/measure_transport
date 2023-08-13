@@ -70,7 +70,7 @@ class Comp_transport_model:
 
         n = len(self.submodel_params['Lambda'])
         eps = .01
-        self.noise_shrink_c = np.exp(np.log(eps)/(n-25))
+        self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
         if device:
@@ -375,7 +375,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     eps = .01
-    noise_shrink_c = np.exp(np.log(eps) / (n-25))
+    noise_shrink_c = np.exp(np.log(eps)/(n))
 
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -688,10 +688,10 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    #elden_exp(12000,n_transports=150)
-    ref_gen = sample_normal
-    two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spirals_composed3', skip_idx=1, vmax=2)
+    elden_exp(8000,n_transports=150)
+    #ref_gen = sample_normal
+    #two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spirals_composed3', skip_idx=1, vmax=2)
     #spheres_exp(5000, 101, exp_name='sphere_check')
     #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
