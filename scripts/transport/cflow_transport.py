@@ -393,7 +393,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
             #model_params['Y_eta']= Y_eta
             #model_params['Y_approx'] = 0 * Y_mu
 
-        n_iter = max(int(n_iter * f), 10)
+        n_iter = max(int(n_iter * f), 101)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
@@ -561,7 +561,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 10, exp_name = 'spheres_exp', n_transports = 300):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 300):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -609,7 +609,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
 
 
 
-def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
@@ -631,7 +631,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=1)
+                                                         plt_range=None, n_transports=300)
 
     N_test = N #min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -689,6 +689,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 def run():
     spheres_exp(4000,  exp_name = 'spheres_exp4')
+    vl_exp(9000)
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
               #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spirals_composed3', skip_idx=1, vmax=2)
