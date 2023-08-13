@@ -602,11 +602,10 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=300)
+                                                         plt_range=None, n_transports=50)
 
-    N_test = N #min(10 * N, 15000)
+    N_test = N
     slice_val = np.asarray([.8, .041, 1.07, .04])
-    #slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_test, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 20)

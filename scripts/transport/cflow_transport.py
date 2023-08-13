@@ -371,12 +371,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         model_params['X'].append(model.X.detach().cpu().numpy())
         model_params['X1'].append(model.X1.detach().cpu().numpy())
 
-        if i==0:
-            pass
-            #model_params['X_mu']= X_mu
-            #model_params['Y_eta']= Y_eta
-            #model_params['Y_approx'] = 0 * Y_mu
-
         n_iter = max(int(n_iter * f), 101)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
@@ -615,9 +609,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=300)
+                                                         plt_range=None, n_transports=50)
 
-    N_test = N #min(10 * N, 15000)
+    N_test = N
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
@@ -672,13 +666,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    #spheres_exp(4000,  exp_name = 'spheres_exp4')
     vl_exp(4000)
-    #ref_gen = sample_normal
-    #two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              #slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spirals_composed3', skip_idx=1, vmax=2)
-    #spheres_exp(5000, 101, exp_name='sphere_check')
-    #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
 if __name__=='__main__':
     run()
