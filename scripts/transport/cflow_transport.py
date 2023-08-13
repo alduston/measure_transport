@@ -303,7 +303,8 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.X_mu_test
+        #x_mu = self.X_mu_test
+        x_mu = self.Y_mu_test
         y_eta = self.Y_eta_test
         y_approx = self.Y_approx_test
         target = self.Y_test
