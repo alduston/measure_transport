@@ -69,7 +69,7 @@ class Comp_transport_model:
         self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
 
         n = len(self.submodel_params['Lambda'])
-        eps = .01
+        eps = 0#.01
         self.noise_shrink_c = np.exp(np.log(eps)/n)
 
 
@@ -338,7 +338,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
-    eps = .01
+    eps = 0#.01
     noise_shrink_c = np.exp(np.log(eps) / n)
 
     for i in range(n):
