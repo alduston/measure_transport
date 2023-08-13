@@ -572,9 +572,9 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
 
 
 
-def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=10000, Yd=36, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal)
+    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 40)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
     X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
@@ -601,7 +601,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
     #slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_test, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal)
+    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 40)
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
