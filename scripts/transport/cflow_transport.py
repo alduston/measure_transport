@@ -442,7 +442,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70,
                            skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 40):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
@@ -493,8 +493,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      except TypeError:
          d = 1
 
-     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
-     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
 
      return trained_models, idx_dict
 
@@ -524,7 +524,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 50):
+def spheres_exp(N = 5000, n_iter = 10, exp_name = 'spheres_exp', n_transports = 300):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -556,7 +556,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                     range=plt_range)
     return True
 
-def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
+def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=50):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
@@ -564,10 +564,10 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
     plt_range = [[-1,1],[-1,1]]
     plot_idx = torch.tensor([0,1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                                                         exp_name=exp_name, process_funcs=[],
+                                                         exp_name=exp_name, process_funcs=[],bins = 80,
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=plot_idx,
-                                                         plt_range=plt_range, n_transports=200)
+                                                         plt_range=plt_range, n_transports=n_transports)
     return True
 
 
@@ -651,7 +651,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(5000, 101, exp_name='sphere_check')
+    elden_exp(8000,n_transports=50)
+    #spheres_exp(5000, 101, exp_name='sphere_check')
     #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
 if __name__=='__main__':
