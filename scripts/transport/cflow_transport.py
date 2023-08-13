@@ -10,7 +10,7 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from lokta_voltera import get_VL_data
+from lokta_voltera import get_VL_data,sample_VL_prior
 from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
 from seaborn import kdeplot
@@ -583,6 +583,12 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    try:
+        os.mkdir(save_dir)
+    except OSError:
+        pass
+
     skip_idx = 0
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
                                                          exp_name=exp_name, process_funcs=[],
@@ -591,7 +597,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          plt_range=None, n_transports=50)
 
     N_test = N #min(10 * N, 15000)
-    slice_val = np.asarray([.8, .041, 1.07, .04])
+    #slice_val = np.asarray([.8, .041, 1.07, .04])
+    slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_test, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal)
@@ -601,13 +608,17 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     slice_sample[:, :4] *= X_std
     slice_sample[:,:4] += X_mean
 
+
+    slice_val = np.asarray([.8, .041, 1.07, .04])
+    #slice_sample = sample_VL_prior(10000)
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
     ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
     ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
     ranges3 = {'alpha': [0, 2.25], 'beta': [-.03, .13], 'gamma': [0, 2.25], 'delta': [-.03, .13]}
+    ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
-    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3]):
+    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3, ranges4]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
@@ -642,7 +653,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(9000, 101, exp_name = 'vl_exp4')
+    vl_exp(9000, 101, exp_name = 'vl_exp')
 
 if __name__=='__main__':
     run()

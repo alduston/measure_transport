@@ -55,10 +55,6 @@ class DeterministicLotkaVolterra:
         gamma = lognorm.rvs(scale=np.exp(self.gamma_mu), s=self.gamma_std, size=(N,))
         delta = lognorm.rvs(scale=np.exp(self.delta_mu), s=self.delta_std, size=(N,))
         # join samples
-        #alpha = np.full(alpha.shape, self.alpha_mu)
-        #beta = np.full(beta.shape, self.beta_mu)
-        #gamma = np.full(gamma.shape, self.gamma_mu)
-        #delta = np.full(delta.shape, self.delta_mu)
         return np.vstack((alpha, beta, gamma, delta)).T
 
     def ode_rhs(self, z, t, theta):
@@ -139,8 +135,14 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
         Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
-    Y = torch.tensor(np.real(Y)[:,  :Yd])
+    Y = torch.tensor(np.real(Y)[:, :Yd])
     return torch.concat([X,Y], dim = 1).detach().numpy()
+
+
+def sample_VL_prior(N):
+    LV = DeterministicLotkaVolterra(20)
+    X = LV.sample_prior(N)
+    return X
 
 
 if __name__ == '__main__':
