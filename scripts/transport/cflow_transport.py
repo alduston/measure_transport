@@ -70,7 +70,7 @@ class Comp_transport_model:
 
         n = len(self.submodel_params['Lambda'])
         eps = .01
-        self.noise_shrink_c = np.exp(np.log(eps)/n)
+        self.noise_shrink_c = np.exp(np.log(eps)/(n-25))
 
 
         if device:
@@ -339,7 +339,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
     eps = .01
-    noise_shrink_c = np.exp(np.log(eps) / n)
+    noise_shrink_c = np.exp(np.log(eps) / (n-25))
 
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
@@ -348,7 +348,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
         model_params['X'].append(model.X.detach().cpu().numpy())
-
 
         if i==0:
             pass
@@ -556,7 +555,7 @@ def spheres_exp(N = 5000, n_iter = 10, exp_name = 'spheres_exp', n_transports = 
                     range=plt_range)
     return True
 
-def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=50):
+def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
@@ -651,7 +650,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    elden_exp(8000,n_transports=50)
+    elden_exp(1000,n_transports=55)
     #spheres_exp(5000, 101, exp_name='sphere_check')
     #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
