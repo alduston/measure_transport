@@ -84,11 +84,6 @@ class Comp_transport_model:
 
 
     def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
-        #temp_param_dict = self.temp_param_dict
-        #X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
-        #Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
-        #Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
-
         Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
         Lambda1 = torch.tensor(self.submodel_params['Lambda1'][step_idx], device=self.device, dtype=self.dtype)
 
@@ -102,18 +97,14 @@ class Comp_transport_model:
             x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
             w = torch.concat([x_mu, y_eta], dim=1)
             w1 = x_mu
-            #W = torch.concat([X_mu, Y_eta], dim=1)
         else:
             w1 = []
 
         if len(y_approx):
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
-
-            #W = torch.concat([W, Y_approx], dim = 1)
         else:
             y_approx = deepcopy(y_eta)
-            #Y_approx = deepcopy(Y_eta)
 
         if len(w1):
             w1 = torch.concat([w1, y_approx], dim=1)
@@ -122,12 +113,8 @@ class Comp_transport_model:
 
         z = fit_kernel(X, w).T @ Lambda
         z1 = fit_kernel(X1, w1).T @ Lambda1
-        #Z = fit_kernel(W, W).T @ Lambda
 
         y_eta = self.noise_shrink_c * shuffle(y_eta)
-        #temp_param_dict['Y_eta'] = shuffle(Y_eta)
-        #temp_param_dict['Y_approx'] = Z + Y_approx
-        #self.temp_param_dict = temp_param_dict
         return (z + z1 + y_approx, y_eta)
 
 
@@ -145,7 +132,6 @@ class Comp_transport_model:
 
 
     def map(self, x = [], y = [], no_x = False):
-        #self.temp_param_dict = {key: deepcopy(self.submodel_params[key]) for key in self.param_keys}
         return self.c_map(x,y, no_x = no_x)
 
 
@@ -196,12 +182,10 @@ class CondTransportKernel(nn.Module):
 
         self.params['fit_kernel_params']['l'] *= l_scale(self.X).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
-        #self.fit_kXX = self.fit_kernel(self.X, self.X)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
         self.fit_kXX_inv = torch.linalg.inv(self.fit_kernel(self.X, self.X) + self.nugget_matrix)
         self.fit_kXX1_inv = torch.linalg.inv(self.fit_kernel(self.X1, self.X1) + self.nugget_matrix)
-
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)

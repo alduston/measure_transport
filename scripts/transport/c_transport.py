@@ -10,14 +10,14 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from lokta_voltera import get_VL_data
+from lokta_voltera import get_VL_data,sample_VL_prior
 from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
 from seaborn import kdeplot
 
 
 def shuffle(tensor):
-    if geq_1d(tensor).shape[1] <=1:
+    if geq_1d(tensor).shape[0] <=1:
         return tensor
     else:
         return tensor[torch.randperm(len(tensor))]
@@ -61,10 +61,18 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
+
 class Comp_transport_model:
-    def __init__(self, submodels, cond = False, device = None):
-        self.submodels = submodels
-        self.cond = cond
+    def __init__(self, submodels_params, device = None):
+        self.submodel_params = submodels_params
+        self.dtype = torch.float32
+        #self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
+
+        n = len(self.submodel_params['Lambda'])
+        eps = .01
+        self.noise_shrink_c = np.exp(np.log(eps)/(n))
+
+
         if device:
             self.device = device
         else:
@@ -74,28 +82,61 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
 
-    def base_map(self, y):
-        y_approx = deepcopy(y)
-        for submodel in self.submodels:
-            y_approx,y = submodel.map(y, y_approx).T
-        return y_approx
+
+    def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
+        #temp_param_dict = self.temp_param_dict
+        #X_mu = geq_1d(torch.tensor(temp_param_dict['X_mu'], device=self.device, dtype=self.dtype))
+        #Y_eta =  geq_1d(torch.tensor(temp_param_dict['Y_eta'], device=self.device, dtype=self.dtype))
+        #Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
+
+        Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
+
+        fit_kernel = self.submodel_params['fit_kernel'][step_idx]
+        X = torch.tensor(self.submodel_params['X'][step_idx],device=self.device, dtype=self.dtype)
+
+
+        y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
+        if len(x_mu):
+            x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
+            w = torch.concat([x_mu, y_eta], dim=1)
+            #W = torch.concat([X_mu, Y_eta], dim=1)
+
+        if len(y_approx):
+            y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
+            w = torch.concat([w, y_approx], dim = 1)
+
+            #W = torch.concat([W, Y_approx], dim = 1)
+        else:
+            y_approx = deepcopy(y_eta)
+            #Y_approx = deepcopy(Y_eta)
+
+        z = fit_kernel(X, w).T @ Lambda
+        #Z = fit_kernel(W, W).T @ Lambda
+
+        y_eta = self.noise_shrink_c * shuffle(y_eta)
+        #temp_param_dict['Y_eta'] = shuffle(Y_eta)
+        #temp_param_dict['Y_approx'] = Z + Y_approx
+        #self.temp_param_dict = temp_param_dict
+        return (z + y_approx, y_eta)
 
 
     def c_map(self, x, y, no_x = False):
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
-        y_approx = deepcopy(y)
-        for submodel in self.submodels:
-            y_approx,y = submodel.map(x, y, y_approx, no_x = True)
+        y_approx = []
+
+        for step_idx in range(len(self.submodel_params['Lambda'])):
+            y_approx,y = self.param_map(y_eta = y, step_idx = step_idx,
+                                        y_approx = y_approx, x_mu = x)
         if no_x:
             return y_approx
         return torch.concat([x, y_approx], dim = 1)
 
 
     def map(self, x = [], y = [], no_x = False):
-        if self.cond:
-            return self.c_map(x,y, no_x = no_x)
-        return self.base_map(x)
+        #self.temp_param_dict = {key: deepcopy(self.submodel_params[key]) for key in self.param_keys}
+        return self.c_map(x,y, no_x = no_x)
+
 
 
 class CondTransportKernel(nn.Module):
@@ -119,7 +160,6 @@ class CondTransportKernel(nn.Module):
         if self.X_mu.shape[1]==0:
             self.params['no_mu'] = True
 
-
         self.Y_approx = self.Y_eta
         self.params['approx'] = False
         if len(base_params['Y_approx']):
@@ -133,10 +173,6 @@ class CondTransportKernel(nn.Module):
         if self.params['no_mu']:
             self.X = self.Y_eta
             self.Y = self.Y_mu
-            self.X1 = torch.concat([self.X_mu, self.Y_approx], dim=1)
-        else:
-            self.X1 = self.X_mu
-
 
         if self.params['approx']:
             self.X = torch.concat([self.X, self.Y_approx], dim=1)
@@ -146,18 +182,14 @@ class CondTransportKernel(nn.Module):
 
         self.params['fit_kernel_params']['l'] *= l_scale(self.X).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
-        self.fit_kXX = self.fit_kernel(self.X, self.X)
-        self.fit_kXX1 = self.fit_kernel(self.X1, self.X1)
+        #self.fit_kXX = self.fit_kernel(self.X, self.X)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
-        self.fit_kXX_inv = torch.linalg.inv(self.fit_kXX + self.nugget_matrix)
-        self.fit_kXX1_inv = torch.linalg.inv(self.fit_kXX1 + self.nugget_matrix)
+        self.fit_kXX_inv = torch.linalg.inv(self.fit_kernel(self.X, self.X) + self.nugget_matrix)
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
         self.Z = nn.Parameter(self.init_Z(), requires_grad=True)
-        self.Z1 = nn.Parameter(self.init_Z(), requires_grad=True)
-
         self.mmd_YY = self.mmd_kernel(self.Y, self.Y)
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
@@ -187,7 +219,6 @@ class CondTransportKernel(nn.Module):
     def get_Lambda(self):
         return self.fit_kXX_inv @ self.Z
 
-
     def get_Lambda1(self):
         return self.fit_kXX1_inv @ self.Z1
 
@@ -197,7 +228,7 @@ class CondTransportKernel(nn.Module):
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         if self.params['no_mu']:
             w = y_eta
-            w1 = torch.empty()
+            w1 = []
         else:
             w = torch.concat([x_mu, y_eta], dim=1)
             w1 = x_mu
@@ -205,22 +236,15 @@ class CondTransportKernel(nn.Module):
         if self.params['approx']:
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
-
         else:
             y_approx = deepcopy(y_eta)
 
-        w1 = torch.concat([w1, y_approx], dim=1)
-
         Lambda = self.get_Lambda()
-        Lambda1 = self.get_Lambda1()
-
         z = self.fit_kernel(self.X, w).T @ Lambda
-        z1 = self.fit_kernel(self.X1, w1).T @ Lambda1
-
 
         y_eta = shuffle(y_eta)
         if no_x or self.params['no_mu']:
-            return  (z + y_approx, y_eta)
+            return  (z +  y_approx, y_eta)
         return (torch.concat([x_mu, z + y_approx], dim = 1), y_eta)
 
 
@@ -240,7 +264,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd_no_mu(self):
-        map_vec = self.Y_approx + self.Z + self.Z1
+        map_vec = self.Y_approx + self.Z
         target = self.Y_mu
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -256,7 +280,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z + self.Z1], dim=1)
+        map_vec = torch.concat([self.X_mu, self.Y_approx + self.Z], dim=1)
         target = self.Y
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -274,9 +298,7 @@ class CondTransportKernel(nn.Module):
     def loss_reg(self):
         Z = self.Z
         Z1 = self.Z1
-        reg_1 = self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
-        reg_2 = self.params['reg_lambda'] * torch.trace(Z1.T @ self.fit_kXX1_inv @ Z1)
-        return  reg_1 + reg_2
+        return self.params['reg_lambda'] * torch.trace(Z.T @ self.fit_kXX_inv @ Z)
 
 
     def prob_add(self, t_1, t_2, p = .001):
@@ -311,44 +333,46 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def base_kernel_transport(Y_eta, Y_mu, params, n_iter = 1001, Y_eta_test = []):
-    transport_params = {'X': Y_eta, 'Y': Y_mu, 'reg_lambda': 1e-5,'normalize': False,
-                   'fit_kernel_params': params['mmd'], 'mmd_kernel_params': params['fit'],
-                   'print_freq':  100, 'learning_rate': .002, 'nugget': 1e-4}
-    if len(Y_eta_test):
-        transport_params['Y_eta_test'] = Y_eta_test
-    transport_kernel = TransportKernel(transport_params)
-    train_kernel(transport_kernel, n_iter=n_iter)
-    return transport_kernel
-
-
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .002, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
-                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                         'iters': iters}
+                        'print_freq': 100, 'learning_rate': .004, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
+                        'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test, 'iters': iters}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel, n_iter)
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, Y_approx = [],
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], n = 1, f = 1):
-    models = []
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50, Y_approx = [],
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .95):
+    model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
+    eps = .01
+    noise_shrink_c = np.exp(np.log(eps)/(n))
+
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
-                                      Y_approx_test = Y_approx_test, iters=iters)
+                                      Y_approx_test = Y_approx_test, iters = iters)
+        model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
+        model_params['fit_kernel'].append(model.fit_kernel)
+        model_params['X'].append(model.X.detach().cpu().numpy())
+
+        if i==0:
+            pass
+            #model_params['X_mu']= X_mu
+            #model_params['Y_eta']= Y_eta
+            #model_params['Y_approx'] = 0 * Y_mu
+
         n_iter = max(int(n_iter * f), 101)
 
         Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
+        Y_eta *= noise_shrink_c
+        Y_eta_test *= noise_shrink_c
         iters = model.iters
-        models.append(model)
-    return Comp_transport_model(models, cond=True)
+    return Comp_transport_model(model_params)
 
 
 def get_idx_tensors(idx_lists):
@@ -361,12 +385,11 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, process_funcs = [],
-                         cond_model_trainer = cond_kernel_transport, idx_dict = {}):
-
+                         cond_model_trainer = cond_kernel_transport, idx_dict = {},  n_transports = 40):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = N #min(10 * N, 10000)
+    N_test = N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -390,7 +413,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_iter, Y_eta_test = Y_eta_test,
-                                                 Y_mu_test = Y_mu_test, X_mu_test = X_mu_test))
+                                                 Y_mu_test = Y_mu_test, X_mu_test = X_mu_test, n = n_transports))
     return trained_models
 
 
@@ -428,8 +451,8 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {},
-                           skip_idx = 0, plot_idx = [], plots_hists = False):
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70,
+                           skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 40):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -449,17 +472,18 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
              idx_dict['cond'].append(list(range(k+1)))
              idx_dict['target'].append([k])
 
+
      idx_dict = {key: get_idx_tensors(val) for key,val in idx_dict.items()}
      idx_dict = {key: val[skip_idx:] for key, val in idx_dict.items()}
 
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
-                                           process_funcs, cond_model_trainer, idx_dict = idx_dict)
+                                           process_funcs, cond_model_trainer,
+                                           idx_dict = idx_dict, n_transports = n_transports)
      N_test = min(10 * N, 15000)
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-
 
      if plots_hists:
         sode_hist(gen_sample,save_dir,save_name='marginal_hists')
@@ -478,14 +502,14 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      except TypeError:
          d = 1
 
-     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
-     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=70, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
 
      return trained_models, idx_dict
 
 
 def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[],
-              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None):
+              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 70):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -495,8 +519,8 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
-                                                         exp_name=exp_name, plt_range=plt_range,plot_idx=plot_idx,
-                                                         process_funcs=process_funcs, skip_idx=skip_idx)
+                                                         exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
+                                                         plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
     N_test = min(10 * N, 15000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
@@ -509,7 +533,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 10000, exp_name = 'spheres_exp'):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 300):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -524,7 +548,7 @@ def spheres_exp(N = 5000, n_iter = 10000, exp_name = 'spheres_exp'):
     skip_idx = 0
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None, skip_idx=skip_idx,
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range)
+                               idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
     N_test =  min(10 * N, 15000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
@@ -541,93 +565,103 @@ def spheres_exp(N = 5000, n_iter = 10000, exp_name = 'spheres_exp'):
                     range=plt_range)
     return True
 
+def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
+    ref_gen = sample_normal
+    target_gen = sample_elden_ring
+    idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
+    skip_idx = 0
+    plt_range = [[-1,1],[-1,1]]
+    plot_idx = torch.tensor([0,1]).long()
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
+                                                         exp_name=exp_name, process_funcs=[],bins = 80,
+                                                         cond_model_trainer=comp_cond_kernel_transport,
+                                                         idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=plot_idx,
+                                                         plt_range=plt_range, n_transports=n_transports)
+    return True
 
-def vl_exp(N = 10000, n_iter = 10000, Yd = 18, normal = True, exp_name = 'vl_exp'):
 
+
+def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, Yd= Yd, normal=normal)
+    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
-    idx_dict = {'ref': [[0,1,2,3]],
+    X_mean = np.asarray([1, 0.0564, 1, 0.0564])
+    X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
+
+    idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
-                'target': [[0,1,2,3]]}
+                'target': [[0, 1, 2, 3]]}
+
+    save_dir = f'../../data/kernel_transport/{exp_name}'
+    try:
+        os.mkdir(save_dir)
+    except OSError:
+        pass
 
     skip_idx = 0
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                               exp_name= exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
-                               idx_dict= idx_dict, skip_idx=skip_idx, plot_idx= [], plt_range = None)
+                                                         exp_name=exp_name, process_funcs=[],
+                                                         cond_model_trainer=comp_cond_kernel_transport,
+                                                         idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
+                                                         plt_range=None, n_transports=300)
 
+    N_test = N #min(10 * N, 15000)
+    slice_val = np.asarray([.8, .041, 1.07, .04])
+    #slice_val = np.asarray([2, .1, 2, .1])
 
-    N_test = min(10 * N, 15000)
-    slice_val = np.asarray([.8,.041,1.07,.04])
-
-    X = np.full((N_test,4), slice_val)
-    ref_slice_sample = normalize(get_VL_data(N_test, X=X,  Yd= Yd, normal=normal))
+    X = np.full((N_test, 4), slice_val)
+    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 20)
     ref_sample = ref_gen(N_test)
 
-
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
+    slice_sample[:, :4] *= X_std
+    slice_sample[:,:4] += X_mean
 
-    params_keys = ['alpha','beta','gamma','delta']
-    ranges = {'alpha': [.5,1.1], 'beta': [-.26,.34], 'gamma':[.77,1.37], 'delta':[-.26,.34]}
+
+    params_keys = ['alpha', 'beta', 'gamma', 'delta']
+
+    ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
+    ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
+    ranges3 = {'alpha': [0, 2.25], 'beta': [-.03, .13], 'gamma': [0, 2.25], 'delta': [-.03, .13]}
+    ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
+
+    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3, ranges4]):
+        for i, key_i in enumerate(params_keys):
+            for j, key_j in enumerate(params_keys):
+                if i <= j:
+                    plt.subplot(4, 4, 1 + (4 * j + i))
+                    if not i:
+                        plt.ylabel(params_keys[j])
+                    if j == 3:
+                        plt.xlabel(params_keys[i])
+
+                    if i < j:
+                        x, y = slice_sample[:, torch.tensor([i, j]).long()].T
+                        plt_range = [ranges[key_i], ranges[key_j]]
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
+                        plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
+                        if plt_range[0][0]!= None:
+                            plt.xlim(plt_range[0][0], plt_range[0][1])
+                            plt.ylim(plt_range[1][0], plt_range[1][1])
+
+                    else:
+                        x = slice_sample[:, i]
+                        plt_range = ranges[key_i]
+                        if plt_range[0] == None:
+                            plt_range = None
+                        plt.hist(x, bins=50, range = plt_range)
+                        plt.axvline(slice_val[i], color='red', linewidth=3)
 
 
-    for i, key_i in enumerate(params_keys):
-        for j,key_j in enumerate(params_keys):
-            if i <= j:
-                plt.subplot(4, 4, 1 + (4*j + i))
-
-                if i<j:
-                    x,y  = slice_sample[:, torch.tensor([i, j]).long()].T
-                    plt_range = [ranges[key_i], ranges[key_j]]
-                    kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
-                    plt.scatter(x=slice_val[i], y=slice_val[j], s=20, color = 'red')
-                    plt.xlim(plt_range[0][0], plt_range[0][1])
-                    plt.ylim(plt_range[1][0], plt_range[1][1])
-
-                else:
-                    x = slice_sample[:, i]
-                    plt_range = ranges[key_i]
-                    plt.hist(x, bins = 50, range = plt_range)
-                    plt.axvline(slice_val[i], color='red', linewidth=5)
-                    plt.xlim(plt_range[0], plt_range[1])
-
-                if not i:
-                    plt.xlabel(params_keys[i])
-                if not j:
-                    plt.ylabel(params_keys[j])
-
-    plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples.png')
+        plt.tight_layout(pad=0.3)
+        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
+        clear_plt()
     return True
 
 
 def run():
-    ref_gen = sample_normal
-    two_d_exp(ref_gen, mgan2, N=4000, n_iter=15001, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
-
-
-    '''
-    two_d_exp(sample_normal, mgan2, N = 8000, n_iter=2001, plt_range= [[-2.5, 2.5], [-1.05, 1.05]],
-              slice_vals = [-1,0,1], slice_range=[-1.5,1.5], exp_name='mgan2_composed2', skip_idx=1, vmax=2)
-
-    two_d_exp(sample_normal, mgan1, N=8000, n_iter=2001, plt_range=[[-2.5, 2.5], [-1, 3]],
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan1_composed2', skip_idx=1, vmax=.5)
-
-    two_d_exp(sample_normal, sample_spirals, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_composed2', skip_idx=1, vmax=.15)
-
-    two_d_exp(sample_normal, sample_swiss_roll, N=8000, n_iter=2001, plt_range=[[-3, 3], [-3, 3]],
-              slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_roll_composed2', skip_idx=1, vmax=.25)
-
-    vl_exp(8000, 2001)
-
-    spheres_exp(8000, 2001)
-    '''
+    vl_exp(9000)
 
 
 if __name__=='__main__':
     run()
-
-
-
-
