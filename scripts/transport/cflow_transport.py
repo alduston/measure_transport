@@ -372,7 +372,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50, Y_approx = [],
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
-    model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
+    model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     eps = .01
     noise_shrink_c = np.exp(np.log(eps) / (n-25))
@@ -382,7 +382,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters)
         model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
-        model_params['Lambda1'].append(model.get_Lambda().detach().cpu().numpy())
+        model_params['Lambda1'].append(model.get_Lambda1().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
         model_params['X'].append(model.X.detach().cpu().numpy())
         model_params['X1'].append(model.X1.detach().cpu().numpy())
