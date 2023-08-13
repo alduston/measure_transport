@@ -132,7 +132,7 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = False):
         X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
         X -= X_mean
         X /= X_var
-        Y = normalize(Y, just_var=True)
+        Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
     Y = torch.tensor(np.real(Y)[:, :Yd])
