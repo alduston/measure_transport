@@ -609,8 +609,6 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     slice_sample[:,:4] += X_mean
 
 
-    slice_val = np.asarray([.8, .041, 1.07, .04])
-    #slice_sample = sample_VL_prior(10000)
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
     ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
