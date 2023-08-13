@@ -688,7 +688,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(4000,  exp_name = 'spheres_exp4')
+    #spheres_exp(4000,  exp_name = 'spheres_exp4')
     vl_exp(9000)
     #ref_gen = sample_normal
     #two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
