@@ -572,7 +572,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
 
 
 
-def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal)
 
@@ -597,8 +597,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
                                                          plt_range=None, n_transports=25)
 
     N_test = N #min(10 * N, 15000)
-    #slice_val = np.asarray([.8, .041, 1.07, .04])
-    slice_val = np.asarray([2, .1, 2, .1])
+    slice_val = np.asarray([.8, .041, 1.07, .04])
+    #slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_test, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal)
