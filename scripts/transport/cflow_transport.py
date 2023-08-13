@@ -164,8 +164,7 @@ class CondTransportKernel(nn.Module):
             self.params['approx'] = True
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        #self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
-        self.X = torch.concat([self.Y_mu, self.Y_eta], dim=1)
+        self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         if self.params['no_mu']:
@@ -303,8 +302,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        #x_mu = self.X_mu_test
-        x_mu = self.Y_mu_test
+        x_mu = self.X_mu_test
         y_eta = self.Y_eta_test
         y_approx = self.Y_approx_test
         target = self.Y_test
@@ -574,7 +572,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
 
 
 
-def vl_exp(N=10000, n_iter=10000, Yd=36, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 40)
 

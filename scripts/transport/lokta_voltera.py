@@ -135,7 +135,8 @@ def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 40, X = [], normal = False):
         Y = normalize(Y)
 
     X = torch.tensor(np.real(X)[:, :Xd])
-    Y = torch.tensor(np.real(Y)[:, :Yd])
+    #Y = torch.tensor(np.real(Y)[:, :Yd])
+    Y = X + .1 * np.random.randn(X.shape)
     return torch.concat([X,Y], dim = 1).detach().numpy()
 
 
