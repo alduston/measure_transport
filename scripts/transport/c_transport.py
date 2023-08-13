@@ -660,7 +660,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(9000)
+    vl_exp(4000)
 
 
 if __name__=='__main__':
