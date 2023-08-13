@@ -66,7 +66,7 @@ class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
-        self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
+        #self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
 
         n = len(self.submodel_params['Lambda'])
         eps = .01
@@ -90,31 +90,45 @@ class Comp_transport_model:
         #Y_approx =  geq_1d(torch.tensor(temp_param_dict['Y_approx'], device=self.device, dtype=self.dtype))
 
         Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
+        Lambda1 = torch.tensor(self.submodel_params['Lambda1'][step_idx], device=self.device, dtype=self.dtype)
+
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
         X = torch.tensor(self.submodel_params['X'][step_idx],device=self.device, dtype=self.dtype)
+        X1 = torch.tensor(self.submodel_params['X1'][step_idx], device=self.device, dtype=self.dtype)
+
 
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         if len(x_mu):
             x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
             w = torch.concat([x_mu, y_eta], dim=1)
+            w1 = x_mu
             #W = torch.concat([X_mu, Y_eta], dim=1)
+        else:
+            w1 = []
 
         if len(y_approx):
             y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
             w = torch.concat([w, y_approx], dim = 1)
+
             #W = torch.concat([W, Y_approx], dim = 1)
         else:
             y_approx = deepcopy(y_eta)
             #Y_approx = deepcopy(Y_eta)
 
+        if len(w1):
+            w1 = torch.concat([w1, y_approx], dim=1)
+        else:
+            w1 = y_approx
+
         z = fit_kernel(X, w).T @ Lambda
+        z1 = fit_kernel(X1, w1).T @ Lambda1
         #Z = fit_kernel(W, W).T @ Lambda
 
-        y_eta = self.noise_shrink_c * shuffle(y_eta) #.985 * shuffle(y_eta)
+        y_eta = self.noise_shrink_c * shuffle(y_eta)
         #temp_param_dict['Y_eta'] = shuffle(Y_eta)
         #temp_param_dict['Y_approx'] = Z + Y_approx
         #self.temp_param_dict = temp_param_dict
-        return (z + y_approx, y_eta)
+        return (z + z1 + y_approx, y_eta)
 
 
     def c_map(self, x, y, no_x = False):
@@ -368,8 +382,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters)
         model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
+        model_params['Lambda1'].append(model.get_Lambda().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
         model_params['X'].append(model.X.detach().cpu().numpy())
+        model_params['X1'].append(model.X1.detach().cpu().numpy())
 
         if i==0:
             pass
@@ -521,7 +537,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
 
 
 def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[],
-              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 200):
+              slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 70):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -672,7 +688,10 @@ def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    elden_exp(12000,n_transports=150)
+    #elden_exp(12000,n_transports=150)
+    ref_gen = sample_normal
+    two_d_exp(ref_gen, sample_spirals, N=4000, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='spirals_composed3', skip_idx=1, vmax=2)
     #spheres_exp(5000, 101, exp_name='sphere_check')
     #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
