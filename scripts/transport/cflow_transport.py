@@ -69,7 +69,7 @@ class Comp_transport_model:
         self.param_keys = ['X_mu', 'Y_eta', 'Y_approx']
 
         n = len(self.submodel_params['Lambda'])
-        eps = 0#.01
+        eps = .01
         self.noise_shrink_c = np.exp(np.log(eps)/n)
 
 
@@ -338,7 +338,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], f = .5):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': []}
     iters = 0
-    eps = 0#.01
+    eps = .01
     noise_shrink_c = np.exp(np.log(eps) / n)
 
     for i in range(n):
@@ -524,7 +524,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 40):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 50):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -572,9 +572,9 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp'):
 
 
 
-def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=10000, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 40)
+    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
     X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
@@ -601,7 +601,7 @@ def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
     #slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_test, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 40)
+    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 20)
     ref_sample = ref_gen(N_test)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
@@ -651,7 +651,8 @@ def vl_exp(N=10000, n_iter=10000, Yd=4, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    vl_exp(5000, 3000, exp_name = 'vl_exp')
+    spheres_exp(5000, 101, exp_name='sphere_check')
+    #vl_exp(5000, 3000, exp_name = 'vl_exp')
 
 if __name__=='__main__':
     run()
