@@ -164,7 +164,8 @@ class CondTransportKernel(nn.Module):
             self.params['approx'] = True
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
+        #self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
+        self.X = torch.concat([self.Y_mu, self.Y_eta], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         if self.params['no_mu']:
