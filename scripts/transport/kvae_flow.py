@@ -268,7 +268,7 @@ class CondTransportKernel(nn.Module):
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
         z_mean = self.map_mean(x_mu, y_eta, y_mean)
-        z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
+        z_var = self.map_var(x_mu, y_eta, y_mean)
         z = z_mean + z_var
 
         y_approx = deepcopy(y_eta)
