@@ -406,7 +406,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = N
+    N_test = 10 * N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -622,7 +622,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports=50)
 
-    N_test = 5 * N
+    N_test = N
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
@@ -677,11 +677,13 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    ref_gen = sample_normal
-    target_gen = mgan2
-    N = 600
-    two_d_exp(ref_gen, target_gen, N, n_iter=201, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
-              slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=50)
+    #ref_gen = sample_normal
+    #target_gen = mgan2
+    #N = 600
+    #two_d_exp(ref_gen, target_gen, N, n_iter=201, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
+               #slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=50)
+
+    elden_exp(8000, n_iter=101, n_transports=100)
 
 if __name__=='__main__':
     run()
