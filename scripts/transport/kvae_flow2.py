@@ -68,9 +68,9 @@ class Comp_transport_model:
         self.dtype = torch.float32
         self.plot_steps = False
 
-        n = len(self.submodel_params['Lambda_mean'])
-        eps = .01
-        self.noise_shrink_c = np.exp(np.log(eps)/(n))
+        #n = len(self.submodel_params['Lambda_mean'])
+        #eps = .01
+        #self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
         if device:
@@ -106,7 +106,7 @@ class Comp_transport_model:
 
         x_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
-        y_eta = self.noise_shrink_c * shuffle(y_eta)
+        y_eta =  shuffle(y_eta)
 
         y_approx = y_mean + y_var
         z = z_mean + z_var
@@ -260,6 +260,7 @@ class CondTransportKernel(nn.Module):
         y_approx = deepcopy(y_eta)
         if self.params['approx']:
             y_approx = y_mean + y_var
+        y_eta = shuffle(y_eta)
         return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
 
@@ -361,8 +362,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = .95):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    eps = .01
-    noise_shrink_c = np.exp(np.log(eps)/(n))
+    #eps = .01
+    #noise_shrink_c = np.exp(np.log(eps)/(n))
     Y_mean = []
     Y_mean_test = []
     Y_var = 0
@@ -386,8 +387,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         test_map_dict = model.map(model.X_mu_test, model.Y_eta_test, model.Y_mean_test, model.Y_var_test)
         Y_eta_test, Y_mean_test, Y_var_test = test_map_dict['y_eta'], test_map_dict['y_mean'], test_map_dict['y_var']
 
-        Y_eta *= noise_shrink_c
-        Y_eta_test *= noise_shrink_c
+        #Y_eta *= noise_shrink_c
+        #Y_eta_test *= noise_shrink_c
         iters = model.iters
     return Comp_transport_model(model_params)
 
