@@ -329,8 +329,6 @@ class CondTransportKernel(nn.Module):
 
         clear_plt()
         save_loc = f'../../data/kernel_transport/swiss_kflow/test_map_gen.png'
-        sample_hmap(map_vec, save_loc, bins=75, bw_adjust=0.25,
-                    d=2, range=[[-3, 3], [-3, 3]], vmax=.25)
         clear_plt()
         return self.mmd(map_vec, target)
 
@@ -678,9 +676,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_swiss_roll
-    N = 1500
+    N = 2000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', n_transports=20)
+              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', n_transports=30)
 
 
 if __name__=='__main__':
