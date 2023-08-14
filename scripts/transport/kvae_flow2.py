@@ -127,7 +127,6 @@ class Comp_transport_model:
                        'x_mu': x, 'y_approx': None, 'y': None}
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
-            print('here')
         if no_x:
             return param_dict['y_approx']
         return param_dict['y']
@@ -679,9 +678,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 2000
+    N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='spiral_kflow', n_transports=30)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=100)
 
 
 if __name__=='__main__':
