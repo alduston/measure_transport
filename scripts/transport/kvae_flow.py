@@ -509,7 +509,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_test = min(10 * N, 15000)
+     N_test = N
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
