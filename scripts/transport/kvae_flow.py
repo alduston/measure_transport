@@ -225,6 +225,16 @@ class CondTransportKernel(nn.Module):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
 
 
+    def prob_add(self, t_1, t_2, p=.001):
+        T = []
+        for i in range(len(t_1)):
+            if random.random() < p:
+                T.append(t_2[i])
+            else:
+                T.append(t_1[i])
+        return torch.tensor(T, device=self.device).reshape(t_1.shape)
+
+
     def init_Z(self):
         Z = torch.zeros(self.Y_mu.shape, device=self.device, dtype=self.dtype)
         return Z
@@ -323,16 +333,6 @@ class CondTransportKernel(nn.Module):
         reg_1 = self.params['reg_lambda'] * torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
         reg_2 = self.params['reg_lambda'] * torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
         return reg_1 + reg_2
-
-
-    def prob_add(self, t_1, t_2, p = .001):
-        T = []
-        for i in range(len(t_1)):
-            if random.random() < p:
-                T.append(t_2[i])
-            else:
-                T.append(t_1[i])
-        return torch.tensor(T, device= self.device).reshape(t_1.shape)
 
 
     def loss_test(self):
@@ -699,7 +699,7 @@ def run():
     ref_gen = sample_normal
     target_gen = sample_swiss_roll
     N = 1500
-    two_d_exp(ref_gen, target_gen, N, n_iter=501, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+    two_d_exp(ref_gen, target_gen, N, n_iter=51, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
               slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=5)
 
 
