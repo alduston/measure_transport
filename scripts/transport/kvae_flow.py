@@ -328,7 +328,7 @@ class CondTransportKernel(nn.Module):
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
         x,y = map_vec.T.detach().cpu().numpy()
-        plt.hist2d(x,y, bins = 50, range = [[-2.5,2.5],[-1.1,1.1]])
+        plt.hist2d(x,y, bins = 75, range = [[-1,1],[-1,1]])
         plt.savefig('map_vec.png')
         return self.mmd(map_vec, target)
 
@@ -406,7 +406,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = 10 * N
+    N_test =  min(10 * N, 12000)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
