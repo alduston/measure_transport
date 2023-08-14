@@ -115,7 +115,7 @@ class Comp_transport_model:
         save_loc = f'../../data/kernel_transport/swiss_kflow/map_gen{step_idx}.png'
         map_vec = param_dict['y'].detach().cpu().numpy()
         sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
-                    d=2, range=[[-3, 3], [-3, 3]], vmax=.25)
+                    d=2, range=[[-3, 3], [-3, 3]])
 
         return param_dict
 
