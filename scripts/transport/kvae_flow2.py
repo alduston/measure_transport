@@ -406,7 +406,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test =  min(10 * N, 15000)
+    N_test = N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -495,7 +495,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_test = min(10 * N, 15000)
+     N_test = min(10 * N, 5000)
      target_sample = target_gen(N_test)
      ref_sample = ref_gen(N_test)
 
@@ -537,7 +537,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_test = min(10 * N, 15000)
+    N_test = min(10 * N, 5000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
         ref_slice_sample = target_gen(N_test)
@@ -680,7 +680,8 @@ def run():
     target_gen = sample_swiss_roll
     N = 1500
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=20)
+              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', n_transports=20)
+
 
 if __name__=='__main__':
     run()
