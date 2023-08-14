@@ -323,11 +323,10 @@ class CondTransportKernel(nn.Module):
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
         x, y = map_vec.T.detach().cpu().numpy()
-        plt.hist2d(x, y, bins=75, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
-        plt.savefig('map_vec1.png')
+        plt.hist2d(x, y, bins=65, range=[[-1.05, -1.05], [-1.05, 1.05]], vmax=7)
+        plt.savefig('elden_map.png')
         clear_plt()
-
-        sample_hmap(map_vec, 'gen_map1.png', bins=50, d=2, range=[[-2.5,2.5],[-1.1,1.1]], vmax=2)
+        sample_hmap(map_vec, 'elden_hist.png', bins=65, d=2, range=[[-1.05, -1.05], [-1.05, 1.05]], vmax=7)
         clear_plt()
         return self.mmd(map_vec, target)
 
@@ -674,13 +673,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    ref_gen = sample_normal
-    target_gen = mgan2
-    N = 600
-    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
-               slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=55)
-
-    #elden_exp(8000, n_iter=101, n_transports=100)
+    elden_exp(10000, n_iter=101, n_transports=250)
 
 if __name__=='__main__':
     run()

@@ -146,14 +146,6 @@ class CondTransportKernel(nn.Module):
         if not self.params['approx']:
             self.Y_approx = deepcopy(self.Y_eta)
 
-        plt.hist(self.Y_eta.detach().cpu().numpy())
-        plt.savefig('Y_eta_hist1.png')
-        clear_plt()
-
-        plt.hist(self.Y_approx.detach().cpu().numpy())
-        plt.savefig('Y_approx_hist1.png')
-        clear_plt()
-
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         self.Nx = len(self.X)
@@ -178,7 +170,6 @@ class CondTransportKernel(nn.Module):
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
-
 
 
         self.alpha_z = self.p_vec(self.Nx)
