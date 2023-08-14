@@ -112,7 +112,7 @@ class Comp_transport_model:
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
-        save_loc = f'../../data/kernel_transport/swiss_kflow/map_gen{step_idx}.png'
+        save_loc = f'../../data/kernel_transport/swiss_kflow/gen_map{step_idx}.png'
         map_vec = param_dict['y'].detach().cpu().numpy()
         sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
                     d=2, range=[[-3, 3], [-3, 3]])
@@ -516,7 +516,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      except TypeError:
          d = 1
 
-     sample_hmap(gen_sample, f'{save_dir}/gen_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
+     sample_hmap(gen_sample, f'{save_dir}/gen_map_final.png', bins=bins, d=d , range=plt_range, vmax=vmax)
      sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=bins, d=d , range=plt_range, vmax=vmax)
 
      return trained_models, idx_dict
