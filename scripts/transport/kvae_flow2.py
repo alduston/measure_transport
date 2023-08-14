@@ -406,7 +406,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = N
+    N_test = 7000
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -622,7 +622,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports=50)
 
-    N_test = N
+    N_test =  min(10 * N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
