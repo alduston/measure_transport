@@ -101,6 +101,7 @@ class Comp_transport_model:
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
         if self.approx:
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
+            return 0 * y_mean
         else:
             y_mean = deepcopy(y_eta)
             y_eta = shuffle(y_eta)
@@ -124,6 +125,7 @@ class Comp_transport_model:
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
+
 
         z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
@@ -151,6 +153,7 @@ class Comp_transport_model:
                        'x_mu': x, 'y_approx': 0, 'y': 0}
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
+            self.approx = True
         if no_x:
             return param_dict['y_approx']
         return param_dict['y']
@@ -270,6 +273,7 @@ class CondTransportKernel(nn.Module):
     def map_var(self, x_mu, y_eta, y_mean, y_var = []):
         if self.params['approx']:
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
+            return 0 * y_mean
         else:
             y_mean = deepcopy(y_eta)
             y_eta = shuffle(y_eta)
@@ -320,7 +324,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_approx  + self.Z_mean +  self.Z_var], dim=1)
+        map_vec = torch.concat([self.X_mu, self.Y_approx  + self.Z_mean +  self.Z_var * float(self.approx)], dim=1)
         target = self.Y
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -338,7 +342,7 @@ class CondTransportKernel(nn.Module):
 
     def loss_reg(self):
         Z_mean = self.Z_mean
-        Z_var = self.Z_var
+        Z_var = self.Z_var * float(self.approx)
 
         reg_1 = self.params['reg_lambda'] * torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
         reg_2 = self.params['reg_lambda'] * torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
@@ -706,7 +710,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 50
+    N = 20
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
               slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=10, vmax=.15)
 
