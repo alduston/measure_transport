@@ -82,6 +82,8 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
     def mmd(self, map_vec, target):
+        map_vec = torch.tensor(map_vec, device = self.device, dtype=self.dtype)
+        target = torch.tensor(target, device = self.device, dtype=self.dtype)
         return self.submodel_params['mmd_func'](map_vec, target)
 
 
@@ -505,9 +507,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_test = min(10 * N, 5000)
-     target_sample = target_gen(N_test)
-     ref_sample = ref_gen(N_test)
+     N_plot = min(10 * N, 7000)
+     target_sample = target_gen(N_plot)
+     ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
 
@@ -550,10 +552,10 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_test = min(10 * N, 5000)
+    N_plot = min(10 * N, 7000)
     for slice_val in slice_vals:
-        ref_sample = ref_gen(N_test)
-        ref_slice_sample = target_gen(N_test)
+        ref_sample = ref_gen(N_plot)
+        ref_slice_sample = target_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         plt.hist(slice_sample[:, 1], bins=50, range=slice_range, label = f'x ={slice_val}')
@@ -692,7 +694,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 3000
+    N = 2000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=100, vmax=.15)
 
