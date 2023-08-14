@@ -125,6 +125,7 @@ class Comp_transport_model:
                        'x_mu': x, 'y_approx': None, 'y': None}
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
+            print('here')
         if no_x:
             return param_dict['y_approx']
         return param_dict['y']
