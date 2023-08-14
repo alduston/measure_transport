@@ -420,7 +420,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test =  min(10 * N, 15000)
+    N_test =  N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -509,9 +509,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_test = N
-     target_sample = target_gen(N_test)
-     ref_sample = ref_gen(N_test)
+     N_plot = min(10 * N, 15000)
+     target_sample = target_gen(N_plot)
+     ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
 
@@ -551,10 +551,10 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_test = min(10 * N, 15000)
+    N_plot = min(10 * N, 15000)
     for slice_val in slice_vals:
-        ref_sample = ref_gen(N_test)
-        ref_slice_sample = target_gen(N_test)
+        ref_sample = ref_gen(N_plot)
+        ref_slice_sample = target_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         plt.hist(slice_sample[:, 1], bins=50, range=slice_range, label = f'x ={slice_val}')
@@ -581,15 +581,15 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_test =  min(10 * N, 15000)
+    N_plot =  min(10 * N, 15000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
     for slice_val in slice_vals:
-        ref_sample = ref_gen(N_test)
-        RX = np.full((N_test,2), slice_val)
-        ref_slice_sample = sample_spheres(N = N_test, n = n, RX = RX)
+        ref_sample = ref_gen(N_plot)
+        RX = np.full((N_plot,2), slice_val)
+        ref_slice_sample = sample_spheres(N = N_plot, n = n, RX = RX)
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         sample_hmap(slice_sample[:,np.asarray([0,1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2,
@@ -637,13 +637,13 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports=50)
 
-    N_test = N
+    N_plot = min(10*N, 15000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
-    X = np.full((N_test, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 20)
-    ref_sample = ref_gen(N_test)
+    X = np.full((N_plot, 4), slice_val)
+    ref_slice_sample = get_VL_data(10 *  N_plot, X=X, Yd=Yd, normal=normal,  T = 20)
+    ref_sample = ref_gen(N_plot)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
     slice_sample[:, :4] *= X_std
