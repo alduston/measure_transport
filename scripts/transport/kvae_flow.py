@@ -186,7 +186,6 @@ class CondTransportKernel(nn.Module):
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
-
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -380,7 +379,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         Y_eta, Y_mean, Y_var = map_dict['y_eta'], map_dict['y_mean'], map_dict['y_var']
 
         test_map_dict = model.map(model.X_mu_test, model.Y_eta_test, model.Y_mean_test, model.Y_var_test)
-        Y_eta_test, Y_mean_mean, Y_var_test = test_map_dict['y_eta'], test_map_dict['y_mean'], test_map_dict['y_var']
+        Y_eta_test, Y_mean_test, Y_var_test = test_map_dict['y_eta'], test_map_dict['y_mean'], test_map_dict['y_var']
 
         Y_eta *= noise_shrink_c
         Y_eta_test *= noise_shrink_c
