@@ -321,11 +321,10 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
-        x, y = map_vec.T.detach().cpu().numpy()
-        plt.hist2d(x, y, bins=65, range=[[-1.05, -1.05], [-1.05, 1.05]], vmax=7)
-        plt.savefig('elden_map.png')
+
         clear_plt()
-        sample_hmap(map_vec, 'elden_hist.png', bins=65, d=2, range=[[-1.05, -1.05], [-1.05, 1.05]], vmax=7)
+        sample_hmap(map_vec, 'elden_hist.png', bins=75, bw_adjust= 0.125,
+                    d=2, range=[[-1, 1], [-1.05, 1.15]], vmax=6)
         clear_plt()
         return self.mmd(map_vec, target)
 
@@ -401,7 +400,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test =  min(10 * N, 12000)
+    N_test =  min(10 * N, 15000)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -582,10 +581,10 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
     skip_idx = 0
-    plt_range = [[-1,1],[-1,1]]
+    plt_range = [[-1,1],[-1.05,1.15]]
     plot_idx = torch.tensor([0,1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=None,
-                                                         exp_name=exp_name, process_funcs=[],bins = 80,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=6,
+                                                         exp_name=exp_name, process_funcs=[],bins = 75,
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=plot_idx,
                                                          plt_range=plt_range, n_transports=n_transports)
@@ -664,7 +663,6 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                         plt.hist(x, bins=50, range = plt_range)
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
-
         plt.tight_layout(pad=0.3)
         plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
         clear_plt()
@@ -672,7 +670,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    elden_exp(10000, n_iter=101, n_transports=250)
+    elden_exp(3000, n_iter=10, n_transports=1)
 
 if __name__=='__main__':
     run()
