@@ -69,7 +69,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1e-3
+        eps = 1e-4
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -330,7 +330,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
-        if not self.iters % 500:
+        if not self.iters % 2000:
             clear_plt()
             save_loc = f'../../data/kernel_transport/spiral_kflow/test_map_gen.png'
             sample_hmap(map_vec, save_loc, bins=50, bw_adjust=0.25,d=2, range=[[-3, 3], [-3, 3]], vmax=.15)
@@ -364,7 +364,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = .95):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    eps = 1e-3
+    eps = 1e-4
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = []
@@ -645,6 +645,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
     ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
     ranges3 = {'alpha': [0, 2.25], 'beta': [-.03, .13], 'gamma': [0, 2.25], 'delta': [-.03, .13]}
     ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
+
 
     for range_idx,ranges in enumerate([ranges1, ranges2, ranges3, ranges4]):
         for i, key_i in enumerate(params_keys):
