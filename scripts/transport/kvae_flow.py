@@ -20,7 +20,8 @@ def shuffle(tensor):
     if geq_1d(tensor).shape[0] <=1:
         return tensor
     else:
-        return tensor[torch.randperm(len(tensor))]
+        return tensor
+        #return tensor[torch.randperm(len(tensor))]
 
 
 def geq_1d(tensor):
@@ -95,8 +96,10 @@ class Comp_transport_model:
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         else:
             y_mean = deepcopy(y_eta)
+            return 0 * y_mean #####
 
-        w_var = torch.concat([x_mu, shuffle(y_eta), y_mean], dim=1)
+        #w_var = torch.concat([x_mu, shuffle(y_eta), y_mean], dim=1)
+        w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = Lambda_var
 
         z_var = fit_kernel(X_var, w_var).T @ Lambda_var
@@ -509,7 +512,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_plot = min(10 * N, 15000)
+     N_plot = min(10 * N, 5000)
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -551,7 +554,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_plot = min(10 * N, 15000)
+    N_plot = min(10 * N, 5000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -581,7 +584,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_plot =  min(10 * N, 15000)
+    N_plot =  min(10 * N, 5000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -637,7 +640,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports=50)
 
-    N_plot = min(10*N, 15000)
+    N_plot = min(10*N, 5000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
@@ -693,9 +696,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_swiss_roll
-    N = 2000
-    two_d_exp(ref_gen, target_gen, N, n_iter=51, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=40)
+    N = 500
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=20)
 
 
 if __name__=='__main__':
