@@ -290,6 +290,15 @@ class CondTransportKernel(nn.Module):
         y_approx = self.Y_approx_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_approx)[0]
+
+        x, y = map_vec.T.detach().cpu().numpy()
+        plt.hist2d(x, y, bins=75, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
+        plt.savefig('map_vec2.png')
+        clear_plt()
+
+        sample_hmap(map_vec, 'gen_map2.png', bins=50, d=2, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
+        clear_plt()
+
         return self.mmd(map_vec, target)
 
 
@@ -622,13 +631,13 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
         clear_plt()
     return True
 
-
+0.001192
 def run():
     ref_gen = sample_normal
     target_gen = mgan2
     N = 600
-    two_d_exp(ref_gen, target_gen, N, n_iter=201, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
-              slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp1', skip_idx=1, vmax=None, n_transports=12)
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[],
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=55)
 
 
 if __name__=='__main__':

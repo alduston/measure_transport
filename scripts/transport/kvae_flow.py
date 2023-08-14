@@ -109,8 +109,8 @@ class Comp_transport_model:
 
         y_approx = y_mean + y_var
         z = z_mean + z_var
-        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var+ z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim=1)}
+        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
         return param_dict
 
 
@@ -146,9 +146,6 @@ class CondTransportKernel(nn.Module):
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
 
-        plt.hist(self.Y_eta.detach().cpu().numpy())
-        plt.savefig('Y_eta_hist2.png')
-        clear_plt()
 
         self.Y_mean = self.Y_eta
         self.Y_var = torch.zeros(self.Y_eta.shape,  device=self.device, dtype=self.dtype)
@@ -164,7 +161,6 @@ class CondTransportKernel(nn.Module):
 
         self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
-
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y)
@@ -235,7 +231,7 @@ class CondTransportKernel(nn.Module):
             return 0 * y_eta
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
+        #y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
         w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = self.get_Lambda_var()
@@ -249,7 +245,6 @@ class CondTransportKernel(nn.Module):
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
-
 
         z_mean = self.map_mean(x_mu, y_eta, y_mean)
         z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
@@ -327,9 +322,13 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
-        x,y = map_vec.T.detach().cpu().numpy()
-        plt.hist2d(x,y, bins = 75, range = [[-1,1],[-1,1]])
-        plt.savefig('map_vec.png')
+        x, y = map_vec.T.detach().cpu().numpy()
+        plt.hist2d(x, y, bins=75, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
+        plt.savefig('map_vec1.png')
+        clear_plt()
+
+        sample_hmap(map_vec, 'gen_map1.png', bins=50, d=2, range=[[-2.5,2.5],[-1.1,1.1]], vmax=2)
+        clear_plt()
         return self.mmd(map_vec, target)
 
 
@@ -380,11 +379,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
 
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
         Y_eta, Y_mean, Y_var = map_dict['y_eta'], map_dict['y_mean'], map_dict['y_var']
-        Y_eta, Y_mean = map_dict['y_eta'], map_dict['y_mean']
 
         test_map_dict = model.map(model.X_mu_test, model.Y_eta_test, model.Y_mean_test, model.Y_var_test)
         Y_eta_test, Y_mean_mean, Y_var_test = test_map_dict['y_eta'], test_map_dict['y_mean'], test_map_dict['y_var']
-        Y_eta_test, Y_mean_test = test_map_dict['y_eta'], test_map_dict['y_mean']
 
         Y_eta *= noise_shrink_c
         Y_eta_test *= noise_shrink_c
@@ -677,13 +674,13 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    #ref_gen = sample_normal
-    #target_gen = mgan2
-    #N = 600
-    #two_d_exp(ref_gen, target_gen, N, n_iter=201, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
-               #slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=50)
+    ref_gen = sample_normal
+    target_gen = mgan2
+    N = 600
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5,2.5],[-1.1,1.1]], process_funcs=[],
+               slice_vals=[-1,0,1], slice_range=[-1.5,1.5], exp_name='exp', skip_idx=1, vmax=None, n_transports=55)
 
-    elden_exp(8000, n_iter=101, n_transports=100)
+    #elden_exp(8000, n_iter=101, n_transports=100)
 
 if __name__=='__main__':
     run()
