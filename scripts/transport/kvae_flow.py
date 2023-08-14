@@ -343,7 +343,7 @@ class CondTransportKernel(nn.Module):
 
         clear_plt()
         sample_hmap(map_vec, 'spiral_hist.png', bins=75, bw_adjust= 0.2,
-                    d=2, range=[[-3, 3], [-3, 3]], vmax=.15)
+                    d=2, range=[[-3, 3], [-3, 3]], vmax=.25)
         clear_plt()
         return self.mmd(map_vec, target)
 
@@ -559,8 +559,9 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         plt.hist(slice_sample[:, 1], bins=50, range=slice_range, label = f'x ={slice_val}')
-    plt.savefig(f'{save_dir}/slice_posteriors.png')
-    clear_plt()
+    if len(slice_vals):
+        plt.savefig(f'{save_dir}/slice_posteriors.png')
+        clear_plt()
     return True
 
 
@@ -695,7 +696,7 @@ def run():
     target_gen = sample_swiss_roll
     N = 1500
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.15, n_transports=50)
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=50)
 
 
 if __name__=='__main__':
