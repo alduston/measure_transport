@@ -670,7 +670,7 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    elden_exp(3000, n_iter=10, n_transports=1)
+    elden_exp(15000, n_iter=10, n_transports=400)
 
 if __name__=='__main__':
     run()
