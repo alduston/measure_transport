@@ -700,7 +700,7 @@ def run():
     target_gen = sample_swiss_roll
     N = 1500
     two_d_exp(ref_gen, target_gen, N, n_iter=51, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=5)
+              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=25)
 
 
 if __name__=='__main__':
