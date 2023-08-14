@@ -66,6 +66,7 @@ class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
+        self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
         eps = .01
@@ -112,9 +113,10 @@ class Comp_transport_model:
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
-        save_loc = f'../../data/kernel_transport/swiss_kflow/gen_map{step_idx}.png'
-        map_vec = param_dict['y'].detach().cpu().numpy()
-        sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
+        if self.plot_steps:
+            save_loc = f'../../data/kernel_transport/spiral_kflow/gen_map{step_idx}.png'
+            map_vec = param_dict['y'].detach().cpu().numpy()
+            sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
                     d=2, range=[[-3, 3], [-3, 3]])
 
         return param_dict
@@ -676,10 +678,10 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_swiss_roll
+    target_gen = sample_spirals
     N = 2000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', n_transports=30)
+              slice_vals=[0], slice_range=[-1.5, 1.5], exp_name='spiral_kflow', n_transports=30)
 
 
 if __name__=='__main__':
