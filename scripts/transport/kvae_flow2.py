@@ -81,6 +81,9 @@ class Comp_transport_model:
             else:
                 self.device = 'cpu'
 
+    def mmd(self, map_vec, target):
+        return self.submodel_params['mmd_func'](map_vec, target)
+
 
     def param_map(self, step_idx, param_dict):
         Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
@@ -382,6 +385,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         model_params['X_mean'].append(model.X_mean.detach().cpu().numpy())
         model_params['X_var'].append(model.X_var.detach().cpu().numpy())
 
+        if i==0:
+            model_params['mmd_func'] = model.mmd
+
         n_iter = max(int(n_iter * f), 101)
 
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
@@ -504,6 +510,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      ref_sample = ref_gen(N_test)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
+
+     test_mmd = trained_models[-1].mmd(gen_sample, target_sample)
+     print(f'Test mmd was {test_mmd}')
 
      if plots_hists:
         sode_hist(gen_sample,save_dir,save_name='marginal_hists')

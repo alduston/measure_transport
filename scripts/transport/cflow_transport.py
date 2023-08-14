@@ -81,7 +81,6 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
 
-
     def param_map(self, y_eta, step_idx,y_approx = [], x_mu = []):
         Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
         Lambda1 = torch.tensor(self.submodel_params['Lambda1'][step_idx], device=self.device, dtype=self.dtype)

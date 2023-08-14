@@ -394,6 +394,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
         model_params['X_mean'].append(model.X_mean.detach().cpu().numpy())
         model_params['X_var'].append(model.X_var.detach().cpu().numpy())
 
+
         n_iter = max(int(n_iter * f), 101)
 
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
