@@ -69,7 +69,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = .01
+        eps = 1e-3
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -330,9 +330,11 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
-        clear_plt()
-        save_loc = f'../../data/kernel_transport/swiss_kflow/test_map_gen.png'
-        clear_plt()
+        if not self.iters % 500:
+            clear_plt()
+            save_loc = f'../../data/kernel_transport/spiral_kflow/test_map_gen.png'
+            sample_hmap(map_vec, save_loc, bins=50, bw_adjust=0.25,d=2, range=[[-3, 3], [-3, 3]], vmax=.15)
+            clear_plt()
         return self.mmd(map_vec, target)
 
 
@@ -362,7 +364,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = .95):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    eps = .01
+    eps = 1e-3
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = []
@@ -469,7 +471,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70,
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 50,
                            skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 40):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
