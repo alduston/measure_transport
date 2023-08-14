@@ -117,7 +117,7 @@ class Comp_transport_model:
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
 
-        z_mean = self.map_mean(x_mu, y_eta, y_mean,Lambda_mean, X_mean, fit_kernel)
+        z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
 
         z = z_mean + z_var
@@ -126,8 +126,13 @@ class Comp_transport_model:
         if self.approx:
             y_approx = y_mean + y_var
 
-        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
+        param_dict = {'y_eta': shuffle(y_eta), 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
                        'x_mu': x_mu, 'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim=1)}
+
+        save_loc = f'../../data/kernel_transport/swiss_kflow/map_gen{step_idx}.png'
+        map_vec = param_dict['y'].detach().cpu().numpy()
+        sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
+                    d=2, range=[[-3, 3], [-3, 3]], vmax=.25)
 
         return param_dict
 
@@ -244,13 +249,11 @@ class CondTransportKernel(nn.Module):
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, y_var):
+    def map_var(self, x_mu, y_eta, y_mean):
         if not self.approx:
             return 0 * y_eta
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        #y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
-
         w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = self.get_Lambda_var()
 
@@ -272,7 +275,7 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             y_approx = y_mean + y_var
 
-        return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
+        return_dict = {'y_eta':  shuffle(y_eta), 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
                        'x_mu': x_mu, 'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
         return return_dict
 
@@ -342,7 +345,8 @@ class CondTransportKernel(nn.Module):
 
 
         clear_plt()
-        sample_hmap(map_vec, 'spiral_hist.png', bins=75, bw_adjust= 0.2,
+        save_loc = f'../../data/kernel_transport/swiss_kflow/test_map_gen.png'
+        sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
                     d=2, range=[[-3, 3], [-3, 3]], vmax=.25)
         clear_plt()
         return self.mmd(map_vec, target)
@@ -371,7 +375,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001,  iters = 0,
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = .95):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     eps = .01
@@ -695,8 +699,8 @@ def run():
     ref_gen = sample_normal
     target_gen = sample_swiss_roll
     N = 1500
-    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=50)
+    two_d_exp(ref_gen, target_gen, N, n_iter=501, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', vmax=.25, n_transports=5)
 
 
 if __name__=='__main__':
