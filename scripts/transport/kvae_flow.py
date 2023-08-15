@@ -92,10 +92,10 @@ class Comp_transport_model:
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
         if not self.approx:
             y_eta = shuffle(y_eta)
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
 
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
@@ -121,7 +121,7 @@ class Comp_transport_model:
             y_var = 0 * y_mean
 
         z_mean = self.map_mean(x_mu, y_mean, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
@@ -181,7 +181,7 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
-            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
+            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.Y_approx = self.Y_mean + self.Y_var
@@ -263,13 +263,13 @@ class CondTransportKernel(nn.Module):
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean):
+    def map_var(self, x_mu, y_eta, y_mean, y_var):
         if not self.approx:
             y_eta = shuffle(y_eta)
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
 
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
 
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
@@ -287,7 +287,7 @@ class CondTransportKernel(nn.Module):
             y_var = 0 * y_mean
 
         z_mean = self.map_mean(x_mu, y_eta, y_mean)
-        z_var = self.map_var(x_mu, y_eta, y_mean)
+        z_var = self.map_var(x_mu, y_eta, y_mean, y_eta)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
