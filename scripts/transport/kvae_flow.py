@@ -95,8 +95,7 @@ class Comp_transport_model:
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
         if not self.approx:
             y_eta = shuffle(y_eta)
-        #x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
 
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
@@ -183,8 +182,7 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
-            #self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
-            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
+            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.Y_approx = self.Y_mean + self.Y_var
@@ -272,8 +270,7 @@ class CondTransportKernel(nn.Module):
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
 
-        #x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
 
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
@@ -650,7 +647,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
     N_plot =  min(10 * N, 10000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
-    #slice_val = np.asarray([2, .1, 2, .1])
+    slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_plot, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal=normal,  T = 20)

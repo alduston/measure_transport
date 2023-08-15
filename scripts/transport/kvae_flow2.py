@@ -697,7 +697,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 
 def run():
-    elden_exp(5000, n_transports=300, n_iter=150)
+    spheres_exp(5000, n_transports=200, n_iter=50)
 
 
 
