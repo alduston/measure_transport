@@ -50,7 +50,7 @@ class DeterministicLotkaVolterra:
         self.delta_mu = -3
         self.delta_std = 0.5
         # initial condition
-        self.x0 = [100, 15];
+        self.x0 = [30, 1];
         # length of integration window
         self.T = T
         # observation parameters
