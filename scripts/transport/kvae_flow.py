@@ -95,7 +95,8 @@ class Comp_transport_model:
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
         if not self.approx:
             y_eta = shuffle(y_eta)
-        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        #x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = Lambda_var
 
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
@@ -177,11 +178,13 @@ class CondTransportKernel(nn.Module):
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean], dim=1)
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
-            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
+            #self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
+            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.Y_approx = self.Y_mean + self.Y_var
@@ -269,7 +272,8 @@ class CondTransportKernel(nn.Module):
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
 
-        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        #x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = self.get_Lambda_var()
 
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
@@ -700,6 +704,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 def run():
     elden_exp(N=5000, n_transports=200)
+
     '''
     spheres_exp(N = 8000, n_transports=200)
     vl_exp(N = 8000)

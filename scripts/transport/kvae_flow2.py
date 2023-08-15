@@ -397,8 +397,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
         if i==0:
             model_params['mmd_func'] = model.mmd
 
-        n_iter = max(int(n_iter * f), 50)
-
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
         Y_eta, Y_mean, Y_var = map_dict['y_eta'], map_dict['y_mean'], map_dict['y_var']
 
@@ -605,7 +603,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
     return True
 
 
-def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
+def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=55):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
@@ -699,7 +697,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 
 def run():
-    elden_exp(7000, n_transports=300, n_iter=50)
+    elden_exp(5000, n_transports=300, n_iter=150)
 
 
 
