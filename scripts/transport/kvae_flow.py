@@ -620,7 +620,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transports = 100):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
@@ -642,7 +642,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
                                                          exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
-                                                         plt_range=None, n_transports=50)
+                                                         plt_range=None, n_transports = n_transports)
 
     N_plot =  min(10 * N, 10000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -699,7 +699,30 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    spheres_exp(N = 5000)
+    spheres_exp(N = 8000, n_transports=200)
+    vl_exp(N = 8000)
+    ref_gen = sample_normal
+    N = 10000
+
+    two_d_exp(ref_gen, sample_spirals,N = N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=200, vmax=.15)
+
+    two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_kflow', n_transports=200, vmax=.25)
+
+    two_d_exp(ref_gen, mgan1, 10000, N=N, n_iter=101, plt_range=[[-2.5, 2.5], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan1_kflow', n_transports=200, vmax=2)
+
+    two_d_exp(ref_gen, mgan2, 10000, N = N, n_iter=101, plt_range=[[-2.5, 2.5], [-1, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan2_kflow', n_transports=100, vmax=.5)
+
+    spheres_exp(N=8000, n_transports=200)
+    vl_exp(N=8000,  n_transports=200)
+    elden_exp(N=N, n_transports=200)
+
+
+
+
 
 if __name__=='__main__':
     run()
