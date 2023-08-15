@@ -315,7 +315,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = 
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 1001, n = 50,
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = .95):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     eps = .01
@@ -624,10 +624,10 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 
 def run():
     ref_gen = sample_normal
-    target_gen = sample_swiss_roll
-    N = 1000
-    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[], slice_range=[-1.5, 1.5], exp_name='swiss_kflow', n_transports=20)
+    target_gen = mgan2
+    N = 3000
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan2_kflow2', n_transports=100, vmax=.25)
 
 
 if __name__=='__main__':
