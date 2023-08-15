@@ -57,7 +57,7 @@ def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1
     return yobs
 
 
-def get_VL_data(N, X = [], normal = False, T = 20, Yd = 18):
+def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18):
     if not len(X):
         X = sample_VL_prior(N)
     Y = np.asarray([run_ode(x, T = T) for x in X])
@@ -66,7 +66,8 @@ def get_VL_data(N, X = [], normal = False, T = 20, Yd = 18):
         X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
         X -= X_mean
         X /= X_var
-        Y = normalize(Y)[:, :18]
+        Y = normalize(Y)[:, :Yd]
+    Y = Y[::18]
     return np.concatenate([X,Y], axis = 1)
 
 

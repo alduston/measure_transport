@@ -425,7 +425,7 @@ def train_cond_transport(ref_gen, target_gen, params, N, n_iter = 101, process_f
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = min(10 * N, 7000)
+    N_test = 3000
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -514,7 +514,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_plot = min(10 * N, 10000)
+     N_plot = min(10 * N, 5000)
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -559,7 +559,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax, bins = bins,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_plot = min(10 * N, 10000)
+    N_plot = min(10 * N, 5000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -588,7 +588,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_test =  min(10 * N, 10000)
+    N_test =  min(10 * N, 5000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -643,9 +643,8 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports = n_transports)
 
-    N_plot =  min(10 * N, 10000)
+    N_plot =  min(10 * N, 5000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
-    #slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_plot, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal=normal,  T = 20)
@@ -658,13 +657,13 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
+    #ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
     ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
     ranges3 = {'alpha': [0, 2.25], 'beta': [-.03, .13], 'gamma': [0, 2.25], 'delta': [-.03, .13]}
-    ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
+    #ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
-    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3, ranges4]):
+    for range_idx,ranges in enumerate([ranges2, ranges3]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
@@ -698,8 +697,7 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(3000, n_transports=100, n_iter=50)
-
+    vl_exp(6000, n_transports=150, n_iter=51)
 
 
 
