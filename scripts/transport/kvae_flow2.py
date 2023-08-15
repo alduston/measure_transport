@@ -71,7 +71,6 @@ class Comp_transport_model:
         eps = 1e-3
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
-
         if device:
             self.device = device
         else:
@@ -124,7 +123,22 @@ class Comp_transport_model:
                     d=2, range=[[-3, 3], [-3, 3]])
 
         return param_dict
-    
+
+    def c_map(self, x, y, no_x = False):
+        param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
+                       'x_mu': x, 'y_approx': 0, 'y': 0}
+        self.approx = False
+        for step_idx in range(len(self.submodel_params['Lambda_mean'])):
+            param_dict = self.param_map(step_idx, param_dict)
+            self.approx =True
+        if no_x:
+            return param_dict['y_approx']
+        return param_dict['y']
+
+
+    def map(self, x = [], y = [], no_x = False):
+        return self.c_map(x,y, no_x = no_x)
+
 
 class Comp_transport_model_new:
     def __init__(self, submodels_params, device = None):
