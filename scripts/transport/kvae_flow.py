@@ -176,7 +176,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
-        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean], dim=1)
+        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean, self.Y_var], dim=1)
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
