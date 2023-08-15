@@ -89,6 +89,7 @@ class Comp_transport_model:
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         else:
             y_mean = deepcopy(y_eta)
+
         w_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, w_mean).T @ Lambda_mean
         return z_mean
@@ -100,6 +101,7 @@ class Comp_transport_model:
         else:
             y_mean = deepcopy(y_eta)
             y_eta = shuffle(y_eta)
+
         w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = Lambda_var
 
@@ -119,22 +121,24 @@ class Comp_transport_model:
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
 
-        '''
+
         if self.approx:
             y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
             y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
-            x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
-            z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         else:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
             z_var = 0
-        '''
 
-        y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
-        y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
+        #print(y_mean.shape)
+        #print(y_var.shape)
+
+
+        #y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
+        #y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
         #x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         #z_var = fit_kernel(X_var, x_var).T @ Lambda_var
+
 
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
         z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
