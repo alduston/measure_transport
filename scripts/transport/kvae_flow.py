@@ -86,19 +86,19 @@ class Comp_transport_model:
         return self.submodel_params['mmd_func'](map_vec, target)
 
 
-    def map_mean(self, x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel):
-        w_mean = torch.concat([x_mu, y_mean], dim=1)
-        z_mean = fit_kernel(X_mean, w_mean).T @ Lambda_mean
+    def map_mean(self, x_mu, y_mean, Lambda_mean, X_mean, fit_kernel):
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
+        z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
         if not self.approx:
             y_eta = shuffle(y_eta)
-        w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean, y_var], dim=1)
         Lambda_var = Lambda_var
 
-        z_var = fit_kernel(X_var, w_var).T @ Lambda_var
+        z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -120,8 +120,8 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
+        z_mean = self.map_mean(x_mu, y_mean, Lambda_mean, X_mean, fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
@@ -174,8 +174,8 @@ class CondTransportKernel(nn.Module):
         self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
 
 
-        self.Y_mean = self.Y_eta
-        self.Y_var = torch.zeros(self.Y_eta.shape,  device=self.device, dtype=self.dtype)
+        self.Y_mean = deepcopy(self.Y_eta)
+        self.Y_var =  0 * self.Y_mean
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
@@ -186,7 +186,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
-        self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
+        self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean, self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -257,9 +257,9 @@ class CondTransportKernel(nn.Module):
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         else:
             y_mean = deepcopy(y_eta)
-        w_mean = torch.concat([x_mu, y_mean], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         Lambda_mean = self.get_Lambda_mean()
-        z_mean = self.fit_kernel(self.X_mean, w_mean).T @ Lambda_mean
+        z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
@@ -268,12 +268,12 @@ class CondTransportKernel(nn.Module):
             y_eta = shuffle(y_eta)
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        #y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
+        y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
-        w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean, y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
 
-        z_var = self.fit_kernel(self.X_var, w_var).T @ Lambda_var
+        z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -488,7 +488,7 @@ def sode_hist(trajectories, savedir, save_name = 'traj_hist', n = 4):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [],
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 50,
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70,
                            skip_idx = 0, plot_idx = [], plots_hists = False, n_transports = 40):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
@@ -516,7 +516,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_plot = min(10 * N, 7000)
+     N_plot = min(10 * N, 10000)
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -548,7 +548,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      return trained_models, idx_dict
 
 
-def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[], bins = 60,
+def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs=[], bins = 70,
               slice_vals=[], slice_range=None, exp_name='exp', skip_idx=0, vmax=None, n_transports = 70):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -561,7 +561,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax, bins = bins,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_plot = min(10 * N, 7000)
+    N_plot = min(10 * N, 10000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -590,7 +590,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_test =  min(10 * N, 15000)
+    N_test =  min(10 * N, 10000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
