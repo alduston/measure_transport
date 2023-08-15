@@ -282,14 +282,6 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_approx)[0]
 
-        x, y = map_vec.T.detach().cpu().numpy()
-        plt.hist2d(x, y, bins=75, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
-        plt.savefig('map_vec2.png')
-        clear_plt()
-
-        sample_hmap(map_vec, 'gen_map2.png', bins=50, d=2, range=[[-2.5, 2.5], [-1.1, 1.1]], vmax=2)
-        clear_plt()
-
         return self.mmd(map_vec, target)
 
 
@@ -354,7 +346,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = N
+    N_test = min(10*N, 7000)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -486,7 +478,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_test = min(10 * N, 15000)
+    N_test = min(10 * N, 10000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_test)
         ref_slice_sample = target_gen(N_test)
@@ -515,7 +507,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_test =  min(10 * N, 15000)
+    N_test =  min(10 * N, 10000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
