@@ -6,6 +6,14 @@ import matplotlib.pyplot as plt
 import torch
 from copy import deepcopy
 
+def clear_plt():
+    plt.figure().clear()
+    plt.close()
+    plt.cla()
+    plt.clf()
+    return True
+
+
 def replace_zeros(array, eps = 1e-5):
     for i,val in enumerate(array):
         if np.abs(val) < eps:
@@ -34,19 +42,19 @@ class DeterministicLotkaVolterra:
         self.d = 4
         # prior parameters
         self.alpha_mu = -0.125
-        self.alpha_std = 1#0.5
+        self.alpha_std = 0.5
         self.beta_mu = -3
-        self.beta_std = 1#0.5
+        self.beta_std = 0.5
         self.gamma_mu = -0.125
-        self.gamma_std = 1#0.5
+        self.gamma_std = 0.5
         self.delta_mu = -3
-        self.delta_std = 1#0.5
+        self.delta_std = 0.5
         # initial condition
-        self.x0 = [30, 1];
+        self.x0 = [100, 15];
         # length of integration window
         self.T = T
         # observation parameters
-        self.obs_std = np.sqrt(0.1)
+        self.obs_std = np.sqrt(0.0001)
 
     def sample_prior(self, N):
         # generate Normal samples
@@ -69,6 +77,7 @@ class DeterministicLotkaVolterra:
         # check dimension of theta
         assert (theta.size == self.d)
         # numerically intergate ODE
+        print(self.x0)
         return odeint(self.ode_rhs, self.x0, tt, args=(theta,))
 
     def sample_data(self, theta):
@@ -77,7 +86,7 @@ class DeterministicLotkaVolterra:
             theta = theta[np.newaxis, :]
         assert (theta.shape[1] == self.d)
         # define observation locations
-        tt = np.arange(0, self.T, step=2)
+        tt = np.arange(0, self.T, step=.1)
         nt = 2 * (len(tt) - 1)
         # define arrays to store results
         xt = np.zeros((theta.shape[0], nt))
@@ -86,8 +95,17 @@ class DeterministicLotkaVolterra:
             yobs = self.simulate_ode(theta[j, :], tt);
             # extract observations, flatten, and add noise
             yobs = np.abs(yobs[1:, :]).ravel()
+            yobs = np.array([lognorm.rvs(scale=x, s=self.obs_std) for x in yobs])
+            y = yobs[1::2]
+            x = yobs[::2]
+            plt.plot(x)
+            plt.plot(y)
+            plt.savefig(f'traj_plots_{j}.png')
+            clear_plt()
+
             # xt[j,:] = lognorm.rvs(scale=np.exp(np.log(yobs)), s=self.obs_std, size=(1,))
-            xt[j, :] = np.array([lognorm.rvs(scale=x, s=self.obs_std) for x in yobs])
+            xt[j, :] = yobs
+        plt.savefig('traj_plots.png')
         return (xt, tt)
 
     def log_prior_pdf(self, theta):
@@ -122,7 +140,7 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
-def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 40, X = [], normal = True):
+def get_VL_data_old(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = True):
     LV = DeterministicLotkaVolterra(T)
     if not len(X):
         X = LV.sample_prior(N)
@@ -148,7 +166,11 @@ def sample_VL_prior(N):
 
 if __name__ == '__main__':
     LV = DeterministicLotkaVolterra(20)
-    X = LV.sample_prior(1000000)
+    get_VL_data_old(10)
+
+    X = LV.sample_prior(5)
+    X = np.full(X.shape, X[0])
+    Y,_ = LV.sample_data(X)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
     X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
