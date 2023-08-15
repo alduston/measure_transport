@@ -10,8 +10,7 @@ from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-#from lokta_voltera import get_VL_data,sample_VL_prior
-from lk_sim import get_VL_data, sample_VL_prior
+from lokta_voltera import get_VL_data,sample_VL_prior
 from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
 from seaborn import kdeplot
@@ -69,7 +68,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1e-3
+        eps = 1
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -87,8 +86,8 @@ class Comp_transport_model:
         return self.submodel_params['mmd_func'](map_vec, target)
 
 
-    def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+    def map_mean(self, x_mu, y_mean, Lambda_mean, X_mean, fit_kernel):
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -121,7 +120,7 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_mean = self.map_mean(x_mu, y_mean, Lambda_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel)
         z = z_mean + z_var
 
@@ -178,13 +177,14 @@ class CondTransportKernel(nn.Module):
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean], dim=1)
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
             self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
 
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean+ self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.Y_approx = self.Y_mean + self.Y_var
 
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
@@ -253,12 +253,12 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXXvar_inv @ self.Z_var
 
 
-    def map_mean(self, x_mu, y_eta, y_mean, y_var):
+    def map_mean(self, x_mu, y_eta, y_mean):
         if self.approx:
             y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         else:
             y_mean = deepcopy(y_eta)
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
@@ -287,7 +287,7 @@ class CondTransportKernel(nn.Module):
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu, y_eta, y_mean, y_var)
+        z_mean = self.map_mean(x_mu, y_eta, y_mean)
         z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
         z = z_mean + z_var
 
@@ -376,7 +376,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = -1
-    eps = 1e-3
+    eps = 1
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = 0
@@ -397,6 +397,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
 
         if i==0:
             model_params['mmd_func'] = model.mmd
+
+        n_iter = max(int(n_iter * f), 101)
 
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
         Y_eta, Y_mean, Y_var = map_dict['y_eta'], map_dict['y_mean'], map_dict['y_var']
@@ -425,7 +427,7 @@ def train_cond_transport(ref_gen, target_gen, params, N, n_iter = 101, process_f
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = 3000
+    N_test = min(10 * N, 7000)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -514,7 +516,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 1000, n_iter = 1001, vmax
      trained_models = train_cond_transport(ref_gen, target_gen, exp_params, N, n_iter,
                                            process_funcs, cond_model_trainer,
                                            idx_dict = idx_dict, n_transports = n_transports)
-     N_plot = min(10 * N, 5000)
+     N_plot = min(10 * N, 10000)
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -559,7 +561,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax, bins = bins,
                                                          exp_name=exp_name, plt_range=plt_range, n_transports = n_transports,
                                                          plot_idx=plot_idx, process_funcs=process_funcs, skip_idx=skip_idx)
-    N_plot = min(10 * N, 5000)
+    N_plot = min(10 * N, 10000)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -588,7 +590,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
                                exp_name=exp_name, process_funcs=[],cond_model_trainer=comp_cond_kernel_transport,
                                idx_dict= idx_dict, plot_idx= plot_idx, plt_range = plt_range, n_transports = n_transports)
 
-    N_test =  min(10 * N, 5000)
+    N_test =  min(10 * N, 10000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -604,7 +606,7 @@ def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports =
     return True
 
 
-def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=55):
+def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
@@ -619,9 +621,9 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=55):
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transports = 100):
+def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transports = 100):
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
+    target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
     X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
@@ -643,8 +645,9 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports = n_transports)
 
-    N_plot =  min(10 * N, 5000)
+    N_plot =  min(10 * N, 10000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
+    slice_val = np.asarray([2, .1, 2, .1])
 
     X = np.full((N_plot, 4), slice_val)
     ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal=normal,  T = 20)
@@ -657,13 +660,13 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    #ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
+    ranges1 = {'alpha': [0,1.5], 'beta': [-.06,.33], 'gamma':[.5,1.8], 'delta':[-.06,.33]}
     ranges2 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
     ranges3 = {'alpha': [0, 2.25], 'beta': [-.03, .13], 'gamma': [0, 2.25], 'delta': [-.03, .13]}
-    #ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
+    ranges4 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
-    for range_idx,ranges in enumerate([ranges2, ranges3]):
+    for range_idx,ranges in enumerate([ranges1, ranges2, ranges3, ranges4]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
@@ -697,7 +700,31 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 
 def run():
-    vl_exp(5000, n_transports=150, n_iter=51, exp_name='kvl_exp3')
+    elden_exp(N=5000, n_transports=200)
+
+    '''
+    spheres_exp(N = 8000, n_transports=200)
+    vl_exp(N = 8000)
+    ref_gen = sample_normal
+    N = 10000
+
+    two_d_exp(ref_gen, sample_spirals,N = N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=200, vmax=.15)
+
+    two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_kflow', n_transports=200, vmax=.25)
+
+    two_d_exp(ref_gen, mgan1, 10000, N=N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan1_kflow', n_transports=200, vmax=2)
+
+    two_d_exp(ref_gen, mgan2, 10000, N = N, n_iter=101, plt_range=[[-2.5, 2.5], [-1, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan2_kflow', n_transports=100, vmax=.5)
+
+    spheres_exp(N=8000, n_transports=200)
+    vl_exp(N=8000,  n_transports=200)
+    elden_exp(N=N, n_transports=200)
+    '''
+
 
 
 
