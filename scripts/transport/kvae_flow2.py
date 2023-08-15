@@ -61,8 +61,72 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
-
 class Comp_transport_model:
+    def __init__(self, submodels_params, device = None):
+        self.submodel_params = submodels_params
+        self.dtype = torch.float32
+        self.plot_steps = False
+
+        n = len(self.submodel_params['Lambda_mean'])
+        eps = 1e-3
+        self.noise_shrink_c = np.exp(np.log(eps)/(n))
+
+
+        if device:
+            self.device = device
+        else:
+            if torch.cuda.is_available():
+                self.device = 'cuda'
+            else:
+                self.device = 'cpu'
+
+    def mmd(self, map_vec, target):
+        map_vec = torch.tensor(map_vec, device = self.device, dtype=self.dtype)
+        target = torch.tensor(target, device = self.device, dtype=self.dtype)
+        return self.submodel_params['mmd_func'](map_vec, target)
+
+
+    def param_map(self, step_idx, param_dict):
+        Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
+                                   device=self.device, dtype=self.dtype)
+        Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
+                                  device=self.device, dtype=self.dtype)
+        fit_kernel = self.submodel_params['fit_kernel'][step_idx]
+        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
+        X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
+
+        y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
+        x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
+
+        if len(param_dict['y_mean']):
+            y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
+            y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
+            x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+            z_var = fit_kernel(X_var, x_var).T @ Lambda_var
+        else:
+            y_mean = deepcopy(y_eta)
+            y_var = 0 * y_mean
+            z_var = 0
+
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
+        z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
+        y_eta =  self.noise_shrink_c * shuffle(y_eta)
+
+        y_approx = y_mean + y_var
+        z = z_mean + z_var
+        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+
+        if self.plot_steps:
+            save_loc = f'../../data/kernel_transport/spiral_kflow/gen_map{step_idx}.png'
+            map_vec = param_dict['y'].detach().cpu().numpy()
+            sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
+                    d=2, range=[[-3, 3], [-3, 3]])
+
+        return param_dict
+    
+
+class Comp_transport_model_new:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
