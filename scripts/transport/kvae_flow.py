@@ -87,21 +87,13 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel):
-        if self.approx:
-            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        else:
-            y_mean = deepcopy(y_eta)
         w_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, w_mean).T @ Lambda_mean
         return z_mean
 
 
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
-        if self.approx:
-            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-            return 0 * y_mean
-        else:
-            y_mean = deepcopy(y_eta)
+        if not self.approx:
             y_eta = shuffle(y_eta)
         w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
         Lambda_var = Lambda_var
@@ -132,9 +124,7 @@ class Comp_transport_model:
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
         z = z_mean + z_var
 
-        y_approx = deepcopy(y_eta)
-        if self.approx:
-            y_approx = y_mean + y_var
+        y_approx = y_mean + y_var
         y_eta = self.noise_shrink_c * shuffle(y_eta)
 
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
@@ -274,11 +264,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var = []):
-        if self.approx:
-            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-            return 0 * y_mean
-        else:
-            y_mean = deepcopy(y_eta)
+        if not self.approx:
             y_eta = shuffle(y_eta)
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
@@ -297,13 +283,15 @@ class CondTransportKernel(nn.Module):
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
+        if not self.approx:
+            y_mean = deepcopy(y_eta)
+            y_var = 0 * y_mean
+
         z_mean = self.map_mean(x_mu, y_eta, y_mean)
         z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
         z = z_mean + z_var
 
-        y_approx = deepcopy(y_eta)
-        if self.approx:
-            y_approx = y_mean + y_var
+        y_approx = y_mean + y_var
         y_eta = shuffle(y_eta)
         return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
@@ -327,7 +315,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        map_vec = torch.concat([self.X_mu, self.Y_approx  + self.Z_mean +  self.Z_var * float(self.approx)], dim=1)
+        map_vec = torch.concat([self.X_mu, self.Y_approx  + self.Z_mean +  self.Z_var], dim=1)
         target = self.Y
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -630,7 +618,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
                                                          cond_model_trainer=comp_cond_kernel_transport,
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=plot_idx,
                                                          plt_range=plt_range, n_transports=n_transports)
-    return True
+    return trained_models
 
 
 def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
@@ -716,7 +704,7 @@ def run():
     target_gen = sample_spirals
     N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=100, vmax=.15)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=100, vmax=.15)
 
 
 if __name__=='__main__':
