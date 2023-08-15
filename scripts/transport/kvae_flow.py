@@ -68,7 +68,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = .01
+        eps = 1
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -95,7 +95,7 @@ class Comp_transport_model:
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
         if not self.approx:
             y_eta = shuffle(y_eta)
-        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean, y_var], dim=1)
         Lambda_var = Lambda_var
 
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
@@ -181,7 +181,7 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
-            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
+            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean, self.Y_var], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.Y_approx = self.Y_mean + self.Y_var
@@ -269,7 +269,7 @@ class CondTransportKernel(nn.Module):
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
 
-        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean, y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
 
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
@@ -375,7 +375,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = -1
-    eps = .01
+    eps = 1
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = 0
