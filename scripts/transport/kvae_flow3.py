@@ -707,9 +707,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 20
+    N = 2000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=10, vmax=.15)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=100, vmax=.15)
 
 
 if __name__=='__main__':
