@@ -61,105 +61,6 @@ def flip_2tensor(tensor):
     return Ttensor.T
 
 
-class Comp_transport_model_old:
-    def __init__(self, submodels_params, device = None):
-        self.submodel_params = submodels_params
-        self.dtype = torch.float32
-        self.plot_steps = False
-
-        n = len(self.submodel_params['Lambda_mean'])
-        eps = 1e-3
-        self.noise_shrink_c = np.exp(np.log(eps)/(n))
-
-        if device:
-            self.device = device
-        else:
-            if torch.cuda.is_available():
-                self.device = 'cuda'
-            else:
-                self.device = 'cpu'
-
-    def mmd(self, map_vec, target):
-        map_vec = torch.tensor(map_vec, device = self.device, dtype=self.dtype)
-        target = torch.tensor(target, device = self.device, dtype=self.dtype)
-        return self.submodel_params['mmd_func'](map_vec, target)
-
-    def map_mean(self, x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel):
-        if self.approx:
-            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        else:
-            y_mean = deepcopy(y_eta)
-
-        w_mean = torch.concat([x_mu, y_mean], dim=1)
-        z_mean = fit_kernel(X_mean, w_mean).T @ Lambda_mean
-        return z_mean
-
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
-        if self.approx:
-            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-            return 0 * y_mean
-        else:
-            y_mean = deepcopy(y_eta)
-            y_eta = shuffle(y_eta)
-
-        w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
-        Lambda_var = Lambda_var
-
-        z_var = fit_kernel(X_var, w_var).T @ Lambda_var
-        return z_var
-
-
-    def param_map(self, step_idx, param_dict):
-        Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
-                                   device=self.device, dtype=self.dtype)
-        Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
-                                  device=self.device, dtype=self.dtype)
-        fit_kernel = self.submodel_params['fit_kernel'][step_idx]
-        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
-        X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
-
-        y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
-        x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
-        y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
-        y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
-
-        if not self.approx:
-            y_mean = deepcopy(y_eta)
-            y_var = 0 * y_mean
-
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
-        z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
-        y_eta =  self.noise_shrink_c * shuffle(y_eta)
-
-        y_approx = y_mean + y_var
-        z = z_mean + z_var
-        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
-
-        if self.plot_steps:
-            save_loc = f'../../data/kernel_transport/spiral_kflow/gen_map{step_idx}.png'
-            map_vec = param_dict['y'].detach().cpu().numpy()
-            sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
-                    d=2, range=[[-3, 3], [-3, 3]])
-
-        return param_dict
-
-    def c_map(self, x, y, no_x = False):
-        param_dict = {'y_eta': y, 'y_mean': [] , 'y_var': 0,
-                       'x_mu': x, 'y_approx': 0, 'y': 0}
-        self.approx = False
-        for step_idx in range(len(self.submodel_params['Lambda_mean'])):
-            param_dict = self.param_map(step_idx, param_dict)
-            self.approx =True
-        if no_x:
-            return param_dict['y_approx']
-        return param_dict['y']
-
-
-    def map(self, x = [], y = [], no_x = False):
-        return self.c_map(x,y, no_x = no_x)
-
-
 class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
@@ -732,8 +633,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     return True
 
 
-
-def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 
@@ -757,13 +657,13 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
                                                          idx_dict=idx_dict, skip_idx=skip_idx, plot_idx=[],
                                                          plt_range=None, n_transports=50)
 
-    N_test =  min(10 * N, 15000)
+    N_plot =  min(10 * N, 10000)
     slice_val = np.asarray([.8, .041, 1.07, .04])
     #slice_val = np.asarray([2, .1, 2, .1])
 
-    X = np.full((N_test, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_test, X=X, Yd=Yd, normal=normal,  T = 20)
-    ref_sample = ref_gen(N_test)
+    X = np.full((N_plot, 4), slice_val)
+    ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal=normal,  T = 20)
+    ref_sample = ref_gen(N_plot)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
     slice_sample[:, :4] *= X_std
@@ -814,9 +714,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 1000
+    N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=20, vmax=.15)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=100, vmax=.15)
 
 
 if __name__=='__main__':
