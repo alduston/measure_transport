@@ -699,11 +699,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 
 def run():
-    ref_gen = sample_normal
-    target_gen = mgan2
-    N = 3000
-    two_d_exp(ref_gen, target_gen, N, n_iter=50, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan_kflow3', n_transports=300, vmax=2)
+    elden_exp(7000, n_transports=300, n_iter=50)
 
 
 
