@@ -68,7 +68,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1e-4
+        eps = 1
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -375,7 +375,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = -1
-    eps = 1e-4
+    eps = 1
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = 0
@@ -703,7 +703,7 @@ def run():
     target_gen = mgan2
     N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan2_kflow', n_transports=100, vmax=.25)
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan2_kflow', n_transports=100, vmax=2)
 
 
 if __name__=='__main__':
