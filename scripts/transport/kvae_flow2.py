@@ -84,6 +84,28 @@ class Comp_transport_model:
         target = torch.tensor(target, device = self.device, dtype=self.dtype)
         return self.submodel_params['mmd_func'](map_vec, target)
 
+    def map_mean(self, x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel):
+        if self.approx:
+            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
+        else:
+            y_mean = deepcopy(y_eta)
+        w_mean = torch.concat([x_mu, y_mean], dim=1)
+        z_mean = fit_kernel(X_mean, w_mean).T @ Lambda_mean
+        return z_mean
+
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel):
+        if self.approx:
+            y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
+            return 0 * y_mean
+        else:
+            y_mean = deepcopy(y_eta)
+            y_eta = shuffle(y_eta)
+        w_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        Lambda_var = Lambda_var
+
+        z_var = fit_kernel(X_var, w_var).T @ Lambda_var
+        return z_var
+
 
     def param_map(self, step_idx, param_dict):
         Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
@@ -97,7 +119,7 @@ class Comp_transport_model:
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
 
-        if len(param_dict['y_mean']):
+        if self.approx:
             y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
             y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
             x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
@@ -107,8 +129,11 @@ class Comp_transport_model:
             y_var = 0 * y_mean
             z_var = 0
 
-        x_mean = torch.concat([x_mu, y_mean], dim=1)
-        z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
+        #x_mean = torch.concat([x_mu, y_mean], dim=1)
+        #z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
+
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
+        z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
         y_eta =  self.noise_shrink_c * shuffle(y_eta)
 
         y_approx = y_mean + y_var
@@ -125,7 +150,7 @@ class Comp_transport_model:
         return param_dict
 
     def c_map(self, x, y, no_x = False):
-        param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
+        param_dict = {'y_eta': y, 'y_mean': [] , 'y_var': 0,
                        'x_mu': x, 'y_approx': 0, 'y': 0}
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
