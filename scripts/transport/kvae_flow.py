@@ -225,9 +225,11 @@ class CondTransportKernel(nn.Module):
 
     def get_train_idx(self):
         batch_size = self.params['batch_size']
-        fixed_idx = list(range(batch_size//2))
+        #fixed_idx = list(range(batch_size//2))
+        fixed_idx = list(range(batch_size))
         N = len(self.params['Y_mu'])
-        inducing_idx = random.sample(list(range(batch_size//2, N)), k = batch_size//2)
+        #inducing_idx = random.sample(list(range(batch_size//2, N)), k = batch_size//2)
+        inducing_idx = []
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
 
@@ -474,7 +476,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 
 def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vmax = None,
-                           exp_name= 'exp', plt_range = None,  process_funcs = [],
+                           exp_name= 'exp', plt_range = None,  process_funcs = [], N_plot = 5000,
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70,
                            skip_idx = 0, plot_idx = [], batch_size = 4000, n_transports = 50):
      save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -504,7 +506,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
                                            n_iter = n_iter, process_funcs = process_funcs,idx_dict = idx_dict,
                                            cond_model_trainer = cond_model_trainer, n_transports = n_transports,
                                            batch_size = batch_size)
-     N_plot = min(10 * batch_size, 10000)
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -542,12 +543,13 @@ def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, proce
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
+    N_plot = min(10 * batch_size, 5000)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
                                                          bins = bins,exp_name=exp_name, plt_range=plt_range,
                                                          n_transports = n_transports, plot_idx=plot_idx,
                                                          process_funcs=process_funcs, skip_idx=skip_idx,
-                                                         batch_size = batch_size)
-    N_plot = min(10 * batch_size, 10000)
+                                                         batch_size = batch_size, N_plot=N_plot)
+
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -572,13 +574,13 @@ def spheres_exp(N = 10000, n_iter = 101, exp_name = 'spheres_exp', n_transports 
     plt_range = [[.5,1.5],[-1.5,1.5]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter,
+    N_plot = min(10 * batch_size, 5000)
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot=N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= plot_idx, plt_range = plt_range,idx_dict= idx_dict,
                                                          n_transports = n_transports, batch_size = batch_size)
 
-    N_plot =  min(10 * batch_size, 10000)
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -599,10 +601,13 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
     skip_idx = 0
+
     plt_range = [[-1,1],[-1.05,1.15]]
     plot_idx = torch.tensor([0,1]).long()
+    N_plot = min(10 *N, 15000)
+
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, bins = 75,
-                                                         skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
+                                                         skip_idx=skip_idx,exp_name=exp_name, N_plot=N_plot,
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=6,
                                                          plot_idx= plot_idx, plt_range = plt_range,idx_dict= idx_dict,
                                                          n_transports = n_transports, batch_size = batch_size)
@@ -627,7 +632,7 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
         pass
 
     skip_idx = 0
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot = N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
