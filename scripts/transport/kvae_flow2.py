@@ -133,8 +133,8 @@ class Comp_transport_model:
 
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
-        z_var = fit_kernel(X_var, x_var).T @ Lambda_var
+        #x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        #z_var = fit_kernel(X_var, x_var).T @ Lambda_var
 
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
         z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
