@@ -703,7 +703,7 @@ def run():
     target_gen = sample_spirals
     N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=50, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan_kflow3', n_transports=100, vmax=2)
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan_kflow3', n_transports=200, vmax=2)
 
 
 
