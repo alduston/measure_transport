@@ -413,7 +413,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [],
                     'Lambda_var': [], 'X_var': [],'Lambda_denoise': [], 'X_denoise': []}
     iters = -1
-    eps = 1
+    eps = .01
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = 0
