@@ -122,7 +122,7 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
-def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 40, X = [], normal = False):
+def get_VL_data(N = 5000, Xd = 4, Yd = 18, T = 40, X = [], normal = True):
     LV = DeterministicLotkaVolterra(T)
     if not len(X):
         X = LV.sample_prior(N)
