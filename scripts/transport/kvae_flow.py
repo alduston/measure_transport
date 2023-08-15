@@ -214,7 +214,7 @@ class CondTransportKernel(nn.Module):
         if self.params['mmd_lambda'] != 0:
             self.mmd_lambda = self.params['mmd_lambda']
         else:
-            self.mmd_lambda = ((1 / self.mmd(self.Y_eta_test, self.Y_mu_test).detach()))
+            self.mmd_lambda = 1 #((1 / self.mmd(self.Y_eta_test, self.Y_mu_test).detach()))
             self.params['mmd_lambda'] = self.mmd_lambda
 
         self.alpha_z = self.p_vec(self.Nx)
@@ -363,7 +363,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_test, Y_mu_test, Y_mean_test, Y_var_test,
                           params, n_iter = 101,  iters = -1,  approx = False, batch_size = 4000, mmd_lambda = 0):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-2, 'Y_mean': Y_mean, 'Y_var': Y_var,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_mean': Y_mean, 'Y_var': Y_var,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 100, 'learning_rate': .001, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_mean_test': Y_mean_test, 'approx': approx,
@@ -693,8 +693,8 @@ def run():
     ref_gen = sample_normal
     N = 20000
     batch_size = 4000
-    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_kflow', n_transports=200,
+    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=51, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_kflow', n_transports=100,
               vmax=.25, batch_size = batch_size)
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
