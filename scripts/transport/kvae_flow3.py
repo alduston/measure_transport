@@ -189,13 +189,13 @@ class CondTransportKernel(nn.Module):
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
         self.Y_denoise = 0 * self.Y_mean
-        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean], dim=1)
+        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
             self.Y_denoise = geq_1d(torch.tensor(base_params['Y_denoise'], device=self.device, dtype=self.dtype))
-            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean], dim=1)
+            self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
         self.X_denoise = torch.concat([self.X_mu, self.Y_mean, self.Y_var + self.Y_denoise], dim=1)
@@ -285,12 +285,12 @@ class CondTransportKernel(nn.Module):
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean):
+    def map_var(self, x_mu, y_eta, y_mean, y_var):
         if not self.approx:
             y_eta = shuffle(y_eta)
 
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
-        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        x_var = torch.concat([x_mu, y_eta, y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
 
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
@@ -317,7 +317,7 @@ class CondTransportKernel(nn.Module):
             y_denoise = 0 * y_mean
 
         z_mean = self.map_mean(x_mu, y_eta, y_mean)
-        z_var = self.map_var(x_mu, y_eta, y_mean)
+        z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
         z_denoise = self.map_denoise(x_mu, y_mean, y_var, y_denoise)
         z = z_mean + z_var + z_denoise
 
@@ -744,10 +744,10 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = sample_spirals
     N = 3000
-    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.05, 1.05]], process_funcs=[], skip_idx=1,
-              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='exp', n_transports=100, vmax=2)
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow2', n_transports=100, vmax=.15)
 
 
 if __name__=='__main__':

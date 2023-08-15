@@ -1,10 +1,7 @@
 import torch
 import numpy as np
-import os
-from transport_kernel import get_kernel, l_scale
-from unif_transport import unif_diffs, circle_diffs, normalize_rows, get_res_dict, resample, one_normalize
+from unif_transport import unif_diffs, normalize_rows, get_res_dict, resample
 #from pydiffmap import diffusion_map as dm
-from get_data import unif_circle, normal_theta_circle, unif_elipse, sample_spirals
 from picture_to_dist import sample_elden_ring
 import matplotlib.pyplot as plt
 from copy import deepcopy

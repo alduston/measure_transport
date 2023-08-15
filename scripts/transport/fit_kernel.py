@@ -1,19 +1,8 @@
 import torch
 import numpy as np
-from transport_kernel import  TransportKernel, l_scale, normalize,get_kernel
-from regress_kernel import RegressionKernel, UnifKernel2
 import matplotlib.pyplot as plt
-import os
-from unif_transport import get_res_dict, smoothing, unif_diffs, one_normalize, circle_diffs, geo_circle_diffs
-from get_data import resample, normal_theta_circle, normal_theta_two_circle, sample_normal,\
-    sample_swiss_roll, sample_moons, sample_rings, sample_circles,sample_banana, sample_spirals, \
-    normal_theta_circle_noisy,sample_pinweel,sample_unif_dumbell
 
-from picture_to_dist import sample_elden_ring, sample_bambdad, sample_twisted_rings
 #from kernel_geodesics import geo_diffs, boosted_geo_diffs
-from copy import deepcopy
-import random
-from datetime import datetime as dt
 from seaborn import kdeplot
 
 import warnings

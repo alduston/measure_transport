@@ -2,8 +2,6 @@ import torch.nn as nn
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from copy import copy, deepcopy
-import time
 from transport_kernel import get_kernel
 from unif_transport import one_normalize
 

@@ -2,7 +2,6 @@ import numpy as np
 import PIL
 from PIL import Image,ImageOps
 from unif_transport import resample
-from get_data import sample_normal, sample_moons
 import matplotlib.pyplot as plt
 
 
