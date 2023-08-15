@@ -572,7 +572,7 @@ def two_d_exp(ref_gen, target_gen, N, n_iter=1001, plt_range=None, process_funcs
     return True
 
 
-def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 300):
+def spheres_exp(N = 5000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 150):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -699,12 +699,7 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
 
 
 def run():
-    ref_gen = sample_normal
-    target_gen = sample_spirals
-    N = 3000
-    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow', n_transports=100, vmax=.15)
-
+    spheres_exp(N = 5000)
 
 if __name__=='__main__':
     run()
