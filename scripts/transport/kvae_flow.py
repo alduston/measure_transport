@@ -231,6 +231,7 @@ class CondTransportKernel(nn.Module):
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
 
+
     def p_vec(self, n):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
 
