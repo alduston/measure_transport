@@ -703,7 +703,7 @@ def run():
     target_gen = sample_spirals
     N = 3000
     two_d_exp(ref_gen, target_gen, N, n_iter=31, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow2', n_transports=60, vmax=.15)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow2', n_transports=200, vmax=.15)
 
 
 
