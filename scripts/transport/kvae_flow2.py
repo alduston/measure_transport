@@ -702,8 +702,8 @@ def run():
     ref_gen = mgan2
     target_gen = sample_spirals
     N = 3000
-    two_d_exp(ref_gen, target_gen, N, n_iter=50, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='mgan_kflow3', n_transports=100, vmax=.15)
+    two_d_exp(ref_gen, target_gen, N, n_iter=50, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[], skip_idx=1,
+              slice_vals=[-1,0,1], slice_range=[-1.5, 1.5], exp_name='mgan_kflow3', n_transports=100, vmax=2)
 
 
 

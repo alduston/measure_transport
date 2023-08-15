@@ -710,7 +710,7 @@ def run():
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
               slice_vals=[0], slice_range=[-3, 3], exp_name='swiss_kflow', n_transports=200, vmax=.25)
 
-    two_d_exp(ref_gen, mgan1, 10000, N=N, n_iter=101, plt_range=[[-2.5, 2.5], [-3, 3]], process_funcs=[], skip_idx=1,
+    two_d_exp(ref_gen, mgan1, 10000, N=N, n_iter=101, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[], skip_idx=1,
               slice_vals=[-1, 0, 1], slice_range=[-1.5, 1.5], exp_name='mgan1_kflow', n_transports=200, vmax=2)
 
     two_d_exp(ref_gen, mgan2, 10000, N = N, n_iter=101, plt_range=[[-2.5, 2.5], [-1, 3]], process_funcs=[], skip_idx=1,
