@@ -93,7 +93,7 @@ class Comp_transport_model:
 
 
     def map_denoise(self, x_mu, y_mean, y_var, y_denoise, Lambda_denoise, X_denoise, fit_kernel):
-        x_denoise = torch.concat([x_mu, y_mean, y_var + y_denoise], dim=1)
+        x_denoise = torch.concat([x_mu, y_mean, y_var + y_denoise + y_mean], dim=1)
         z_denoise = fit_kernel(X_denoise, x_denoise).T @ Lambda_denoise
         return z_denoise
 
@@ -198,9 +198,9 @@ class CondTransportKernel(nn.Module):
             self.X_var = torch.concat([self.X_mu, self.Y_eta, self.Y_mean + self.Y_var], dim=1)
 
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
-        self.X_denoise = torch.concat([self.X_mu, self.Y_mean, self.Y_var + self.Y_denoise], dim=1)
 
         self.Y_approx = self.Y_mean + self.Y_var + self.Y_denoise
+        self.X_denoise = torch.concat([self.X_mu, self.Y_mean, self.Y_approx], dim=1)
 
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
@@ -298,7 +298,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_denoise(self, x_mu, y_mean, y_var, y_denoise):
-        x_denoise = torch.concat([x_mu, y_mean, y_var + y_denoise], dim=1)
+        x_denoise = torch.concat([x_mu, y_mean, y_var + y_denoise + y_mean], dim=1)
         Lambda_denoise = self.get_Lambda_denoise()
         z_denoise = self.fit_kernel(self.X_denoise, x_denoise).T @ Lambda_denoise
         return z_denoise
