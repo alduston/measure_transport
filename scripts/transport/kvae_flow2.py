@@ -119,6 +119,7 @@ class Comp_transport_model:
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
 
+        '''
         if self.approx:
             y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
             y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
@@ -128,9 +129,12 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
             z_var = 0
+        '''
 
-        #x_mean = torch.concat([x_mu, y_mean], dim=1)
-        #z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
+        y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
+        y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
+        x_var = torch.concat([x_mu, y_eta, y_mean], dim=1)
+        z_var = fit_kernel(X_var, x_var).T @ Lambda_var
 
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, fit_kernel)
         z_mean = self.map_mean(x_mu, y_eta, y_mean, Lambda_mean, X_mean, fit_kernel)
@@ -815,9 +819,9 @@ def vl_exp(N=10000, n_iter=31, Yd=18, normal=True, exp_name='vl_exp'):
 def run():
     ref_gen = sample_normal
     target_gen = sample_spirals
-    N = 1500
+    N = 1000
     two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
-              slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=50, vmax=.15)
+              slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=20, vmax=.15)
 
 
 if __name__=='__main__':
