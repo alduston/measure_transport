@@ -68,7 +68,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = .01
+        eps = 1e-3
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -375,7 +375,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [], f = 1):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = -1
-    eps = .01
+    eps = 1e-3
     noise_shrink_c = np.exp(np.log(eps)/(n))
 
     Y_mean = 0
@@ -397,7 +397,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 101, n = 50,
         if i==0:
             model_params['mmd_func'] = model.mmd
 
-        n_iter = max(int(n_iter * f), 101)
+        n_iter = max(int(n_iter * f), 31)
 
         map_dict = model.map(model.X_mu, model.Y_eta, model.Y_mean, model.Y_var)
         Y_eta, Y_mean, Y_var = map_dict['y_eta'], map_dict['y_mean'], map_dict['y_var']
@@ -699,10 +699,10 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 
 def run():
-    ref_gen = sample_normal
+    ref_gen = mgan2
     target_gen = sample_spirals
     N = 3000
-    two_d_exp(ref_gen, target_gen, N, n_iter=31, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
+    two_d_exp(ref_gen, target_gen, N, n_iter=101, plt_range=[[-3, 3], [-3, 3]], process_funcs=[], skip_idx=1,
               slice_vals=[0], slice_range=[-3, 3], exp_name='spiral_kflow2', n_transports=200, vmax=.15)
 
 
