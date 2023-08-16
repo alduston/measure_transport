@@ -189,7 +189,6 @@ class CondTransportKernel(nn.Module):
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))[train_idx]
 
 
-
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
@@ -243,8 +242,8 @@ class CondTransportKernel(nn.Module):
         N = len(self.params['Y_mu'])
         if batch_size == N:
             return torch.tensor(list(range(batch_size))).long()
-        fixed_idx = list(range(batch_size//2))
-        inducing_idx = random.sample(list(range(batch_size//2, N)), k = int(batch_size//2))
+        fixed_idx = list(range(int(batch_size*.75)))
+        inducing_idx = random.sample(list(range(int(batch_size*.75), N)), k = int(batch_size*.25))
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
 
@@ -715,8 +714,8 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_spirals
-    N = 20000
-    batch_size = 1000
+    N = 10000
+    batch_size = 3000
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='sample_exp', n_transports=400, vmax=.25,
               batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
