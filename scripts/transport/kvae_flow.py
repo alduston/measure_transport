@@ -250,8 +250,8 @@ class CondTransportKernel(nn.Module):
         N = len(self.params['Y_mu'])
         if batch_size == N:
             return torch.tensor(list(range(batch_size))).long()
-        fixed_idx = list(range(int(batch_size*.75)))
-        inducing_idx = random.sample(list(range(int(batch_size*.75), N)), k = int(batch_size*.25))
+        fixed_idx = list(range(int(batch_size*.95)))
+        inducing_idx = random.sample(list(range(int(batch_size*.95), N)), k = int(batch_size*.05))
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
 
