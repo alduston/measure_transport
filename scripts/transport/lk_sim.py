@@ -27,7 +27,7 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     if not just_mean:
         normal_array = normal_array/std_vec
     if len(keep_axes):
-        normal_array = np.concatenate([normal_array, keep_array], axis = 1)
+        normal_array = np.concatenate([normal_array, keep_array], axis = 0)
     return normal_array
 
 
@@ -44,7 +44,7 @@ def derivative(X, t, alpha, beta, gamma, delta):
     return np.array([dotx, doty])
 
 
-def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-1)):
+def run_ode(params, T = 10, n = 500, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-3)):
     t_vec = np.linspace(0,T, num = n)
     alpha, beta, delta, gamma = params
     res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, delta, gamma))[1:]
@@ -57,10 +57,10 @@ def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1
     return yobs
 
 
-def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18):
+def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([1,1])):
     if not len(X):
         X = sample_VL_prior(N).astype(float)
-    Y = np.asarray([run_ode(x, T = T) for x in X], dtype=float)
+    Y = np.asarray([run_ode(x, T = T, X0 = X0) for x in X], dtype=float)
     X = np.asarray(X, dtype=float)
     if normal:
         X_mean = np.asarray([1, 0.0564, 1, 0.0564], dtype=float)
@@ -74,18 +74,22 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18):
 
 
 def run():
-    x = np.asarray([1,1,1,1])
-    X = np.asarray([x for i in range(10)])
-    lv_data = get_VL_data(10, X = X)
-    for xy in lv_data:
-        y = xy[4:]
-        prey_data = y[::2]
-        predator_data = y[1::2]
-        plt.plot(prey_data)
-        plt.plot(predator_data)
+    lv_data = get_VL_data(1000)
+    mu = np.mean(lv_data, axis = 0)
+    sigma = np.std(lv_data, axis = 0)
+    colors = ['red', 'blue', 'green']
+    param_vecs = sample_VL_prior(3)
+    for i,x in enumerate(param_vecs):
+        X = np.asarray([x for i in range(1000)])
+        param_data = (get_VL_data(N = 1000, X = X) - mu)/sigma
+        prey_data = param_data[4:, ::2]
+        predator_data = param_data[4:, 1::2]
+        plt.plot(prey_data, color =  colors[i])
+        plt.plot(predator_data, color =  colors[i])
+
     plt.savefig('y_vecs.png')
 
 
 if __name__=='__main__':
-    get_VL_data(N = 1000)
+    #get_VL_data(N = 1000)
     run()

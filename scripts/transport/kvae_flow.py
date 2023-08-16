@@ -388,7 +388,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                params, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    final_eps = 1
+    final_eps = 1e-3
     noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
 
     Y_mean = 0
@@ -631,7 +631,7 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transports = 100, batch_size = 4000):
+def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100, batch_size = 4000):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
@@ -656,10 +656,15 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
                                                          n_transports = n_transports, batch_size = batch_size)
 
-    slice_val = np.asarray([.8, .041, 1.07, .04])
+    target_sample = target_gen(5000, normal = False)[4:]
+    mu = np.mean(target_sample, axis = 0)
+    sigma = np.std(target_sample, axis = 0)
 
+    slice_val = np.asarray([.8, .041, 1.07, .04])
     X = np.full((N_plot, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal=normal,  T = 20)
+    ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal = False,  T = 20)
+    ref_slice_sample[4:] -= mu
+    ref_slice_sample[4:] /= sigma
     ref_sample = ref_gen(N_plot)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
