@@ -38,29 +38,34 @@ def sample_VL_prior(N):
 
 
 def derivative(X, t, alpha, beta, gamma, delta):
-    x, y = X
-    dotx = x * (alpha - beta * y)
-    doty = y * (-delta + gamma * x)
+    x,y = X
+    dotx = x * (alpha - (beta * y))
+    doty = y * ((delta * x) - gamma)
     return np.array([dotx, doty])
 
 
-def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.1)):
+def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.1)):
     t_vec = np.linspace(0,T, num = n)
-    alpha, beta, delta, gamma = params
-    res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, delta, gamma))[1:]
-    x, y = res.T
+    alpha, beta, gamma, delta = params
+    res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, gamma, delta))
+    x, y = res[1:].T
     res_vec = np.zeros(len(x)+len(y))
     res_vec[::2]+=x
     res_vec[1::2]+=y
     res_vec = np.abs(res_vec)
+
+    plt.plot(x, color = 'blue')
+    plt.plot(y, color='red')
+    plt.savefig('test_plot.png')
+
     yobs = np.array([lognorm.rvs(scale=x, s=obs_std) for x in res_vec])
     return yobs
 
 
-def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1])):
+def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1]), n = 10):
     if not len(X):
         X = sample_VL_prior(N).astype(float)
-    Y = np.asarray([run_ode(x, T = T, X0 = X0) for x in X], dtype=float)
+    Y = np.asarray([run_ode(x, T = T, X0 = X0, n = n) for x in X], dtype=float)
     X = np.asarray(X, dtype=float)
     XY = np.concatenate([X,Y], axis = 1)
     if normal:
@@ -70,32 +75,12 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1
 
 
 def run():
-    #lv_data = get_VL_data(500)
-   # mu = np.mean(lv_data, axis = 0)
-    #sigma = np.std(lv_data, axis = 0)
+    pass
+   #x = np.asarray([[.92,.05,1.50,.02]])
+   #alpha, beta, gamma, delta
+   #x = np.asarray([[1, 1, 1, 1]])
+   #get_VL_data(N = 1, X=x, n = 1000, Yd = 5000, T = 20)
 
-    #colors = ['red']#, 'blue', 'green']
-    #x = sample_VL_prior(1)[0]
-    #X = np.asarray([x for i in range(5)])
-    #get_VL_data(N=10, X=X)
-    #plt.savefig('y_vecs.png')
-
-    data = get_VL_data(N=10)
-    print(data.shape)
-
-    '''
-    for i,x in enumerate(param_vecs):
-        X = np.asarray([x for i in range(3)])
-        param_data = (get_VL_data(N = 10, X = X))
-        prey_data = param_data[:, 4:][:, ::2]
-        predator_data = param_data[:, 4:][:, ::2]
-
-        for v_prey, v_predator in zip(prey_data, predator_data):
-            plt.plot(v_prey, color =  colors[i])
-            plt.plot(v_predator, color =  colors[i])
-
-    plt.savefig('y_vecs.png')
-    '''
 
 
 if __name__=='__main__':
