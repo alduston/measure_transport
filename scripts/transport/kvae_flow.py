@@ -257,7 +257,7 @@ class CondTransportKernel(nn.Module):
 
 
     def init_Z(self):
-        Z = torch.zeros(self.Y_eta[self.train_idx].shape, device=self.device, dtype=self.dtype)
+        Z = torch.zeros(self.Y_eta.shape, device=self.device, dtype=self.dtype)
         return Z
 
 
