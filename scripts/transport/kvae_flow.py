@@ -177,8 +177,7 @@ class CondTransportKernel(nn.Module):
 
         eps = self.params['noise_eps']
         self.train_idx = self.get_train_idx()
-        self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))[self.train_idx]
-        self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
+        self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
 
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
@@ -187,15 +186,13 @@ class CondTransportKernel(nn.Module):
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
-
+        self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
-        self.X_mu = self.X_mu[self.train_idx]
-        self.Y_mean = self.Y_mean[self.train_idx]
-        self.Y_var = self.Y_var[self.train_idx]
-        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)[self.train_idx]
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)[self.train_idx]
+        self.X_mu = self.X_mu[:self.params['batch_size']]
+        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
@@ -243,17 +240,6 @@ class CondTransportKernel(nn.Module):
             self.params['mmd_lambda'] = self.mmd_lambda
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.iters = deepcopy(self.params['iters'])
-
-
-    def get_train_idx(self):
-        batch_size = self.params['batch_size']
-        if True:
-            return torch.tensor(list(range(batch_size))).long()
-        N = len(self.params['Y_mu'])
-        fixed_idx = list(range(int(batch_size*.95)))
-        inducing_idx = random.sample(list(range(int(batch_size* 1 ), N)), k = int(batch_size* 0.0))
-        train_idx = torch.tensor(fixed_idx + inducing_idx).long()
-        return train_idx
 
 
     def p_vec(self, n):
@@ -457,7 +443,7 @@ def train_cond_transport(ref_gen, target_gen, params, N, n_iter = 101, process_f
                          batch_size = 4000, cond_model_trainer = cond_kernel_transport,
                          idx_dict = {}, reg_lambda = 1e-4, n_transports = 100):
 
-    ref_sample = ref_gen(N)
+    ref_sample = ref_gen(batch_size)
     target_sample = target_gen(N)
 
     N_test = min(5000, 10 * batch_size)
