@@ -730,18 +730,19 @@ def run():
     batch_size = 1000
 
     print('Long transport steps:')
-    for i in range(3):
     n_transports = 50
-    two_d_exp(ref_gen, target_gen, N=N, n_iter=45, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp0', n_transports=n_transports, vmax=.25,
-              batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
+    for i in range(3):
+        two_d_exp(ref_gen, target_gen, N=N, n_iter=45, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp0', n_transports=n_transports, vmax=.25,
+                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
     print('\n')
     print('Short transport steps:')
     n_transports = 250
-    two_d_exp(ref_gen, target_gen, N=N, n_iter=9, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp1', n_transports=n_transports, vmax=.25,
-              batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
+    for i in range(3):
+        two_d_exp(ref_gen, target_gen, N=N, n_iter=9, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp1', n_transports=n_transports, vmax=.25,
+                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
 
 if __name__=='__main__':
