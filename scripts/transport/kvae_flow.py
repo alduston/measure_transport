@@ -534,7 +534,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      try:
         cref_sample  = deepcopy(ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
-        base_mmd = trained_models[0].mmd(cref_sample, target_sample)
+        base_mmd = trained_models[0].mmd(cref_sample, target_sample).detach().cpu().numpy()
         ntest_mmd = test_mmd/base_mmd
         print(f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}')
      except BaseException:
