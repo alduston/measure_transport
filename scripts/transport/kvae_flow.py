@@ -248,7 +248,7 @@ class CondTransportKernel(nn.Module):
     def get_train_idx(self):
         batch_size = self.params['batch_size']
         N = len(self.params['Y_mu'])
-        if batch_size == N:
+        if True:
             return torch.tensor(list(range(batch_size))).long()
         fixed_idx = list(range(int(batch_size*.95)))
         inducing_idx = random.sample(list(range(int(batch_size* 1 ), N)), k = int(batch_size* 0.0))
