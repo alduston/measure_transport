@@ -645,7 +645,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
     X_mean = np.asarray([1, 0.0564, 1, 0.0564])
-    X_std = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
+    X_std = np.asarray([0.53, 0.03, 0.53, 0.03])
 
     idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
