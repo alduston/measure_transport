@@ -662,11 +662,16 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
     ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal = False,  T = 20)
     ref_slice_sample[4:] -= mu
     ref_slice_sample[4:] /= sigma
+
+    ref_slice_sample[:4] -= X_mean
+    ref_slice_sample[:4] /= X_std
+
     ref_sample = ref_gen(N_plot)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
     slice_sample[:, :4] *= X_std
     slice_sample[:,:4] += X_mean
+
 
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
