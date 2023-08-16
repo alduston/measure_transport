@@ -140,7 +140,6 @@ class Comp_transport_model:
             map_vec = param_dict['y'].detach().cpu().numpy()
             sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
                     d=2, range=[[-3, 3], [-3, 3]])
-        print(torch.linalg.norm(y_eta))
         return param_dict
 
 
