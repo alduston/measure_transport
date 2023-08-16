@@ -78,9 +78,8 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = .1
-        self.noise_shrink_c = np.exp(np.log(eps)/(n-1))
-        self.noise_eps = 1
+        final_eps = .1
+        self.noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
 
         if device:
             self.device = device
@@ -175,9 +174,9 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
 
-        eps = self.params['noise_eps']
+
         #self.train_idx = self.get_train_idx()
-        self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
+        self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
 
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var =  0 * self.Y_mean
@@ -210,7 +209,7 @@ class CondTransportKernel(nn.Module):
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
 
-        self.Y_eta_test = eps * geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
+        self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
         self.Y_var_test = 0 * self.Y_eta_test
 
@@ -399,7 +398,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     Y_var_test = 0
     approx = False
     mmd_lambda = 0
-    noise_eps = 1
     E_mmd_yy  = 0
 
     for i in range(n):
@@ -424,7 +422,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
-        noise_eps *= noise_shrink_c
+        Y_eta *= noise_shrink_c
+        Y_eta_test *= noise_shrink_c
+
         iters = model.iters
         approx = True
         E_mmd_yy = model.E_mmd_YY
