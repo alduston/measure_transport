@@ -717,8 +717,8 @@ def run():
     N = 3000
     batch_size = 3000
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='sample_exp', n_transports=400, vmax=.25,
-              batch_size = batch_size, N_plot = N, reg_lambda= 1e-4)
+              skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='sample_exp', n_transports=100, vmax=.25,
+              batch_size = batch_size, N_plot = N, reg_lambda= 3e-4)
 
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
