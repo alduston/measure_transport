@@ -646,7 +646,7 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
         pass
 
     skip_idx = 0
-    N_plot = min(10 * batch_size, 50)
+    N_plot = min(10 * batch_size, 5000)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot = N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
