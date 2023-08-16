@@ -375,7 +375,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_te
 
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta,'nugget': 1e-4,'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']),'mmd_kernel_params': deepcopy(params['mmd']),
-                         'print_freq': 500,'learning_rate': .001, 'reg_lambda': reg_lambda,
+                         'print_freq': 50,'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx,'mmd_lambda': mmd_lambda,'Y_var_test': Y_var_test,
                         'iters': iters, 'batch_size': batch_size, 'E_mmd_YY': E_mmd_yy}
@@ -724,7 +724,24 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 
 def run():
-    vl_exp(batch_size=2000, n_transports=70, n_iter=49)
+    ref_gen = sample_normal
+    target_gen = sample_swiss_roll
+    N = 1000
+    batch_size = 1000
+
+    print('Long transport steps:')
+    for i in range(3):
+    n_transports = 50
+    two_d_exp(ref_gen, target_gen, N=N, n_iter=45, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=n_transports, vmax=.25,
+              batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
+
+    print('\n')
+    print('Short transport steps:')
+    n_transports = 250
+    two_d_exp(ref_gen, target_gen, N=N, n_iter=9, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=n_transports, vmax=.25,
+              batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
 
 if __name__=='__main__':
