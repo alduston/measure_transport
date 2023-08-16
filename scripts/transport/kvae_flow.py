@@ -176,7 +176,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
 
         eps = self.params['noise_eps']
-        self.train_idx = self.get_train_idx()
+        #self.train_idx = self.get_train_idx()
         self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
 
         self.Y_mean = deepcopy(self.Y_eta)
