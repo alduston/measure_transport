@@ -671,14 +671,14 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
     slice_val = np.asarray([.8, .041, 1.07, .04])
     X = np.full((N_plot, 4), slice_val)
-    ref_slice_sample = get_VL_data(10 * N_plot, X=X, Yd=Yd, normal = False,  T = 20)
+    ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal = False,  T = 20)
 
     ref_slice_sample -= mu
     ref_slice_sample /= sigma
 
     ref_sample = ref_gen(N_plot)
 
-    slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
+    slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)[:, :4]
     slice_sample *= X_std
     slice_sample += X_mean
 
@@ -686,7 +686,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    ranges1 = {'alpha': [.5,1.4], 'beta': [0.02,0.07], 'gamma':[.5,1.5], 'delta':[0.025,0.065]}
+    ranges1 = {'alpha': [.5, 1.4], 'beta': [0.02, 0.07], 'gamma': [.5, 1.5], 'delta': [0.025, 0.065]}
     ranges2 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
@@ -724,7 +724,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, batch_size=3000, n_transports=120, exp_name='kvl_exp_real')
+    vl_exp(n_iter=49, N = 4000,  batch_size=4000, n_transports=100, exp_name='kvl_exp_real')
 
 
 
