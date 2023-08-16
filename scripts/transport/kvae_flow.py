@@ -725,8 +725,8 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_normal
-    N = 400
-    batch_size = 400
+    N = 2000
+    batch_size = 2000
     print('\n \n')
     print('Eps = 1 exps')
     for i in range(3):
