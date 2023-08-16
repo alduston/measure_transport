@@ -95,7 +95,7 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -193,7 +193,7 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)[self.train_idx]
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)[self.train_idx]
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)[self.train_idx]
         self.Y_mean =  self.Y_mean[self.train_idx]
         self.Y_var = self.Y_var[self.train_idx]
         self.X_mu = self.X_mu[self.train_idx]
@@ -284,7 +284,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_mean(self, x_mu, y_mean, y_var):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
@@ -723,9 +723,9 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_spirals
-    N = 3000
-    batch_size = 3000
-    two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+    N = 5000
+    batch_size = 2000
+    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.25,
               batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
 
