@@ -417,7 +417,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if i==0:
             model_params['mmd_func'] = model.mmd
 
-        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+        map_dict = model.map(X_mu[:batch_size], Y_eta, Y_mean, Y_var)
         Y_mean, Y_var =  map_dict['y_mean'], map_dict['y_var']
 
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
