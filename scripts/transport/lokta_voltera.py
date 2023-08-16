@@ -28,6 +28,7 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
         normal_array = normal_array[:, norm_axes]
     if not just_var:
         normal_array = normal_array - np.mean(normal_array, axis = 0)
+        print(np.mean(normal_array, axis = 0).shape)
     std_vec = replace_zeros(np.std(normal_array, axis = 0))
     if not just_mean:
         normal_array = normal_array/std_vec

@@ -44,11 +44,14 @@ def derivative(X, t, alpha, beta, gamma, delta):
     return np.array([dotx, doty])
 
 
-def run_ode(params, T = 10, n = 500, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-3)):
+def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-5)):
     t_vec = np.linspace(0,T, num = n)
     alpha, beta, delta, gamma = params
     res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, delta, gamma))[1:]
     x, y = res.T
+    plt.plot(x+ np.random.random(x.shape), color = 'red')
+    plt.plot(y+np.random.random(y.shape), color='red')
+
     res_vec = np.zeros(len(x)+len(y))
     res_vec[::2]+=x
     res_vec[1::2]+=y
@@ -74,22 +77,33 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([1,1]
 
 
 def run():
-    lv_data = get_VL_data(1000)
-    mu = np.mean(lv_data, axis = 0)
-    sigma = np.std(lv_data, axis = 0)
-    colors = ['red', 'blue', 'green']
-    param_vecs = sample_VL_prior(3)
+    #lv_data = get_VL_data(500)
+   # mu = np.mean(lv_data, axis = 0)
+    #sigma = np.std(lv_data, axis = 0)
+
+    #colors = ['red']#, 'blue', 'green']
+    #x = sample_VL_prior(1)[0]
+    #X = np.asarray([x for i in range(5)])
+    #get_VL_data(N=10, X=X)
+    #plt.savefig('y_vecs.png')
+
+    data = get_VL_data(N=10)
+    print(data.shape)
+
+    '''
     for i,x in enumerate(param_vecs):
-        X = np.asarray([x for i in range(1000)])
-        param_data = (get_VL_data(N = 1000, X = X) - mu)/sigma
-        prey_data = param_data[4:, ::2]
-        predator_data = param_data[4:, 1::2]
-        plt.plot(prey_data, color =  colors[i])
-        plt.plot(predator_data, color =  colors[i])
+        X = np.asarray([x for i in range(3)])
+        param_data = (get_VL_data(N = 10, X = X))
+        prey_data = param_data[:, 4:][:, ::2]
+        predator_data = param_data[:, 4:][:, ::2]
+
+        for v_prey, v_predator in zip(prey_data, predator_data):
+            plt.plot(v_prey, color =  colors[i])
+            plt.plot(v_predator, color =  colors[i])
 
     plt.savefig('y_vecs.png')
+    '''
 
 
 if __name__=='__main__':
-    #get_VL_data(N = 1000)
     run()

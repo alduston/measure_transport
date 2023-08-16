@@ -78,7 +78,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1
+        eps = 1e-3
         self.noise_shrink_c = np.exp(np.log(eps)/(n-1))
         self.noise_eps = 1
 
@@ -95,7 +95,7 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([x_mu, y_mean], dim=1)
+        x_mean = torch.concat([x_mu, y_mean+y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -191,7 +191,7 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean ], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean +  self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
@@ -269,7 +269,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_mean(self, x_mu, y_mean, y_var):
-        x_mean = torch.concat([x_mu, y_mean], dim=1)
+        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
@@ -527,9 +527,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
 
-     test_mmd = trained_models[0].mmd(gen_sample, target_sample) / (trained_models[0].mmd(target_sample, ref_sample))
-     print(f'Normalized test mmd was {format(float(test_mmd.detach().cpu()),4)}')
-
      if len(process_funcs):
          backward = process_funcs[1]
          gen_sample = backward(gen_sample.cpu())
@@ -649,14 +646,14 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
         pass
 
     skip_idx = 0
-    N_plot = min(10 * batch_size, 5000)
+    N_plot = min(10 * batch_size, 50)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot = N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
                                                          n_transports = n_transports, batch_size = batch_size)
 
-    target_sample = target_gen(5000, normal = False)[4:]
+    target_sample = get_VL_data(N_plot, normal=False, Yd = Yd)[4:]
     mu = np.mean(target_sample, axis = 0)
     sigma = np.std(target_sample, axis = 0)
 
@@ -718,7 +715,7 @@ def run():
     #two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               #skip_idx=1, slice_vals=[-1,0,1], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.15,
               #batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
-    vl_exp(batch_size=5000, n_transports=200)
+    vl_exp(batch_size=5000, n_transports=100)
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
     #0.0008
