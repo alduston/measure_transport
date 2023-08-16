@@ -715,7 +715,7 @@ def run():
     #two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               #skip_idx=1, slice_vals=[-1,0,1], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.15,
               #batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
-    vl_exp(batch_size=10000, n_transports=150)
+    vl_exp(batch_size=8000, n_transports=150)
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
     #0.0008
