@@ -54,10 +54,6 @@ def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.
     res_vec[1::2]+=y
     res_vec = np.abs(res_vec)
 
-    plt.plot(x, color = 'blue')
-    plt.plot(y, color='red')
-    plt.savefig('test_plot.png')
-
     yobs = np.array([lognorm.rvs(scale=x, s=obs_std) for x in res_vec])
     return yobs
 
