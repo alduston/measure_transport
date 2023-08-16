@@ -235,6 +235,7 @@ class CondTransportKernel(nn.Module):
         else:
             self.mmd_lambda = (1 / self.loss_mmd().detach())
             self.params['mmd_lambda'] = self.mmd_lambda
+        self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.iters = deepcopy(self.params['iters'])
 
     def get_train_idx(self):
@@ -350,9 +351,9 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var * float(self.approx)
 
-        reg_1 = self.params['reg_lambda'] * torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_2 = self.params['reg_lambda'] * torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
-        return reg_1 + reg_2
+        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
+        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        return  self.reg_lambda * (reg_1 + reg_2)
 
 
     def loss_test(self):
@@ -718,7 +719,7 @@ def run():
     batch_size = 3000
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='sample_exp', n_transports=100, vmax=.25,
-              batch_size = batch_size, N_plot = N, reg_lambda= 3e-4)
+              batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
 
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
