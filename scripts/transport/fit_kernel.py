@@ -8,6 +8,15 @@ from seaborn import kdeplot
 import warnings
 warnings.filterwarnings("ignore")
 
+def format(n, n_digits = 4):
+    if n > 1e-3:
+        return round(n,4)
+    a = '%E' % n
+    str =  a.split('E')[0].rstrip('0').rstrip('.') + 'E' + a.split('E')[1]
+    scale = str[-4:]
+    digits = str[:-4]
+    return digits[:min(len(digits),n_digits)] + scale
+
 
 def clear_plt():
     plt.figure().clear()
@@ -29,25 +38,36 @@ def prob_normalization(alpha):
     return alpha - c_norm
 
 
+def print_losses(loss_dict):
+    print_str = f'At step {loss_dict["n_iter"]}: fit_loss = {format(float((loss_dict["fit"])))},' + f' reg_loss = {format(float(loss_dict["reg"]))}'
+    print_str += f', test loss = {format(float(loss_dict["test"]))}'
+    mem_str = ''
+    if torch.cuda.is_available():
+        free_mem, total_mem = torch.cuda.mem_get_info()
+        mem_str = f', Using {round(100 * (1 - (free_mem / total_mem)), 2)}% GPU mem'
+    print_str += mem_str
+    print(print_str)
+
+
+
 def train_kernel(kernel_model, n_iter = 100):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr= kernel_model.params['learning_rate'])
-    Loss_dict = {'n_iter': [], 'fit': [], 'reg': [], 'test': [], 'total': []}
+    kernel_model.eval()
+    Loss_dict = {key: [val] for key,val in kernel_model.loss()[1].items()}
+    Loss_dict['n_iter'] = [0]
+    Loss_dict['test'] = [kernel_model.loss_test().detach().cpu()]
     kernel_model.train()
+    iter = kernel_model.iters
     for i in range(n_iter):
+        kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
-        Loss_dict = update_list_dict(Loss_dict, loss_dict)
-        iter = kernel_model.iters
         if not iter % kernel_model.params['print_freq']:
-            print_str = f'At step {iter}: fit_loss = {round(float((loss_dict["fit"])),6)},' + f' reg_loss = {round(float(loss_dict["reg"]),6)}'
             kernel_model.eval()
-            test_loss = kernel_model.loss_test().detach().cpu()
-            print_str += f', test loss = {round(float(test_loss),6)}'
-            mem_str = ''
-            if torch.cuda.is_available():
-                free_mem, total_mem = torch.cuda.mem_get_info()
-                mem_str = f', Using {round(100*(1-(free_mem/total_mem)),2)}% GPU mem'
-            print(print_str + mem_str)
-            kernel_model.train()
+            loss_dict['test'] = kernel_model.loss_test().detach().cpu()
+            loss_dict['n_iter'] = iter
+            Loss_dict = update_list_dict(Loss_dict, loss_dict)
+            print_losses(loss_dict)
+        iter = kernel_model.iters
     return kernel_model, Loss_dict
 
 
@@ -122,7 +142,8 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
 
         plt.subplot(1, 2, 2)
         kdeplot(data = x, fill=True, bw_adjust=bw_adjust)
-        plt.xlim(range[0], range[0])
+        if range:
+            plt.xlim(range[0], range[1])
     plt.savefig(save_loc)
     clear_plt()
     return True
