@@ -701,11 +701,10 @@ def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp', n_transpo
 
 def run():
     #elden_exp(N=5000, n_transports=200)
-
     ref_gen = sample_normal
-    N = 400
-    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp', n_transports=50, vmax=.15)
+    batch_size = 500
+    two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+              skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp', n_transports=50, vmax=.25)
 
     '''
     spheres_exp(N = 8000, n_transports=200)

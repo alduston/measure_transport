@@ -16,7 +16,7 @@ from datetime import datetime as dt
 from seaborn import kdeplot
 
 
-def format(n, n_digits = 4):
+def format(n, n_digits = 5):
     if n > 1e-3:
         return round(n,4)
     a = '%E' % n
@@ -207,7 +207,6 @@ class CondTransportKernel(nn.Module):
         self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -225,6 +224,8 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
+
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
@@ -233,14 +234,17 @@ class CondTransportKernel(nn.Module):
         if self.params['mmd_lambda'] != 0:
             self.mmd_lambda = self.params['mmd_lambda']
         else:
-            self.mmd_lambda = (1 / self.loss_mmd().detach())
+            self.mmd_lambda = 1 #(1 / self.loss_mmd().detach())
             self.params['mmd_lambda'] = self.mmd_lambda
         self.iters = deepcopy(self.params['iters'])
 
     def get_train_idx(self):
         batch_size = self.params['batch_size']
         N = len(self.params['Y_mu'])
-        inducing_idx = random.sample(list(range(batch_size//2, N)), k = int(batch_size*.2))
+        if batch_size == N:
+            return torch.tensor(list(range(batch_size))).long()
+        fixed_idx = list(range(batch_size//2))
+        inducing_idx = random.sample(list(range(batch_size//2, N)), k = int(batch_size//2))
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
 
@@ -710,12 +714,12 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 
 def run():
-    ref_gen = sample_normal
-    N = 2000
+    ref_gen = sample_spirals
+    N = 20000
     batch_size = 500
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=50,
-              vmax=.25, batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
+              skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='sample_exp', n_transports=50, vmax=.25,
+              batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
 
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')

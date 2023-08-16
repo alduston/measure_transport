@@ -8,7 +8,7 @@ from seaborn import kdeplot
 import warnings
 warnings.filterwarnings("ignore")
 
-def format(n, n_digits = 4):
+def format(n, n_digits = 5):
     if n > 1e-3:
         return round(n,4)
     a = '%E' % n
