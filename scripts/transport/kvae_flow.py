@@ -78,7 +78,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1#1e-3
+        eps = 1 #1e-3
         self.noise_shrink_c = np.exp(np.log(eps)/(n-1))
         self.noise_eps = 1
 
@@ -727,7 +727,7 @@ def run():
     batch_size = 2000
     two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.25,
-              batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
+              batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
 
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
