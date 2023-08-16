@@ -375,7 +375,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_te
 
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta,'nugget': 1e-4,'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']),'mmd_kernel_params': deepcopy(params['mmd']),
-                         'print_freq': 100,'learning_rate': .001, 'reg_lambda': reg_lambda,
+                         'print_freq': 500,'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx,'mmd_lambda': mmd_lambda,'Y_var_test': Y_var_test,
                         'iters': iters, 'batch_size': batch_size, 'E_mmd_YY': E_mmd_yy}
@@ -727,39 +727,40 @@ def run():
     ref_gen = sample_normal
     N = 2000
     batch_size = 2000
+    n_transports = 62
     print('\n \n')
     print('Eps = 1 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=20, vmax=.25,
+                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = (i+1) * 700, final_eps=.1)
 
     print('\n \n')
     print('Eps = .1 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp1', n_transports=70, vmax=.25,
+                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp1', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = (i+1) * 700, final_eps=.1)
 
     print('\n \n')
     print('Eps = .01 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=70, vmax=.25,
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=(i+1) * 700, final_eps=.01)
 
     print('\n \n')
     print('Eps = .001 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp3', n_transports=70, vmax=.25,
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp3', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=(i+1) * 700, final_eps=.001)
 
     print('\n \n')
     print('Eps = .0001 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp4', n_transports=70, vmax=.25,
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp4', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=(i+1) * 700, final_eps=.0001)
 
     #vl_exp(batch_size=4500, n_transports=125)
