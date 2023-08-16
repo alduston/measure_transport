@@ -729,47 +729,11 @@ def run():
     N = 2000
     batch_size = 2000
     n_transports = 62
-    print('\n')
-    print('Eps = 1 exps')
-    for i in range(3):
-        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp20', n_transports=n_transports,
+    for i in range(10):
+        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports,
                   vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
-
-    print('\n ')
-    print('Eps = .1 exps')
-    for i in range(3):
-        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp21', n_transports=n_transports,
-                  vmax=.25,
-                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.1)
-
-    print('\n')
-    print('Eps = .01 exps')
-    for i in range(3):
-        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp22', n_transports=n_transports,
-                  vmax=.25,
-                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.01)
-
-    print('\n')
-    print('Eps = .001 exps')
-    for i in range(3):
-        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp23', n_transports=n_transports,
-                  vmax=.25,
-                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.001)
-
-    print('\n')
-    print('Eps = .0001 exps')
-    for i in range(3):
-        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp24', n_transports=n_transports,
-                  vmax=.25,
-                  batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.0001)
-
-
 
 if __name__=='__main__':
     run()
