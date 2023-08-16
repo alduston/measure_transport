@@ -95,7 +95,7 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -191,7 +191,7 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean ], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
@@ -269,7 +269,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_mean(self, x_mu, y_mean, y_var):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([x_mu, y_mean], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
@@ -526,9 +526,6 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-
-     test_mmd = trained_models[0].mmd(gen_sample, target_sample) / (trained_models[0].mmd(target_sample, ref_sample))
-     print(f'Normalized test mmd was {format(float(test_mmd.detach().cpu()),4)}')
 
      if len(process_funcs):
          backward = process_funcs[1]
