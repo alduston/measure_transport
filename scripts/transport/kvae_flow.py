@@ -686,7 +686,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    ranges1 = {'alpha': [.4, 1.6], 'beta': [0.02, 0.08], 'gamma': [.4, 1.6], 'delta': [0.02, 0.08]}
+    ranges1 = {'alpha': [.5, 1.4], 'beta': [0.02, 0.07], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
     ranges2 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
@@ -725,6 +725,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 def run():
     vl_exp(n_iter=49, N = 5000,  batch_size=4000, n_transports=100, exp_name='kvl_exp_real')
+
 
 
 if __name__=='__main__':
