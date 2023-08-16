@@ -386,7 +386,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_te
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps = .01, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-5):
+                               final_eps = 1, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-5):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
@@ -442,7 +442,7 @@ def zero_pad(array):
 
 def train_cond_transport(ref_gen, target_gen, params, N, n_iter = 101, process_funcs = [],
                          batch_size = 4000, cond_model_trainer = cond_kernel_transport,
-                         idx_dict = {}, reg_lambda = 1e-5, n_transports = 100, final_eps = .01):
+                         idx_dict = {}, reg_lambda = 1e-5, n_transports = 100, final_eps = 1):
 
     ref_sample = ref_gen(batch_size)
     target_sample = target_gen(N)
@@ -495,7 +495,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [], N_plot = 5000,
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70, final_eps = .01,
+                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70, final_eps = 1,
                            skip_idx = 0, plot_idx = [], batch_size = 4000, n_transports = 50, reg_lambda = 1e-4):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
@@ -560,7 +560,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
 
 def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, process_funcs=[],
               slice_range=None, N_plot = 5000, slice_vals=[], bins = 70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports = 70, batch_size = 4000, reg_lambda = 1e-4, final_eps = .01):
+              vmax=None, n_transports = 70, batch_size = 4000, reg_lambda = 1e-4, final_eps = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -725,42 +725,42 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_normal
-    target_gen = mgan2
+    target_gen = sample_spirals
     N = 2000
     batch_size = 2000
     n_transports = 62
     print('\n')
     print('Eps = 1 exps')
     for i in range(3):
-        two_d_exp(ref_gen, mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen, target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                 skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = 4000, final_eps=1)
 
     print('\n ')
     print('Eps = .1 exps')
     for i in range(3):
-        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                 skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp1', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = 4000, final_eps=.1)
 
     print('\n')
     print('Eps = .01 exps')
     for i in range(3):
-        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.01)
 
     print('\n')
     print('Eps = .001 exps')
     for i in range(3):
-        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp3', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.001)
 
     print('\n')
     print('Eps = .0001 exps')
     for i in range(3):
-        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  target_gen, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp4', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.0001)
 
