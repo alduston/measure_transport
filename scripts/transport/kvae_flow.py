@@ -140,6 +140,7 @@ class Comp_transport_model:
             map_vec = param_dict['y'].detach().cpu().numpy()
             sample_hmap(map_vec, save_loc, bins=75, bw_adjust= 0.25,
                     d=2, range=[[-3, 3], [-3, 3]])
+        print(torch.linalg.norm(y_eta))
         return param_dict
 
 
@@ -375,7 +376,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_te
 
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta,'nugget': 1e-4,'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']),'mmd_kernel_params': deepcopy(params['mmd']),
-                         'print_freq': 500,'learning_rate': .001, 'reg_lambda': reg_lambda,
+                         'print_freq': 100,'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx,'mmd_lambda': mmd_lambda,'Y_var_test': Y_var_test,
                         'iters': iters, 'batch_size': batch_size, 'E_mmd_YY': E_mmd_yy}
@@ -427,6 +428,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         approx = True
         E_mmd_yy = model.E_mmd_YY
+
     return Comp_transport_model(model_params)
 
 
@@ -527,9 +529,15 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-
      test_mmd = trained_models[0].mmd(gen_sample, target_sample)
-     print(f'Test mmd was {format(float(test_mmd.detach().cpu()),4)}')
+     try:
+        cref_sample  = deepcopy(ref_sample)
+        cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
+        base_mmd = trained_models[0].mmd(cref_sample, target_sample)
+        ntest_mmd = test_mmd/base_mmd
+        print(f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}')
+     except BaseException:
+        print(f'Test mmd :{format(test_mmd)}')
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -717,15 +725,14 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_normal
-    N = 3000
-    batch_size = 3000
-    n_transports = 70
+    N = 400
+    batch_size = 400
     print('\n \n')
     print('Eps = 1 exps')
     for i in range(3):
         two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=70, vmax=.25,
-                batch_size = batch_size, reg_lambda= 1e-5, N_plot = (i+1) * 700, final_eps=1)
+                skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=20, vmax=.25,
+                batch_size = batch_size, reg_lambda= 1e-5, N_plot = (i+1) * 700, final_eps=.1)
 
     print('\n \n')
     print('Eps = .1 exps')
