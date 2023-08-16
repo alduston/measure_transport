@@ -725,41 +725,42 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_normal
+    target_gen = mgan2
     N = 2000
     batch_size = 2000
     n_transports = 62
     print('\n')
     print('Eps = 1 exps')
     for i in range(3):
-        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen, mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                 skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp0', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = 4000, final_eps=1)
 
     print('\n ')
     print('Eps = .1 exps')
     for i in range(3):
-        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                 skip_idx=1, slice_vals=[0], slice_range=[-3,3], exp_name='exp1', n_transports=n_transports, vmax=.25,
                 batch_size = batch_size, reg_lambda= 1e-5, N_plot = 4000, final_eps=.1)
 
     print('\n')
     print('Eps = .01 exps')
     for i in range(3):
-        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.01)
 
     print('\n')
     print('Eps = .001 exps')
     for i in range(3):
-        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp3', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.001)
 
     print('\n')
     print('Eps = .0001 exps')
     for i in range(3):
-        two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+        two_d_exp(ref_gen,  mgan2, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp4', n_transports=n_transports, vmax=.25,
                   batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=.0001)
 
