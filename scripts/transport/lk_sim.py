@@ -60,7 +60,7 @@ def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1
     return yobs
 
 
-def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([1,1])):
+def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1])):
     if not len(X):
         X = sample_VL_prior(N).astype(float)
     Y = np.asarray([run_ode(x, T = T, X0 = X0) for x in X], dtype=float)

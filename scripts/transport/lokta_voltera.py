@@ -43,13 +43,13 @@ class DeterministicLotkaVolterra:
         self.d = 4
         # prior parameters
         self.alpha_mu = -0.125
-        self.alpha_std = 0.5
+        self.alpha_std = 0.7
         self.beta_mu = -3
-        self.beta_std = 0.5
+        self.beta_std = 0.7
         self.gamma_mu = -0.125
-        self.gamma_std = 0.5
+        self.gamma_std = 0.7
         self.delta_mu = -3
-        self.delta_std = 0.5
+        self.delta_std = 0.7
         # initial condition
         self.x0 = [30, 1];
         # length of integration window
