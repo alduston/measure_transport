@@ -371,11 +371,11 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, n_iter = 101,  iters = -1,  approx = False,
-                          batch_size = 4000, reg_lambda = 1e-4, mmd_lambda = 0, noise_eps = 1, E_mmd_yy = 0):
+                          batch_size = 4000, reg_lambda = 1e-4, mmd_lambda = 0, E_mmd_yy = 0):
 
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta,'nugget': 1e-4,'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']),'mmd_kernel_params': deepcopy(params['mmd']),
-                        'noise_eps': noise_eps, 'print_freq': 100,'learning_rate': .001, 'reg_lambda': reg_lambda,
+                         'print_freq': 100,'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx,'mmd_lambda': mmd_lambda,'Y_var_test': Y_var_test,
                         'iters': iters, 'batch_size': batch_size, 'E_mmd_YY': E_mmd_yy}
@@ -404,7 +404,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_test, Y_mu_test,
                                       Y_mean_test, Y_var_test, params = params, n_iter = n_iter, iters = iters,
                                       batch_size = batch_size,  approx =approx, mmd_lambda = mmd_lambda,
-                                      reg_lambda=reg_lambda, noise_eps = noise_eps, E_mmd_yy = E_mmd_yy)[0]
+                                      reg_lambda=reg_lambda, E_mmd_yy = E_mmd_yy)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
