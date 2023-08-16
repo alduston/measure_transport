@@ -78,7 +78,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1e-3
+        eps = 1
         self.noise_shrink_c = np.exp(np.log(eps)/(n-1))
         self.noise_eps = 1
 
@@ -276,7 +276,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
-        x_var = torch.concat([x_mu, shuffle(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, shuffle(y_eta), y_mean], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
@@ -388,7 +388,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                params, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    final_eps = 1e-3
+    final_eps = 1
     noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
 
     Y_mean = 0
@@ -526,6 +526,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
+
+     test_mmd = trained_models[0].mmd(gen_sample, target_sample) / (trained_models[0].mmd(target_sample, ref_sample))
+     print(f'Normalized test mmd was {format(float(test_mmd.detach().cpu()),4)}')
 
      if len(process_funcs):
          backward = process_funcs[1]
@@ -704,13 +707,13 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 
 def run():
-    ref_gen = sample_spirals
-    N = 2000
-    batch_size = 2000
-    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[-1,0,1], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.15,
-              batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
-
+    #ref_gen = sample_spirals
+    #N = 2000
+    #batch_size = 5000
+    #two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
+              #skip_idx=1, slice_vals=[-1,0,1], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.15,
+              #batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
+    vl_exp(batch_size=5000, n_transports=200)
 
     #vl_exp(N = 20000, batch_size=4000, n_transports=150, n_iter=51, exp_name='kvl_exp')
     #0.0008
