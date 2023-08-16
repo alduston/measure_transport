@@ -529,7 +529,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      ref_sample = ref_gen(N_plot)
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-     test_mmd = trained_models[0].mmd(gen_sample, target_sample)
+     test_mmd = trained_models[0].mmd(gen_sample, target_sample).detach().cpu().numpy()
+
      try:
         cref_sample  = deepcopy(ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
