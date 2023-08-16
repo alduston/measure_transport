@@ -496,7 +496,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vmax = None,
                            exp_name= 'exp', plt_range = None,  process_funcs = [], N_plot = 5000,
                            cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70, final_eps = 1,
-                           skip_idx = 0, plot_idx = [], batch_size = 4000, n_transports = 50, reg_lambda = 1e-4):
+                           skip_idx = 0, plot_idx = [], batch_size = 4000, n_transports = 50, reg_lambda = 1e-5):
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -560,7 +560,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
 
 def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, process_funcs=[],
               slice_range=None, N_plot = 5000, slice_vals=[], bins = 70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports = 70, batch_size = 4000, reg_lambda = 1e-4, final_eps = 1):
+              vmax=None, n_transports = 70, batch_size = 4000, reg_lambda = 1e-5, final_eps = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -640,7 +640,7 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transports = 100, batch_size = 4000):
+def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100, batch_size = 4000):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
@@ -679,8 +679,8 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
     ref_sample = ref_gen(N_plot)
 
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-    slice_sample[:, :4] *= X_std
-    slice_sample[:,:4] += X_mean
+    slice_sample *= X_std
+    slice_sample += X_mean
 
 
 

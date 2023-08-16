@@ -43,19 +43,19 @@ class DeterministicLotkaVolterra:
         self.d = 4
         # prior parameters
         self.alpha_mu = -0.125
-        self.alpha_std = 0.7
+        self.alpha_std = 0.5
         self.beta_mu = -3
-        self.beta_std = 0.7
+        self.beta_std = 0.5
         self.gamma_mu = -0.125
-        self.gamma_std = 0.7
+        self.gamma_std = 0.5
         self.delta_mu = -3
-        self.delta_std = 0.7
+        self.delta_std = 0.5
         # initial condition
         self.x0 = [30, 1];
         # length of integration window
         self.T = T
         # observation parameters
-        self.obs_std = np.sqrt(0.0001)
+        self.obs_std = np.sqrt(0.1)
 
     def sample_prior(self, N):
         # generate Normal samples

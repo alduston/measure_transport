@@ -44,14 +44,11 @@ def derivative(X, t, alpha, beta, gamma, delta):
     return np.array([dotx, doty])
 
 
-def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(5e-2)):
+def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.1)):
     t_vec = np.linspace(0,T, num = n)
     alpha, beta, delta, gamma = params
     res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, delta, gamma))[1:]
     x, y = res.T
-    plt.plot(x+ np.random.random(x.shape), color = 'red')
-    plt.plot(y+np.random.random(y.shape), color='red')
-
     res_vec = np.zeros(len(x)+len(y))
     res_vec[::2]+=x
     res_vec[1::2]+=y
@@ -65,14 +62,10 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1
         X = sample_VL_prior(N).astype(float)
     Y = np.asarray([run_ode(x, T = T, X0 = X0) for x in X], dtype=float)
     X = np.asarray(X, dtype=float)
+    XY = np.concatenate([X,Y], axis = 1)
     if normal:
-        X_mean = np.asarray([1, 0.0564, 1, 0.0564], dtype=float)
-        X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009],dtype=float) ** .5
-        X -= X_mean
-        X /= X_var
-        Y = normalize(Y)[:, :Yd]
-    Y = Y[:, :18]
-    return np.concatenate([X,Y], axis = 1)
+        XY = normalize(XY)
+    return XY[:, :4 + Yd]
 
 
 
