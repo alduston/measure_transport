@@ -177,7 +177,7 @@ class CondTransportKernel(nn.Module):
 
         eps = self.params['noise_eps']
         self.train_idx = self.get_train_idx()
-        self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
+        self.Y_eta = eps * geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))[self.train_idx]
         self.X_mu =  geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
 
         self.Y_mean = deepcopy(self.Y_eta)
@@ -190,7 +190,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
-        self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
+
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)[self.train_idx]
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)[self.train_idx]
@@ -228,10 +228,10 @@ class CondTransportKernel(nn.Module):
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
 
         self.alpha_z = self.p_vec(self.Nx)
-        self.alpha_y = self.p_vec(min(self.Ny, 20000))
+        self.alpha_y = self.p_vec(self.Ny)
 
         if self.params['E_mmd_YY'] == 0:
-            self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target[:20000], self.Y_target[:20000]) @ self.alpha_y
+            self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
             self.params['E_mmd_YY'] = float(self.E_mmd_YY.detach().cpu())
         else:
             self.E_mmd_YY = self.params['E_mmd_YY']
@@ -245,11 +245,12 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.iters = deepcopy(self.params['iters'])
 
+
     def get_train_idx(self):
         batch_size = self.params['batch_size']
-        N = len(self.params['Y_mu'])
         if True:
             return torch.tensor(list(range(batch_size))).long()
+        N = len(self.params['Y_mu'])
         fixed_idx = list(range(int(batch_size*.95)))
         inducing_idx = random.sample(list(range(int(batch_size* 1 ), N)), k = int(batch_size* 0.0))
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
@@ -356,7 +357,7 @@ class CondTransportKernel(nn.Module):
 
     def loss_reg(self):
         Z_mean = self.Z_mean
-        Z_var = self.Z_var * float(self.approx)
+        Z_var = self.Z_var
 
         reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
         reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
@@ -542,7 +543,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
 
      gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
 
-     test_mmd = trained_models[-1].mmd(gen_sample, target_sample) / (trained_models[0].mmd(target_sample, ref_sample))
+     test_mmd = trained_models[0].mmd(gen_sample, target_sample) / (trained_models[0].mmd(target_sample, ref_sample))
      print(f'Normalized test mmd was {format(float(test_mmd.detach().cpu()),4)}')
 
      if len(process_funcs):
@@ -723,10 +724,10 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_spirals
-    N = 2000
+    N = 5000
     batch_size = 2000
     two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.25,
+              skip_idx=1, slice_vals=[-1,0,1], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.15,
               batch_size = batch_size, reg_lambda= 1e-5, N_plot = 10000)
 
 
