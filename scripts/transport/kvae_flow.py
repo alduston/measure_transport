@@ -207,7 +207,7 @@ class CondTransportKernel(nn.Module):
         self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -239,11 +239,11 @@ class CondTransportKernel(nn.Module):
 
     def get_train_idx(self):
         batch_size = self.params['batch_size']
-        fixed_idx = list(range(int(batch_size * .8)))
         N = len(self.params['Y_mu'])
         inducing_idx = random.sample(list(range(batch_size//2, N)), k = int(batch_size*.2))
         train_idx = torch.tensor(fixed_idx + inducing_idx).long()
         return train_idx
+
 
     def p_vec(self, n):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
@@ -711,8 +711,8 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_normal
-    N = 20000
-    batch_size = 5000
+    N = 2000
+    batch_size = 500
     two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=50,
               vmax=.25, batch_size = batch_size, N_plot = N, reg_lambda= 1e-5)
