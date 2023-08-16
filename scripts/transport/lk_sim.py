@@ -44,7 +44,7 @@ def derivative(X, t, alpha, beta, gamma, delta):
     return np.array([dotx, doty])
 
 
-def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-5)):
+def run_ode(params, T = 10, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(1e-1)):
     t_vec = np.linspace(0,T, num = n)
     alpha, beta, delta, gamma = params
     res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, delta, gamma))[1:]
