@@ -192,10 +192,10 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu[self.train_idx]
+        self.Y_mean = self.Y_mean[self.train_idx]
+        self.Y_var = self.Y_var[self.train_idx]
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)[self.train_idx]
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)[self.train_idx]
-        self.Y_mean =  self.Y_mean[self.train_idx]
-        self.Y_var = self.Y_var[self.train_idx]
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
