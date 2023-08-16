@@ -723,7 +723,7 @@ def vl_exp(N=10000, n_iter=51, Yd=18, normal=True, exp_name='kvl_exp2', n_transp
 
 def run():
     ref_gen = sample_spirals
-    N = 5000
+    N = 2000
     batch_size = 2000
     two_d_exp(ref_gen, sample_spirals, N=N, n_iter=49, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3,3], exp_name='exp', n_transports=200, vmax=.25,
