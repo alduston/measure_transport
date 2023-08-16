@@ -78,7 +78,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         n = len(self.submodel_params['Lambda_mean'])
-        eps = 1
+        eps = .1
         self.noise_shrink_c = np.exp(np.log(eps)/(n-1))
         self.noise_eps = 1
 
@@ -390,7 +390,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                params, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    final_eps = 1
+    final_eps = .1
     noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
 
     Y_mean = 0
