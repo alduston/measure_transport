@@ -732,7 +732,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    elden_exp( N = 4000,  n_transports = 50, exp_name='elden_exp1', N_plot = 4000)
+    spheres_exp(N=4000, exp_name='spheres_exp', n_transports=50)
 
 
 if __name__ == '__main__':
