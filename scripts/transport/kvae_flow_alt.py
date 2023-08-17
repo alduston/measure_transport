@@ -726,7 +726,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
 
 
 def run():
-    vl_exp( N = 4000,  n_transports = 10, exp_name='kvl_exp')
+    vl_exp( N = 4000,  n_transports = 10, exp_name='kvl_exp2')
 
 
 if __name__ == '__main__':
