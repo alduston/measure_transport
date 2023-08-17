@@ -380,13 +380,13 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-5, E_mmd_yy=0):
+                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 50, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,
-                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .01}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model)
@@ -408,9 +408,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     E_mmd_yy = 0
 
     for i in range(n_transports):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                                      Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,approx=approx,
-                                      mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters)[0]
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
+                                      Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
+                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
+                                      grad_cutoff = grad_cutoff)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -439,6 +440,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if model.iters - iters < 2:
             return Comp_transport_model(model_params)
         iters = model.iters
+        grad_cutoff *= .75
 
     return Comp_transport_model(model_params)
 
