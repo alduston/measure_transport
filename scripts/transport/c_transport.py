@@ -106,10 +106,10 @@ class Comp_transport_model:
 
         if not self.approx:
             y_approx = deepcopy(y_eta)
-            x = torch.concat([x_mu, y_approx], dim=1)  ##
-        else:
-            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
-        #x = torch.concat([x_mu, y_approx], dim=1)
+            #x = torch.concat([x_mu, y_approx], dim=1)  ##
+        #else:
+            #x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+        x = torch.concat([x_mu, y_approx], dim=1)
 
         z = fit_kernel(X, x).T @ Lambda
         y_eta = self.noise_shrink_c * shuffle(y_eta)
@@ -153,14 +153,14 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_approx = geq_1d(torch.tensor(base_params['Y_approx'], device=self.device, dtype=self.dtype))
 
-        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), shuffle(self.Y_eta)], dim=1)
+        #self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), shuffle(self.Y_eta)], dim=1)
 
         self.params['approx'] = bool(base_params['Y_approx'].shape[1])
         if not self.params['approx']:
             self.Y_approx = deepcopy(self.Y_eta)
-            self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
+            #self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
 
-        #self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx)], dim=1)
+        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx)], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         self.Nx = len(self.X)
@@ -233,10 +233,10 @@ class CondTransportKernel(nn.Module):
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         if not self.params['approx']:
             y_approx = deepcopy(y_eta)
-            x = torch.concat([x_mu, y_approx], dim=1)  ##
-        else:
-            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
-        #x = torch.concat([x_mu, y_approx], dim=1)
+            #x = torch.concat([x_mu, y_approx], dim=1)  ##
+        #else:
+            #x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+        x = torch.concat([x_mu, y_approx], dim=1)
 
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, x).T @ Lambda
