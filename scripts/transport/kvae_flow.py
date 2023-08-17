@@ -726,7 +726,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, N = 3000,  batch_size=3000, n_transports=150, exp_name='kvl_exp_real4',reg_lambda= 4e-6)
+    vl_exp(n_iter=49, N = 3000,  batch_size=3000, n_transports=150, exp_name='kvl_exp_real4',reg_lambda= 7e-6)
     #@ref_gen = sample_normal
     #N = 2000
     #batch_size = 2000
