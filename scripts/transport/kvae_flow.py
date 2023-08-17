@@ -407,7 +407,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
-    grad_cutoff = .005
+    grad_cutoff = .002
 
     for i in range(n_transports):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
@@ -439,8 +439,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         E_mmd_yy = model.E_mmd_YY
-        if model.iters - iters == 1:
-            return Comp_transport_model(model_params)
+        #if model.iters - iters == 1:
+            #return Comp_transport_model(model_params)
         iters = model.iters
 
     return Comp_transport_model(model_params)
