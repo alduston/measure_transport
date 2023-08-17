@@ -357,7 +357,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return self.mmd_lambda_test * self.mmd(map_vec, target)
+        return  self.mmd(map_vec, target) #* self.mmd_lambda_test
 
 
     def loss(self):
@@ -708,6 +708,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
                         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        #plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0]!= None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])
@@ -722,13 +723,13 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
         plt.tight_layout(pad=0.3)
-        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
+        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}hmap.png')
         clear_plt()
     return True
 
 
 def run():
-    vl_exp(n_iter=51, N = 3000,  batch_size=3000, n_transports=200, exp_name='kvl_exp_real4',reg_lambda= 1e-5)
+    vl_exp(n_iter=51, N = 3000,  batch_size=3000, n_transports=200, exp_name='kvl_exp_real5',reg_lambda= 1e-5)
     #@ref_gen = sample_normal
     #N = 2000
     #batch_size = 2000

@@ -723,7 +723,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
         plt.tight_layout(pad=0.3)
-        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}.png')
+        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}hmap.png')
         clear_plt()
     return True
 
