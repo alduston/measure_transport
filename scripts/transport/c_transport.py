@@ -308,7 +308,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, n_iter = 10001, Y_approx = [],
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], iters = 0):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-5, 'Y_approx': Y_approx,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 1e-6, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 100, 'learning_rate': .004, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test, 'iters': iters}
@@ -643,13 +643,13 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
     return True
 
 def run():
-    #vl_exp(n_iter=1500, N=9000, n_transports=1, exp_name='kvl_exp_real3')
-    ref_gen = sample_normal
-    N = 2000
-    batch_size = 2000
-    n_transports = 1
-    two_d_exp(ref_gen, sample_banana, N=N, n_iter=3000, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
-                skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='banana_exp', n_transports=n_transports, vmax=.25)
+    vl_exp(n_iter=1500, N=9000, n_transports=1, exp_name='kvl_exp_real3')
+    #ref_gen = sample_normal
+    #N = 2000
+    #batch_size = 2000
+    #n_transports = 1
+    #two_d_exp(ref_gen, sample_banana, N=N, n_iter=3000, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
+                #skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='banana_exp', n_transports=n_transports, vmax=.25)
 
 
 if __name__=='__main__':
