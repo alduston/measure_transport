@@ -383,7 +383,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01,n_iter = 99):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 5, 'learning_rate': .001, 'reg_lambda': reg_lambda,
+                        'print_freq': 5, 'learning_rate': .001, 'reg_lambda': 1e-6#reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
@@ -584,7 +584,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         N_plot=N_plot, reg_lambda=reg_lambda)
+                                                         N_plot=N_plot)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
