@@ -381,7 +381,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=4e-5, E_mmd_yy=0, grad_cutoff = .01):
+                          reg_lambda=1e-4, E_mmd_yy=0, grad_cutoff = .01):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 50, 'learning_rate': .001, 'reg_lambda': reg_lambda,
@@ -395,7 +395,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1, n_transports=50, reg_lambda=1e-5):
+                               final_eps=1, n_transports=50, reg_lambda=1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
@@ -571,7 +571,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports=70, reg_lambda=1e-5, final_eps=1):
+              vmax=None, n_transports=70, reg_lambda=1e-4, final_eps=1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
