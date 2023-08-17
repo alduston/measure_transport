@@ -728,7 +728,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=24, N=3000, batch_size=3000, n_transports=300, exp_name='kvl_exp_real4', reg_lambda= 2e-5)
+    vl_exp(n_iter=24, N=3000, batch_size=3000, n_transports=300, exp_name='kvl_exp_real4', reg_lambda= 1.5e-5)
 
 
 if __name__=='__main__':
