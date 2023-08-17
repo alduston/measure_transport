@@ -407,7 +407,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
-    grad_cutoff = .001
+    grad_cutoff = .0005
 
     for i in range(n_transports):
         print(f"Transport step {i}")
@@ -572,7 +572,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports=70, reg_lambda=1e-4, final_eps=1):
+              vmax=None, n_transports=70,  final_eps=1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -581,11 +581,10 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         N_plot=N_plot, reg_lambda=reg_lambda)
+                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)

@@ -380,7 +380,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01):
+                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01,n_iter = 99):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 50, 'learning_rate': .001, 'reg_lambda': reg_lambda,
@@ -389,12 +389,12 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
-    model, loss_dict = train_kernel(model)
+    model, loss_dict = train_kernel(model, n_iter = n_iter)
     return model, loss_dict
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1, n_transports=50, reg_lambda=1e-5):
+                               final_eps=1, n_transports=50, reg_lambda=1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
@@ -406,6 +406,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
+    grad_cutoff = .0005
 
     for i in range(n_transports):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
@@ -437,10 +438,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         E_mmd_yy = model.E_mmd_YY
-        if model.iters - iters < 2:
-            return Comp_transport_model(model_params)
+        #if model.iters - iters < 2:
+            #return Comp_transport_model(model_params)
         iters = model.iters
-        grad_cutoff *= .75
 
     return Comp_transport_model(model_params)
 
@@ -729,7 +729,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    elden_exp( N = 4000,  n_transports = 1, exp_name='elden_exp1', N_plot = 4000)
+    spheres_exp(N=4000, exp_name='spheres_exp_alt', n_transports=80)
 
 
 if __name__ == '__main__':
