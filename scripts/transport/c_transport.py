@@ -353,7 +353,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
             model_params['mmd_func'] = model.mmd
 
 
-        Y_approx, Y_eta = model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
+        Y_approx  = model.Y_approx + model.Z #model.map(model.X_mu, model.Y_eta, model.Y_approx, no_x = True)
         Y_approx_test, Y_eta_test = model.map(model.X_mu_test, model.Y_eta_test, model.Y_approx_test, no_x = True)
         Y_eta *= noise_shrink_c
         Y_eta_test *= noise_shrink_c
