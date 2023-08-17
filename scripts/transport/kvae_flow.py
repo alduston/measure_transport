@@ -434,10 +434,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_eta *= noise_shrink_c
         Y_eta_test *= noise_shrink_c
 
-        iters = model.iters
         approx = True
         E_mmd_yy = model.E_mmd_YY
-
+        if model.iters - iters <= 2:
+            return Comp_transport_model(model_params)
+        iters = model.iters
     return Comp_transport_model(model_params)
 
 

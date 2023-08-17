@@ -379,26 +379,25 @@ class CondTransportKernel(nn.Module):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                          Y_mean_test, Y_var_test, params, n_iter=101, iters=-1, approx=False,
-                          reg_lambda=1e-5, mmd_lambda=0, E_mmd_yy=0):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
+                          Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
+                          reg_lambda=1e-5, E_mmd_yy=0):
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 100, 'learning_rate': .001, 'reg_lambda': reg_lambda,
+                        'print_freq': 50, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,
-                        'Y_var_test': Y_var_test,
-                        'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .01}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .01}
 
     model = CondTransportKernel(transport_params)
-    model, loss_dict = train_kernel(model, n_iter)
+    model, loss_dict = train_kernel(model)
     return model, loss_dict
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1, n_iter=101, n=50, reg_lambda=1e-5):
+                               final_eps=1, n_transports=50, reg_lambda=1e-5):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / (n - 1))
+    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
     model_params['final_eps'] = final_eps
     Y_mean = 0
     Y_mean_test = 0
@@ -408,10 +407,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     E_mmd_yy = 0
 
-    for i in range(n):
+    for i in range(n_transports):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                                      Y_mean_test, Y_var_test, params=params, n_iter=n_iter, E_mmd_yy=E_mmd_yy,
-                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters)[0]
+                                      Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,approx=approx,
+                                      mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -423,8 +422,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if i == 0:
             model_params['mmd_func'] = model.mmd
 
-        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-        Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+        #map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+        #Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+
+        Y_mean = model.Y_mean + model.Z_mean
+        Y_var = model.Y_var + model.Z_var
 
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
@@ -432,9 +434,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_eta *= noise_shrink_c
         Y_eta_test *= noise_shrink_c
 
-        iters = model.iters
         approx = True
         E_mmd_yy = model.E_mmd_YY
+        if model.iters - iters < 2:
+            return Comp_transport_model(model_params)
+        iters = model.iters
 
     return Comp_transport_model(model_params)
 
@@ -448,13 +452,13 @@ def zero_pad(array):
     return np.concatenate([zero_array, array], axis=1)
 
 
-def train_cond_transport(ref_gen, target_gen, params, N, n_iter=101, process_funcs=[],
-                         batch_size=4000, cond_model_trainer=cond_kernel_transport,
-                         idx_dict={}, reg_lambda=1e-5, n_transports=100, final_eps=1):
-    ref_sample = ref_gen(batch_size)
+def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],
+                         cond_model_trainer=cond_kernel_transport,final_eps=1,
+                         idx_dict={}, reg_lambda=1e-5, n_transports=100):
+    ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = min(4000, 10 * batch_size)
+    N_test = min(4000, 10 * N)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
@@ -477,9 +481,8 @@ def train_cond_transport(ref_gen, target_gen, params, N, n_iter=101, process_fun
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test,
-                                                 params=params, n_iter=n_iter, reg_lambda=reg_lambda,
-                                                 n=n_transports, final_eps=final_eps))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params=params,
+                                                 reg_lambda=reg_lambda, n_transports=n_transports, final_eps=final_eps))
     return trained_models
 
 
@@ -563,9 +566,9 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     return trained_models, idx_dict
 
 
-def two_d_exp(ref_gen, target_gen, N=10000, plt_range=None, process_funcs=[],
-              slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports=70, batch_size=4000, reg_lambda=1e-5, final_eps=1):
+def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
+              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
+              vmax=None, n_transports=70, reg_lambda=1e-5, final_eps=1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -578,7 +581,7 @@ def two_d_exp(ref_gen, target_gen, N=10000, plt_range=None, process_funcs=[],
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         batch_size=batch_size, N_plot=N_plot, reg_lambda=reg_lambda)
+                                                         N_plot=N_plot, reg_lambda=reg_lambda)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
@@ -708,7 +711,6 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
                         if plt_range[0][0] != None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])
                             plt.ylim(plt_range[1][0], plt_range[1][1])
-
                     else:
                         x = slice_sample[:, i]
                         plt_range = ranges[key_i]
@@ -724,7 +726,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
 
 
 def run():
-    vl_exp( N = 30,  n_transports=5, exp_name='kvl_exp')
+    vl_exp( N = 4000,  n_transports = 10, exp_name='kvl_exp')
 
 
 if __name__ == '__main__':
