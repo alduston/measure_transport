@@ -559,7 +559,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100):
     return True
 
 
-def elden_exp(N=4000, exp_name='elden_exp', n_transports=100):
+def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, N_plot = 0):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]], 'target': [[0, 1]]}
@@ -567,7 +567,8 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100):
 
     plt_range = [[-1, 1], [-1.05, 1.15]]
     plot_idx = torch.tensor([0, 1]).long()
-    N_plot = min(10 * N, 8000)
+    if not N_plot:
+        N_plot = min(10 * N, 8000)
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins=75, skip_idx=skip_idx,
                                                          vmax=6, exp_name=exp_name, n_transports=n_transports,
