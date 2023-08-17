@@ -69,16 +69,8 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1
     return XY[:, :4 + Yd]
 
 
-
 def run():
-    N = 100000
-    X = sample_VL_prior(N)
-    print(np.mean(X, axis=0))
-    print(np.std(X, axis=0))
-
-    #x = np.asarray([[.92,.05,1.50,.02]])
-    #alpha, beta, gamma, delta
-    #x = np.asarray([[1, 1, 1, 1]])
+   pass
 
 
 if __name__=='__main__':

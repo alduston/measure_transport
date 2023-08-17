@@ -734,6 +734,23 @@ def run():
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp1', n_transports=n_transports,
                   vmax=.25, batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
+'''
+At step 0: fit_loss = 1.0, reg_loss = 0E+00, test loss = 1.1093, Using 58.65% GPU mem
+At step 500: fit_loss = 0.1586, reg_loss = 0.0013, test loss = 0.2325, Using 70.49% GPU mem
+At step 1000: fit_loss = 0.0707, reg_loss = 8.804E-04, test loss = 0.1349, Using 70.49% GPU mem
+At step 1500: fit_loss = 0.0577, reg_loss = 4.327E-04, test loss = 0.1224, Using 70.49% GPU mem
+At step 2000: fit_loss = 0.0523, reg_loss = 2.640E-04, test loss = 0.118, Using 70.49% GPU mem
+At step 2500: fit_loss = 0.049, reg_loss = 4.166E-04, test loss = 0.1155, Using 70.49% GPU mem
+At step 3000: fit_loss = 0.0467, reg_loss = 1.959E-04, test loss = 0.114, Using 70.49% GPU mem
+At step 3500: fit_loss = 0.045, reg_loss = 1.354E-04, test loss = 0.113, Using 70.49% GPU mem
+At step 4000: fit_loss = 0.0436, reg_loss = 1.085E-04, test loss = 0.1122, Using 70.49% GPU mem
+At step 4500: fit_loss = 0.0425, reg_loss = 8.941E-05, test loss = 0.1118, Using 70.49% GPU mem
+At step 5000: fit_loss = 0.0414, reg_loss = 2.754E-04, test loss = 0.1114, Using 70.49% GPU mem
+At step 5500: fit_loss = 0.0406, reg_loss = 1.203E-04, test loss = 0.1112, Using 70.49% GPU mem
+At step 6000: fit_loss = 0.0399, reg_loss = 8.456E-05, test loss = 0.1109, Using 70.49% GPU mem
+At step 6500: fit_loss = 0.0392, reg_loss = 6.702E-05, test loss = 0.1108, Using 70.49% GPU mem
+At step 7000: fit_loss = 0.0386, reg_loss = 5.797E-05, test loss = 0.1107, Using 70.49% GPU mem
+'''
 
 
 if __name__=='__main__':

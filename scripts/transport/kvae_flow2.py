@@ -686,7 +686,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    ranges1 = {'alpha': [.4, 1.6], 'beta': [0.02, 0.08], 'gamma': [.4, 1.6], 'delta': [0.02, 0.08]}
+    ranges1 = {'alpha': [.5, 1.4], 'beta': [0.02, 0.07], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
     ranges2 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
@@ -703,7 +703,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.25, cmap='Blues')
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0]!= None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])
@@ -733,5 +733,6 @@ def run():
                   skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports,
                   vmax=.25, batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
+
 if __name__=='__main__':
-    vl_exp(n_iter=49, N = 8000,  batch_size=8000, n_transports=150, exp_name='kvl_exp_real2')
+    vl_exp(n_iter=49, N = 9000,  batch_size=8000, n_transports=200, exp_name='kvl_exp_real2')
