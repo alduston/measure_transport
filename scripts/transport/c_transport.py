@@ -77,7 +77,7 @@ class Comp_transport_model:
         self.dtype = torch.float32
 
         n = len(self.submodel_params['Lambda'])
-        eps = .01
+        eps = 1
         self.noise_shrink_c = np.exp(np.log(eps)/(n))
 
 
@@ -333,7 +333,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 5, 'learning_rate': .001, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .005 ,'mmd_lambda': mmd_lambda}
+                        'iters': iters, 'grad_cutoff': .001 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel)
     return ctransport_kernel
@@ -343,7 +343,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = []):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
-    eps = .01
+    eps = 1
     noise_shrink_c = np.exp(np.log(eps)/(n_transports))
     Y_approx = torch.empty([len(Y_eta),0])
     Y_approx_test = torch.empty([len(Y_eta_test), 0])
@@ -658,7 +658,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    spheres_exp(N=4000, exp_name='spheres_exp_alt', n_transports=2)
+    spheres_exp(N=4000, exp_name='spheres_exp_alt1', n_transports=2)
 
 
 if __name__ == '__main__':
