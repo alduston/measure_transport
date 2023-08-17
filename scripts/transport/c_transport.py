@@ -119,6 +119,7 @@ class Comp_transport_model:
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
         self.approx = False
+        y_approx = 0
         for step_idx in range(len(self.submodel_params['Lambda'])):
             y_approx,y = self.param_map(y_eta = y, step_idx = step_idx,
                                         y_approx = y_approx, x_mu = x)
