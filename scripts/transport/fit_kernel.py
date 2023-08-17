@@ -41,6 +41,7 @@ def prob_normalization(alpha):
 def print_losses(loss_dict):
     print_str = f'At step {loss_dict["n_iter"]}: fit_loss = {format(float((loss_dict["fit"])))},' + f' reg_loss = {format(float(loss_dict["reg"]))}'
     print_str += f', test loss = {format(float(loss_dict["test"]))}'
+    print_str += f', grad norm = {format(float(loss_dict["grad_norm"]))}'
     mem_str = ''
     if torch.cuda.is_available():
         free_mem, total_mem = torch.cuda.mem_get_info()
@@ -50,21 +51,25 @@ def print_losses(loss_dict):
 
 
 
-def train_kernel(kernel_model, n_iter = 100):
+def train_kernel(kernel_model):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr= kernel_model.params['learning_rate'])
     kernel_model.eval()
     Loss_dict = {key: [val] for key,val in kernel_model.loss()[1].items()}
     Loss_dict['n_iter'] = [0]
     Loss_dict['test'] = [kernel_model.loss_test().detach().cpu()]
+    Loss_dict['grad_norm'] = [0]
     kernel_model.train()
     iter = kernel_model.iters
-    for i in range(n_iter):
+    grad_norm = np.inf
+    while grad_norm > kernel_model.params['grad_cutoff']:
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
+        grad_norm = kernel_model.total_grad()
         if not iter % kernel_model.params['print_freq']:
             kernel_model.eval()
             loss_dict['test'] = kernel_model.loss_test().detach().cpu()
             loss_dict['n_iter'] = iter
+            loss_dict['grad_norm'] = grad_norm
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
             print_losses(loss_dict)
         iter = kernel_model.iters

@@ -243,6 +243,15 @@ class CondTransportKernel(nn.Module):
         self.iters = deepcopy(self.params['iters'])
 
 
+    def total_grad(self):
+        total_norm = 0
+        for p in self.parameters():
+            param_norm = p.grad.detach().data.norm(2)
+            total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** 0.5
+        return total_norm
+
+
     def p_vec(self, n):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
 
@@ -370,16 +379,17 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
+
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, n_iter = 101,  iters = -1,  approx = False,
-                          batch_size = 4000, reg_lambda = 1e-5, mmd_lambda = 0, E_mmd_yy = 0):
+                          reg_lambda = 1e-5, mmd_lambda = 0, E_mmd_yy = 0):
 
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta,'nugget': 1e-4,'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']),'mmd_kernel_params': deepcopy(params['mmd']),
-                         'print_freq': 500,'learning_rate': .001, 'reg_lambda': reg_lambda,
+                         'print_freq': 100,'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx,'mmd_lambda': mmd_lambda,'Y_var_test': Y_var_test,
-                        'iters': iters, 'batch_size': batch_size, 'E_mmd_YY': E_mmd_yy}
+                        'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .01}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter)
@@ -387,7 +397,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_te
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps = 1, n_iter = 101, n = 50, batch_size = 4000, reg_lambda = 1e-5):
+                               final_eps = 1, n_iter = 101, n = 50, reg_lambda = 1e-5):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
@@ -402,9 +412,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
     for i in range(n):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var,  X_mu_test, Y_eta_test, Y_mu_test,
-                                      Y_mean_test, Y_var_test, params = params, n_iter = n_iter, iters = iters,
-                                      batch_size = batch_size,  approx =approx, mmd_lambda = mmd_lambda,
-                                      reg_lambda=reg_lambda, E_mmd_yy = E_mmd_yy)[0]
+                                      Y_mean_test, Y_var_test, params = params, n_iter = n_iter,E_mmd_yy = E_mmd_yy,
+                                      approx =approx, mmd_lambda = mmd_lambda,reg_lambda=reg_lambda, iters = iters)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -416,7 +425,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if i==0:
             model_params['mmd_func'] = model.mmd
 
-        map_dict = model.map(X_mu[:batch_size], Y_eta, Y_mean, Y_var)
+        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
         Y_mean, Y_var =  map_dict['y_mean'], map_dict['y_var']
 
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
@@ -473,7 +482,7 @@ def train_cond_transport(ref_gen, target_gen, params, N, n_iter = 101, process_f
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test,
                                                  params = params, n_iter = n_iter, reg_lambda = reg_lambda,
-                                               n = n_transports, batch_size = batch_size, final_eps = final_eps))
+                                                 n = n_transports, final_eps = final_eps))
     return trained_models
 
 
@@ -494,10 +503,10 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
     return X
 
 
-def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vmax = None,
-                           exp_name= 'exp', plt_range = None,  process_funcs = [], N_plot = 5000,
-                           cond_model_trainer= comp_cond_kernel_transport,idx_dict = {}, bins = 70, final_eps = 1,
-                           skip_idx = 0, plot_idx = [], batch_size = 4000, n_transports = 50, reg_lambda = 1e-5):
+def conditional_transport_exp(ref_gen, target_gen, N = 4000, vmax = None,exp_name= 'exp', plt_range = None, bins = 70,
+                              process_funcs = [], N_plot = 4000, cond_model_trainer= comp_cond_kernel_transport,
+                              final_eps = 1, skip_idx = 0, plot_idx = [], n_transports = 50,idx_dict = {}):
+
      save_dir = f'../../data/kernel_transport/{exp_name}'
      try:
          os.mkdir(save_dir)
@@ -522,11 +531,8 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      idx_dict = {key: val[skip_idx:] for key, val in idx_dict.items()}
 
      trained_models = train_cond_transport(N = N, ref_gen = ref_gen, target_gen = target_gen, params = exp_params,
-                                           n_iter = n_iter, process_funcs = process_funcs,idx_dict = idx_dict,
                                            cond_model_trainer = cond_model_trainer, n_transports = n_transports,
-                                           batch_size = batch_size, reg_lambda= reg_lambda, final_eps = final_eps)
-
-     N_plot = N
+                                           final_eps = final_eps, process_funcs = process_funcs,idx_dict = idx_dict)
 
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
@@ -562,7 +568,7 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
      return trained_models, idx_dict
 
 
-def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, process_funcs=[],
+def two_d_exp(ref_gen, target_gen, N = 10000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot = 5000, slice_vals=[], bins = 70, exp_name='exp', skip_idx=0,
               vmax=None, n_transports = 70, batch_size = 4000, reg_lambda = 1e-5, final_eps = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -573,7 +579,7 @@ def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, proce
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, vmax=vmax,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,
                                                          bins = bins,exp_name=exp_name, plt_range=plt_range,
                                                          n_transports = n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps = final_eps,
@@ -591,7 +597,7 @@ def two_d_exp(ref_gen, target_gen, N = 10000, n_iter=1001, plt_range=None, proce
     return True
 
 
-def spheres_exp(N = 10000, n_iter = 101, exp_name = 'spheres_exp', n_transports = 150, batch_size = 4000):
+def spheres_exp(N = 4000, exp_name = 'spheres_exp', n_transports = 100):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N = N, d = 2, n = 2)
     target_gen = lambda N: sample_spheres(N = N, n = n)
@@ -604,12 +610,12 @@ def spheres_exp(N = 10000, n_iter = 101, exp_name = 'spheres_exp', n_transports 
     plt_range = [[.5,1.5],[-1.5,1.5]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
-    N_plot = min(10 * batch_size, 5000)
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot=N_plot,
+    N_plot = min(10 * N, 4000)
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= plot_idx, plt_range = plt_range,idx_dict= idx_dict,
-                                                         n_transports = n_transports, batch_size = batch_size)
+                                                         n_transports = n_transports)
 
     slice_vals = np.asarray([[1,.0], [1,.2], [1,.4], [1,.5], [1,.6], [1,.7], [1,.75], [1,.79]])
 
@@ -626,7 +632,7 @@ def spheres_exp(N = 10000, n_iter = 101, exp_name = 'spheres_exp', n_transports 
     return True
 
 
-def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_size = 4000):
+def elden_exp( N=4000, exp_name='elden_exp', n_transports=100):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]],'target': [[0,1]]}
@@ -634,18 +640,16 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
 
     plt_range = [[-1,1],[-1.05,1.15]]
     plot_idx = torch.tensor([0,1]).long()
-    N_plot = min(10 *N, 15000)
+    N_plot = min(10 *N, 8000)
 
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, bins = 75,
-                                                         skip_idx=skip_idx,exp_name=exp_name, N_plot=N_plot,
-                                                         cond_model_trainer=comp_cond_kernel_transport, vmax=6,
-                                                         plot_idx= plot_idx, plt_range = plt_range,idx_dict= idx_dict,
-                                                         n_transports = n_transports, batch_size = batch_size)
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins = 75,skip_idx=skip_idx,
+                                                         vmax=6,exp_name=exp_name,n_transports = n_transports,
+                                                         cond_model_trainer=comp_cond_kernel_transport,N_plot=N_plot,
+                                                         plot_idx= plot_idx, plt_range = plt_range,idx_dict= idx_dict)
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100,
-           batch_size = 4000, reg_lambda = 8e-6):
+def vl_exp(N=4000,  Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
@@ -663,13 +667,12 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
         pass
 
     skip_idx = 0
-    N_plot = min(10 * batch_size, 4000)
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, n_iter=n_iter, N_plot = N_plot,
+    N_plot = min(10 * N, 4000)
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot = N_plot,
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
-                                                         n_transports = n_transports, batch_size = batch_size,
-                                                         reg_lambda=reg_lambda)
+                                                         n_transports = n_transports)
 
     target_sample = get_VL_data(N_plot, normal=False, Yd = Yd)
     mu = np.mean(target_sample, axis = 0)
@@ -730,13 +733,13 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 def run():
     #vl_exp(n_iter=51, N = 3000,  batch_size=3000, n_transports=200, exp_name='kvl_exp_real5',reg_lambda= 1e-5)
-    N = 3000
+    N = 500
     ref_gen = sample_normal
-    batch_size = 3000
-    n_transports = 1
-    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=3000, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              batch_size=batch_size, skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp_flow1',
-              n_transports=n_transports, vmax=.25, reg_lambda=1e-6)
+    batch_size = 500
+    n_transports = 5
+    two_d_exp(ref_gen, sample_spirals, N=N, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[],
+              batch_size=batch_size, skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp',
+              n_transports=n_transports, vmax=.25, reg_lambda=1e-5)
 
 
 if __name__=='__main__':

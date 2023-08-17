@@ -197,6 +197,14 @@ class CondTransportKernel(nn.Module):
         self.iters = deepcopy(self.params['iters'])
 
 
+    def total_grad(self):
+        total_norm = 0
+        for p in self.parameters():
+            param_norm = p.grad.detach().data.norm(2)
+            total_norm += param_norm.item() ** 2
+        total_norm = total_norm ** 0.5
+        return total_norm
+
 
     def p_vec(self, n):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
@@ -656,12 +664,12 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 def run():
     #vl_exp(n_iter=3000, N=3000, n_transports=1, exp_name='kvl_exp_real3')
 
+    N = 500
     ref_gen = sample_normal
-    N = 3000
-    batch_size = 3000
-    n_transports = 1
-    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=3000, plt_range=[[-3, 3], [-3, 3]], process_funcs=[],
-              skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp_base', n_transports=n_transports, vmax=.25)
+    batch_size = 500
+    n_transports = 4
+    two_d_exp(ref_gen, mgan2, N=N, n_iter=1500, plt_range=[[-2.5, 2.5], [-1.1, 1.1]], process_funcs=[],
+             skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports, vmax=2)
 
 
 if __name__=='__main__':
