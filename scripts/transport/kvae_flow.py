@@ -189,7 +189,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
-        self.X_mu = self.X_mu[:self.params['batch_size']]
+        self.X_mu = self.X_mu
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean], dim=1)
