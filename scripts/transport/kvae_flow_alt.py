@@ -386,7 +386,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'print_freq': 100, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,
-                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .0025}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': .001}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model)
@@ -646,7 +646,7 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100):
     return trained_models
 
 
-def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
+def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_plot = 0):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd=Yd)
 
@@ -664,7 +664,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
         pass
 
     skip_idx = 0
-    N_plot = min(10 * N, 4000)
+    if not N_plot:
+        N_plot = min(10 * N, 4000)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
@@ -726,7 +727,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
 
 
 def run():
-    vl_exp( N = 4000,  n_transports = 10, exp_name='kvl_exp2')
+    vl_exp( N = 4000,  n_transports = 10, exp_name='kvl_exp2',N_plot = 1500)
 
 
 if __name__ == '__main__':
