@@ -525,6 +525,9 @@ def conditional_transport_exp(ref_gen, target_gen, N = 10000, n_iter = 1001, vma
                                            n_iter = n_iter, process_funcs = process_funcs,idx_dict = idx_dict,
                                            cond_model_trainer = cond_model_trainer, n_transports = n_transports,
                                            batch_size = batch_size, reg_lambda= reg_lambda, final_eps = final_eps)
+
+     N_plot = N
+
      target_sample = target_gen(N_plot)
      ref_sample = ref_gen(N_plot)
 
@@ -666,7 +669,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
                                                          n_transports = n_transports, batch_size = batch_size,
-                                                         reg_lambda=7e-6)
+                                                         reg_lambda=reg_lambda)
 
     target_sample = get_VL_data(N_plot, normal=False, Yd = Yd)
     mu = np.mean(target_sample, axis = 0)
@@ -684,7 +687,6 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)[:, :4]
     slice_sample *= X_std
     slice_sample += X_mean
-
 
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
@@ -726,7 +728,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=24, N = 3000,  batch_size=3000, n_transports=300, exp_name='kvl_exp_real4',reg_lambda= 3e-5)
+    vl_exp(n_iter=24, N = 3000,  batch_size=3000, n_transports=500, exp_name='kvl_exp_real4',reg_lambda= 3e-5)
     #@ref_gen = sample_normal
     #N = 2000
     #batch_size = 2000
