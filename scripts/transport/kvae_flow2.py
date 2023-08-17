@@ -735,7 +735,7 @@ def run():
     batch_size = 3000
     n_transports = 1
     two_d_exp(ref_gen, sample_spirals, N=N, n_iter=3000, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
-              batch_size=batch_size, skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp1',
+              batch_size=batch_size, skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp_flow2',
               n_transports=n_transports, vmax=.25, reg_lambda=1e-6)
 
 
