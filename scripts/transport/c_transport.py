@@ -657,8 +657,8 @@ def run():
     #vl_exp(n_iter=3000, N=3000, n_transports=1, exp_name='kvl_exp_real3')
 
     ref_gen = sample_normal
-    N = 2000
-    batch_size = 2000
+    N = 3000
+    batch_size = 3000
     n_transports = 1
     two_d_exp(ref_gen, sample_spirals, N=N, n_iter=3000, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
               skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp2', n_transports=n_transports, vmax=.25)
