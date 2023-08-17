@@ -333,7 +333,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 5, 'learning_rate': .001, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .001 ,'mmd_lambda': mmd_lambda}
+                        'iters': iters, 'grad_cutoff': .0003 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel)
     return ctransport_kernel
