@@ -359,7 +359,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 1000, n_iter = 1001, p
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = min(10*N, 7000)
+    N_test = N
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
 
