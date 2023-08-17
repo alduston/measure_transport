@@ -710,7 +710,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        #kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
                         # plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:

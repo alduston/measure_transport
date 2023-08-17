@@ -383,7 +383,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01,n_iter = 99):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 5, 'learning_rate': .001, 'reg_lambda': 5e-6,#reg_lambda,
+                        'print_freq': 5, 'learning_rate': .001, 'reg_lambda': 7.5e-6,#reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
@@ -406,7 +406,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
-    grad_cutoff = .001
+    grad_cutoff = .007
 
     for i in range(n_transports):
         print(f"Transport step {i}:")
@@ -709,7 +709,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        plt.hist2d(x,y, density=True, bins = 75, range = plt_range, cmap = 'Blues')
+                        #kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
                         # plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:
@@ -730,7 +731,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    vl_exp(N=4000, exp_name='kvl_exp2', n_transports=80)
+    vl_exp(N=4000, exp_name='kvl_exp2', n_transports=120)
 
 
 if __name__ == '__main__':
