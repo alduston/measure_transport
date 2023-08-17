@@ -100,20 +100,17 @@ class Comp_transport_model:
         Lambda = torch.tensor(self.submodel_params['Lambda'][step_idx],device=self.device, dtype=self.dtype)
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
         X = torch.tensor(self.submodel_params['X'][step_idx],device=self.device, dtype=self.dtype)
-
-        approx = True
-        if not len(y_approx):
-            y_approx = torch.empty((len(y_eta), 0))
-            approx = False
-
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
-        w = torch.concat([x_mu, deepcopy(y_approx), y_eta], dim=1)
-        if not approx:
-            y_approx = deepcopy(y_eta)
-        z = fit_kernel(X, w).T @ Lambda
 
+        if not self.approx:
+            y_approx = deepcopy(y_eta)
+            x = torch.concat([x_mu, y_approx], dim=1)  ##
+        else:
+            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+
+        z = fit_kernel(X, x).T @ Lambda
         y_eta = self.noise_shrink_c * shuffle(y_eta)
         return (z + y_approx, y_eta)
 
@@ -121,11 +118,11 @@ class Comp_transport_model:
     def c_map(self, x, y, no_x = False):
         x = geq_1d(torch.tensor(x, device = self.device))
         y = geq_1d(torch.tensor(y, device = self.device))
-        y_approx = []
-
+        self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda'])):
             y_approx,y = self.param_map(y_eta = y, step_idx = step_idx,
                                         y_approx = y_approx, x_mu = x)
+            self.approx = True
         if no_x:
             return y_approx
         return torch.concat([x, y_approx], dim = 1)
@@ -154,7 +151,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_approx = geq_1d(torch.tensor(base_params['Y_approx'], device=self.device, dtype=self.dtype))
 
-        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), self.Y_eta], dim=1)
+        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), shuffle(self.Y_eta)], dim=1)
 
         self.params['approx'] = bool(base_params['Y_approx'].shape[1])
         if not self.params['approx']:
@@ -223,17 +220,17 @@ class CondTransportKernel(nn.Module):
 
 
     def map(self, x_mu, y_eta, y_approx = [], no_x = False):
-        if not self.params['approx']:
-            y_approx = torch.empty((len(y_eta),0))
+        y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
-        y_approx = geq_1d(torch.tensor(y_approx, device=self.device, dtype=self.dtype))
-        w = torch.concat([x_mu, deepcopy(y_approx), y_eta], dim=1) ##
         if not self.params['approx']:
             y_approx = deepcopy(y_eta)
+            x = torch.concat([x_mu, y_approx], dim=1)  ##
+        else:
+            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
 
         Lambda = self.get_Lambda()
-        z = self.fit_kernel(self.X, w).T @ Lambda
+        z = self.fit_kernel(self.X, x).T @ Lambda
 
         y_eta = shuffle(y_eta)
         if no_x:
@@ -328,9 +325,9 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-7, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 100, 'learning_rate': .004, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
+                        'print_freq': 50, 'learning_rate': .004, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .001}
+                        'iters': iters, 'grad_cutoff': .002}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel)
     return ctransport_kernel
@@ -652,7 +649,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    vl_exp( N = 4000,  n_transports = 1, exp_name='kvl_exp3',N_plot = 1500)
+    vl_exp( N = 4000,  n_transports = 5, exp_name='kvl_exp3',N_plot = 1500)
 
 
 if __name__ == '__main__':
