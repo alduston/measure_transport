@@ -687,10 +687,9 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
     ranges1 = {'alpha': [.5, 1.4], 'beta': [0.02, 0.07], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
-    ranges2 = {'alpha': [None, None], 'beta': [None, None], 'gamma': [None, None], 'delta': [None, None]}
 
 
-    for range_idx,ranges in enumerate([ranges1, ranges2]):
+    for range_idx,ranges in enumerate([ranges1]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
