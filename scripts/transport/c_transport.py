@@ -352,6 +352,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
     Y_approx_test = torch.empty([len(Y_eta_test), 0])
     mmd_lambda = 0
     for i in range(n_transports):
+        print(f"Transport step {i}")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_eta_test = Y_eta_test, mmd_lambda=mmd_lambda,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters)
