@@ -641,7 +641,8 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100, batch_size = 4000):
+def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100,
+           batch_size = 4000, reg_lambda = 1e-5):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
@@ -664,7 +665,8 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
-                                                         n_transports = n_transports, batch_size = batch_size)
+                                                         n_transports = n_transports, batch_size = batch_size,
+                                                         reg_lambda = reg_lambda)
 
     target_sample = get_VL_data(N_plot, normal=False, Yd = Yd)
     mu = np.mean(target_sample, axis = 0)
@@ -724,7 +726,8 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, N=9000, batch_size=9000, n_transports=200, exp_name='kvl_exp_real2')
+    vl_exp(n_iter=49, N=9000, batch_size=9000, n_transports=200, exp_name='kvl_exp_real2',
+           reg_lambda= 5e-6)
 
 
 if __name__=='__main__':
