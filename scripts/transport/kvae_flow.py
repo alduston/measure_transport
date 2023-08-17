@@ -731,7 +731,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    spheres_exp(N=4000, exp_name='spheres_exp_alt', n_transports=80)
+    vl_exp(N=4000, exp_name='kvl_exp1', n_transports=80)
 
 
 if __name__ == '__main__':
