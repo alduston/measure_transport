@@ -51,7 +51,7 @@ def print_losses(loss_dict):
 
 
 
-def train_kernel(kernel_model):
+def train_kernel(kernel_model, n_iter = np.inf):
     optimizer = torch.optim.Adam(kernel_model.parameters(), lr= kernel_model.params['learning_rate'])
     kernel_model.eval()
     Loss_dict = {key: [val] for key,val in kernel_model.loss()[1].items()}
@@ -62,7 +62,7 @@ def train_kernel(kernel_model):
     iter = kernel_model.iters
     grad_norm = np.inf
     i = 0
-    while grad_norm > kernel_model.params['grad_cutoff']:
+    while grad_norm > kernel_model.params['grad_cutoff'] and i < n_iter:
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
         grad_norm = kernel_model.total_grad()
