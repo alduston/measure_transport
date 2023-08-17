@@ -238,6 +238,7 @@ class CondTransportKernel(nn.Module):
         else:
             self.mmd_lambda = (1 / self.loss_mmd().detach())
             self.params['mmd_lambda'] = self.mmd_lambda
+        self.mmd_lambda_test = (1/self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis = 1), self.Y_test))
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.iters = deepcopy(self.params['iters'])
 
@@ -356,7 +357,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return self.mmd(map_vec, target) * self.mmd_lambda
+        return self.mmd_lambda_test * self.mmd(map_vec, target)
 
 
     def loss(self):
@@ -725,7 +726,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, N = 3000,  batch_size=3000, n_transports=150, exp_name='kvl_exp_real4',reg_lambda= 7e-6)
+    vl_exp(n_iter=49, N = 3000,  batch_size=3000, n_transports=150, exp_name='kvl_exp_real4',reg_lambda= 4e-6)
     #@ref_gen = sample_normal
     #N = 2000
     #batch_size = 2000
