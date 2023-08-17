@@ -61,7 +61,8 @@ def train_kernel(kernel_model):
     kernel_model.train()
     iter = kernel_model.iters
     grad_norm = np.inf
-    while grad_norm > kernel_model.params['grad_cutoff']:
+    i = 0
+    while grad_norm > kernel_model.params['grad_cutoff'] or i < 50:
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
         grad_norm = kernel_model.total_grad()
@@ -73,6 +74,7 @@ def train_kernel(kernel_model):
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
             print_losses(loss_dict)
         iter = kernel_model.iters
+        i += 1
     return kernel_model, Loss_dict
 
 
