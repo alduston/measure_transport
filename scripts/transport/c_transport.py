@@ -338,7 +338,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
                         'iters': iters, 'grad_cutoff': .0004 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
-    train_kernel(ctransport_kernel, n_iter=99)
+    train_kernel(ctransport_kernel)#, n_iter=99)
     return ctransport_kernel
 
 
