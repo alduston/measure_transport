@@ -457,7 +457,7 @@ def zero_pad(array):
 
 def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],
                          cond_model_trainer=cond_kernel_transport,final_eps=1,
-                         idx_dict={}, reg_lambda=1e-5, n_transports=100):
+                         idx_dict={}, reg_lambda=1e-4, n_transports=100):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
