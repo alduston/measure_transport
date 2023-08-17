@@ -188,7 +188,12 @@ class CondTransportKernel(nn.Module):
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
         self.mmd_lambda = 1
-        self.mmd_lambda = float((1 / self.loss_mmd().detach()))
+        if self.params['mmd_lambda'] != 0:
+            self.mmd_lambda = self.params['mmd_lambda']
+        else:
+            self.mmd_lambda = (1 / self.loss_mmd().detach())
+            self.params['mmd_lambda'] = self.mmd_lambda
+
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
         self.iters = deepcopy(self.params['iters'])
@@ -321,13 +326,13 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mmd_lambda=0,
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-7, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 50, 'learning_rate': .004, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .002}
+                        'iters': iters, 'grad_cutoff': .002,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel)
     return ctransport_kernel
@@ -341,13 +346,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
     noise_shrink_c = np.exp(np.log(eps)/(n_transports))
     Y_approx = torch.empty([len(Y_eta),0])
     Y_approx_test = torch.empty([len(Y_eta_test), 0])
+    mmd_lambda = 0
     for i in range(n_transports):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_eta_test = Y_eta_test,
+        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_eta_test = Y_eta_test, mmd_lambda=mmd_lambda,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters)
         model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
         model_params['X'].append(model.X.detach().cpu().numpy())
+        mmd_lambda = model.mmd_lambda
 
         if i==0:
             model_params['mmd_func'] = model.mmd
