@@ -175,8 +175,6 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
 
-
-        #self.train_idx = self.get_train_idx()
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
 
         self.Y_mean = deepcopy(self.Y_eta)
@@ -190,7 +188,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
-        self.X_mu = self.X_mu[:self.params['batch_size']]
+        self.X_mu = self.X_mu
 
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
@@ -726,7 +724,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100):
 
 
 def run():
-    vl_exp( N = 3000,  n_transports=100, exp_name='kvl_exp_real5')
+    vl_exp( N = 30,  n_transports=5, exp_name='kvl_exp')
 
 
 if __name__ == '__main__':
