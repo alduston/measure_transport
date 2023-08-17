@@ -381,7 +381,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-4, E_mmd_yy=0, grad_cutoff = .01, n_iter = 99):
+                          reg_lambda=1e-4, E_mmd_yy=0, grad_cutoff = .001, n_iter = 99):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 5, 'learning_rate': .001, 'reg_lambda': reg_lambda,
@@ -407,9 +407,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
-    grad_cutoff = .002
+    grad_cutoff = .001
 
     for i in range(n_transports):
+        print(f"Transport step {i}")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                       Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
@@ -731,7 +732,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    elden_exp( N = 4000,  n_transports = 150, exp_name='elden_exp1', N_plot = 4000)
+    elden_exp( N = 4000,  n_transports = 50, exp_name='elden_exp1', N_plot = 4000)
 
 
 if __name__ == '__main__':
