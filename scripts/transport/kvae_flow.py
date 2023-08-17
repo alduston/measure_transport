@@ -640,7 +640,8 @@ def elden_exp(N=10000, n_iter=51, exp_name='elden_exp', n_transports=100, batch_
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100, batch_size = 4000):
+def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transports = 100,
+           batch_size = 4000, reg_lambda = 8e-6):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd = Yd)
 
@@ -663,7 +664,8 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
                                                          skip_idx=skip_idx,exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx= [], plt_range = None ,idx_dict= idx_dict,
-                                                         n_transports = n_transports, batch_size = batch_size)
+                                                         n_transports = n_transports, batch_size = batch_size,
+                                                         reg_lambda=7e-6)
 
     target_sample = get_VL_data(N_plot, normal=False, Yd = Yd)
     mu = np.mean(target_sample, axis = 0)
@@ -723,15 +725,15 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    #vl_exp(n_iter=49, N = 8000,  batch_size=8000, n_transports=150, exp_name='kvl_exp_real')
-    ref_gen = sample_normal
-    N = 2000
-    batch_size = 2000
-    n_transports = 62
-    for i in range(10):
-        two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
-                  skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp1', n_transports=n_transports,
-                  vmax=.25, batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
+    vl_exp(n_iter=49, N = 3000,  batch_size=3000, n_transports=150, exp_name='kvl_exp_real', )
+    #@ref_gen = sample_normal
+    #N = 2000
+    #batch_size = 2000
+    #n_transports = 62
+    #for i in range(10):
+        #two_d_exp(ref_gen, sample_swiss_roll, N=N, n_iter=49, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
+                  #skip_idx=1, slice_vals=[0], slice_range=[-3, 3], exp_name='exp1', n_transports=n_transports,
+                  #vmax=.25, batch_size=batch_size, reg_lambda=1e-5, N_plot=4000, final_eps=1)
 
 '''
 At step 0: fit_loss = 1.0, reg_loss = 0E+00, test loss = 1.1093, Using 58.65% GPU mem
