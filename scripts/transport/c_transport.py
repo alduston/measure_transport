@@ -106,9 +106,10 @@ class Comp_transport_model:
 
         if not self.approx:
             y_approx = deepcopy(y_eta)
-            x = torch.concat([x_mu, y_approx], dim=1)  ##
-        else:
-            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+            #x = torch.concat([x_mu, y_approx], dim=1)  ##
+        #else:
+            #x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+        x = torch.concat([x_mu, y_approx], dim=1)
 
         z = fit_kernel(X, x).T @ Lambda
         y_eta = self.noise_shrink_c * shuffle(y_eta)
@@ -152,13 +153,14 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         self.Y_approx = geq_1d(torch.tensor(base_params['Y_approx'], device=self.device, dtype=self.dtype))
 
-        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), shuffle(self.Y_eta)], dim=1)
+        #self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx), shuffle(self.Y_eta)], dim=1)
 
         self.params['approx'] = bool(base_params['Y_approx'].shape[1])
         if not self.params['approx']:
             self.Y_approx = deepcopy(self.Y_eta)
-            self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
+           #self.X = torch.concat([self.X_mu, self.Y_eta], dim=1)
 
+        self.X = torch.concat([self.X_mu, deepcopy(self.Y_approx)], dim=1)
         self.Y = torch.concat([self.X_mu, self.Y_mu], dim=1)
 
         self.Nx = len(self.X)
@@ -232,8 +234,9 @@ class CondTransportKernel(nn.Module):
         if not self.params['approx']:
             y_approx = deepcopy(y_eta)
             x = torch.concat([x_mu, y_approx], dim=1)  ##
-        else:
-            x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+        #else:
+            #x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
+        x = torch.concat([x_mu, y_approx], dim=1)
 
         Lambda = self.get_Lambda()
         z = self.fit_kernel(self.X, x).T @ Lambda
@@ -331,11 +334,11 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                           Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-7, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
-                        'print_freq': 5, 'learning_rate': .001, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
+                        'print_freq': 10, 'learning_rate': .001, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .0003 ,'mmd_lambda': mmd_lambda}
+                        'iters': iters, 'grad_cutoff': .0008 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
-    train_kernel(ctransport_kernel)
+    train_kernel(ctransport_kernel, n_iter=99)
     return ctransport_kernel
 
 
@@ -658,7 +661,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    vl_exp(N=4000, exp_name='kvl_exp3', n_transports=1)
+    vl_exp(N=4000, exp_name='kvl_exp4', n_transports=80)
 
 
 if __name__ == '__main__':
