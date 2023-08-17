@@ -294,7 +294,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_approx)[0]
 
-        return self.mmd_lambda_test* self.mmd(map_vec, target)
+        return self.mmd(map_vec, target) #* self.mmd_lambda_test
 
 
     def loss(self):
