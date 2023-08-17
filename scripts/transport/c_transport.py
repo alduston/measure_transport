@@ -15,6 +15,15 @@ from picture_to_dist import sample_elden_ring
 from datetime import datetime as dt
 from seaborn import kdeplot
 
+def format(n, n_digits = 5):
+    if n > 1e-3:
+        return round(n,4)
+    a = '%E' % n
+    str =  a.split('E')[0].rstrip('0').rstrip('.') + 'E' + a.split('E')[1]
+    scale = str[-4:]
+    digits = str[:-4]
+    return digits[:min(len(digits),n_digits)] + scale
+
 
 def shuffle(tensor):
     if geq_1d(tensor).shape[0] <=1:

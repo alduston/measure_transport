@@ -358,7 +358,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test 
+        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
 
 
     def loss(self):
@@ -729,7 +729,7 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, N=3000, batch_size=3000, n_transports=150, exp_name='kvl_exp_real4', reg_lambda= 1e-5)
+    vl_exp(n_iter=49, N=3000, batch_size=3000, n_transports=100, exp_name='kvl_exp_real4', reg_lambda= 1e-5)
 
 
 if __name__=='__main__':
