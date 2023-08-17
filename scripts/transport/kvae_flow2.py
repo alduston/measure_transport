@@ -729,7 +729,15 @@ def vl_exp(N=10000, n_iter=49, Yd=18, normal=True, exp_name='kvl_exp', n_transpo
 
 
 def run():
-    vl_exp(n_iter=49, N=3000, batch_size=3000, n_transports=100, exp_name='kvl_exp_real4', reg_lambda= 1e-5)
+    #vl_exp(n_iter=49, N=3000, batch_size=3000, n_transports=100, exp_name='kvl_exp_real4', reg_lambda= 1e-5)
+    N = 3000
+    ref_gen = sample_normal
+    batch_size = 3000
+    n_transports = 1
+    two_d_exp(ref_gen, sample_spirals, N=N, n_iter=3000, plt_range=[[-2.5, 2.5], [-1, 5.5]], process_funcs=[],
+              batch_size=batch_size, skip_idx=1, slice_vals=[], slice_range=[-3, 3], exp_name='exp1',
+              n_transports=n_transports, vmax=.25)
+
 
 
 if __name__=='__main__':
