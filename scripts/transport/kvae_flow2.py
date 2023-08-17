@@ -358,7 +358,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return self.mmd_lambda_test #* self.mmd(map_vec, target)
+        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test 
 
 
     def loss(self):
