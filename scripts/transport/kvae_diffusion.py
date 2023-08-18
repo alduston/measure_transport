@@ -205,6 +205,10 @@ class CondTransportKernel(nn.Module):
         self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
         self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
+        test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
+        test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
+        self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
+
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
@@ -312,13 +316,18 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-    def mmd(self, map_vec, target):
+    def mmd(self, map_vec, target, test = False):
         map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
         target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
 
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
-        mmd_YY = self.mmd_kernel(target, target)
+        if test:
+            K_mmd = self.test_mmd_kernel
+        else:
+            K_mmd = self.mmd_kernel
+
+        mmd_ZZ = K_mmd(map_vec, map_vec)
+        mmd_ZY = K_mmd(map_vec, target)
+        mmd_YY = K_mmd(target, target)
 
         alpha_z = self.p_vec(len(map_vec))
         alpha_y = self.p_vec(len(target))
@@ -372,7 +381,7 @@ class CondTransportKernel(nn.Module):
             plt.savefig(save_loc)
             clear_plt()
             self.print_res = False
-        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
+        return  self.mmd(map_vec, target, test = True)  #* self.mmd_lambda_test
 
 
     def loss(self):
