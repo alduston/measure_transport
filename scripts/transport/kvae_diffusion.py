@@ -227,7 +227,6 @@ class CondTransportKernel(nn.Module):
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
-
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
 
@@ -315,7 +314,7 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-    def mmd(self, map_vec, target, test = False):
+    def mmd(self, map_vec, target, test = True):
         map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
         target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
 
@@ -745,7 +744,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie4', n_transports=70,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=5000, exp_name='swiss_movie', n_transports=70,
              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
              plot_steps = True)
 
