@@ -83,6 +83,7 @@ class Comp_transport_model:
         n = len(self.submodel_params['Lambda_mean'])
         final_eps = self.submodel_params['final_eps']
         self.noise_shrink_c = np.exp(np.log(final_eps)/(n-20))
+        self.noise_eps = deepcopy(self.noise_shrink_c)
 
         if device:
             self.device = device
@@ -107,7 +108,7 @@ class Comp_transport_model:
         x_var = torch.concat([x_mu, shuffle(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
-        return z_var
+        return z_var 
 
 
     def param_map(self, step_idx, param_dict):
@@ -128,7 +129,6 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        y_eta *= self.noise_shrink_c
         z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel)
         z = z_mean + z_var
@@ -137,6 +137,8 @@ class Comp_transport_model:
 
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+
+        self.noise_eps *= self.noise_shrink_c
 
         if self.plot_steps and not step_idx % 5:
             save_loc = f'../../data/kernel_transport/elden_movie2/elden_movie{step_idx}.png'
@@ -178,6 +180,7 @@ class CondTransportKernel(nn.Module):
         self.dtype = torch.float32
         self.params = base_params
         base_params['device'] = self.device
+        self.noise_eps = self.params['target_eps']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -190,7 +193,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y_mu = (1-self.params['target_eps']) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
+        self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -279,7 +282,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ self.Z_var
+        return self.fit_kXXvar_inv @ (self.Z_var * self.noise_eps)
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -336,7 +339,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.noise_eps
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
