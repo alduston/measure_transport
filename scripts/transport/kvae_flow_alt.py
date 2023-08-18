@@ -413,7 +413,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
-    grad_cutoff = .001
+    grad_cutoff = .0001
 
     target_eps = 1
 
