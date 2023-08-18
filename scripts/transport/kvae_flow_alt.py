@@ -29,7 +29,7 @@ def format(n, n_digits = 5):
         return n
 
 
-def shuffle(tensor, actually_tho = False):
+def shuffle(tensor, actually_tho = True):
     if geq_1d(tensor).shape[0] <=1 and actually_tho:
         return tensor
     else:
@@ -454,9 +454,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         target_eps *= noise_shrink_c
         if n_transports - i < 20:
             target_eps = 0
-        if n_transports - i < 2:
+        if n_transports - i < 5:
             print('Almost done!!!')
-            n_iter = 1000
+            n_iter = 700
 
 
     return Comp_transport_model(model_params)
