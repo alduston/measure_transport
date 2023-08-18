@@ -454,6 +454,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         target_eps *= noise_shrink_c
         if n_transports - i < 20:
             target_eps = 0
+        if n_transports - i < 2:
             n_iter = 1000
 
 
