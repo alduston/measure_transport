@@ -332,10 +332,10 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [],final_eps=1e-5):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [],final_eps=1e-6):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
+    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
     Y_approx = torch.empty([len(Y_eta),0])
     Y_approx_test = torch.empty([len(Y_eta_test), 0])
     mmd_lambda = 0
@@ -400,10 +400,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
 
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
-        '''
-        comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = []):
-        '''
+
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_transports,
                                                  Y_eta_test, X_mu_test, Y_mu_test))
     return trained_models
@@ -428,7 +425,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
+                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -650,7 +647,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports=200,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=180,
               slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000)
 
 
