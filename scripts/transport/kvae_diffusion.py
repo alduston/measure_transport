@@ -175,7 +175,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0  if (self.iters >= 3000) else 1
+        self.var_eps = 1 #0  if (self.iters >= 3000) else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -192,7 +192,6 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = self.X_mu
 
-        #self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
@@ -223,7 +222,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
+        self.params['mmd_kernel_params']['l'] *= self.noise_eps * l_scale(self.Y_mu).cpu()
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
