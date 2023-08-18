@@ -751,8 +751,8 @@ def run():
     spheres_exp(5000, exp_name='spheres_diff', n_transports=140)
 
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='spiral_exp_alt4', n_transports=70,
-              slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.15, skip_idx=1, N_plot=5000)
+    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='spiral_exp_alt4', n_transports=70,
+             # slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.15, skip_idx=1, N_plot=5000)
 
 
 
