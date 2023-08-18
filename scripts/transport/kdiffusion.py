@@ -354,7 +354,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, Y_eta_test = [], X_mu
     target_eps = 1
     n_iter = 121
     for i in range(n_transports):
-        print(f"Transport step {i}")
+        print(f"Transport step {i}:")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_eta_test = Y_eta_test, mmd_lambda=mmd_lambda,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
                                       Y_approx_test = Y_approx_test, iters = iters,target_eps = target_eps,
@@ -422,8 +422,8 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_transports, Y_eta_test,
-                                                 X_mu_test, Y_mu_test, reg_lambda  = reg_lambda, final_eps = final_eps))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, Y_eta_test, X_mu_test, Y_mu_test,
+                                            n_transports = n_transports,reg_lambda  = reg_lambda,final_eps = final_eps))
     return trained_models
 
 
