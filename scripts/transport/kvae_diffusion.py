@@ -370,7 +370,7 @@ class CondTransportKernel(nn.Module):
                        range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
-            self.print_res == False
+            self.print_res = False
         return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
 
 
