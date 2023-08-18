@@ -745,7 +745,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    elden_exp(N=10000, exp_name='elden_dif', n_transports=180)
+    elden_exp(N=8000, exp_name='elden_dif', n_transports=180)
     #elden_exp(10000, exp_name='elden_diff', n_transports=180)
 
 
