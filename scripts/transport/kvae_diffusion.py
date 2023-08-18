@@ -141,7 +141,7 @@ class Comp_transport_model:
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
         if self.plot_steps and not step_idx % 5:
-            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie{step_idx}.png'
+            save_loc = f'../../data/kernel_transport/elden_movie4/elden_movie{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
             plt.hist2d(x_plot, y_plot, density=True, bins=85, range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
