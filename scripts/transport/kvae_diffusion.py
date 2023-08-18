@@ -80,11 +80,6 @@ class Comp_transport_model:
         self.dtype = torch.float32
         self.plot_steps = False
 
-        n = len(self.submodel_params['Lambda_mean'])
-        final_eps = self.submodel_params['final_eps']
-        self.noise_shrink_c = np.exp(np.log(final_eps)/(n-20))
-        self.noise_eps = deepcopy(self.noise_shrink_c)
-
         if device:
             self.device = device
         else:
@@ -216,6 +211,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
+        self.Y_var_test = 0 * self.Y_eta_test
 
         if self.approx:
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
@@ -224,7 +220,6 @@ class CondTransportKernel(nn.Module):
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
-        #self.Y_eta_test *= (1 - self.params['target_eps'])
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
 
