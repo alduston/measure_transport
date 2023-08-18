@@ -407,7 +407,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
-    n_iter = max(49, n_iter * target_eps)
+    n_iter = max(99, n_iter * target_eps)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
