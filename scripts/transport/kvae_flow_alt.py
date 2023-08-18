@@ -33,7 +33,8 @@ def shuffle(tensor):
     if geq_1d(tensor).shape[0] <=1:
         return tensor
     else:
-        return tensor[torch.randperm(len(tensor))]
+        return tensor
+        #return tensor[torch.randperm(len(tensor))]
 
 
 def geq_1d(tensor):
