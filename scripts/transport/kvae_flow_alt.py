@@ -402,7 +402,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                final_eps=1e-6, n_transports=50, reg_lambda=1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 10))
+    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
     model_params['final_eps'] = final_eps
     Y_mean = 0
     Y_mean_test = 0
@@ -740,7 +740,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 def run():
     #elden_exp(N=5000, exp_name='elden_exp_alt3', n_transports=150)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 160,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 200,
               slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
 
 
