@@ -177,6 +177,7 @@ class CondTransportKernel(nn.Module):
         if not self.params['approx']:
             self.Y_approx_test = deepcopy(self.Y_eta_test)
 
+
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -185,7 +186,7 @@ class CondTransportKernel(nn.Module):
         self.alpha_y = self.p_vec(self.Ny)
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_YY @ self.alpha_y
 
-
+        self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
 
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
@@ -224,9 +225,6 @@ class CondTransportKernel(nn.Module):
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         if not self.params['approx']:
             y_approx = deepcopy(y_eta)
-            #x = torch.concat([x_mu, y_approx], dim=1)  ##
-        #else:
-            #x = torch.concat([x_mu, shuffle(y_eta), y_approx], dim=1)
         x = torch.concat([x_mu, y_approx], dim=1)
 
         Lambda = self.get_Lambda()
@@ -334,7 +332,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
-                               final_eps=1e-5, Y_eta_test = [], X_mu_test = [],Y_mu_test = []):
+                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [],final_eps=1e-5):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
@@ -652,8 +650,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=150,
-              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[], vmax=6, skip_idx=1, N_plot=5000)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports=200,
+              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000)
 
 
 if __name__ == '__main__':
