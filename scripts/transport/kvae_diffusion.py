@@ -175,7 +175,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 1 #0  if (self.iters >= 3000) else 1
+        self.var_eps = 0  #if (self.iters >= 3000) else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -414,7 +414,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     target_eps = 1
 
     for i in range(n_transports):
-        print(f"Transport step {i}:")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                       Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
