@@ -377,7 +377,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, Y_eta_test = [], X_mu
 
         if n_transports - i < 20:
             target_eps = 0
-        if n_transports - i < 2:
+        if n_transports - i < 3:
             print('Almost done!!!')
             n_iter = np.infty
 
@@ -441,7 +441,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
         model.plot_steps = plot_steps
         X[:, target_indexes[i]] = model.map(X[:, cond_indexes[i]], Y_eta, no_x=True) \
             .detach().cpu().numpy().reshape(target_shape)
-
+        model.plot_steps = False
     return X
 
 
