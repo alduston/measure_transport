@@ -730,7 +730,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    spheres_exp(N=4000, exp_name='kvl_exp2', n_transports=150)
+    spheres_exp(N=4000, exp_name='spheres_exp_1', n_transports=150)
 
 
 if __name__ == '__main__':
