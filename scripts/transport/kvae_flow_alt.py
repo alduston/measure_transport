@@ -189,7 +189,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y_mu = ((1-self.params['target_eps'])*.5 + .5) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
+        self.Y_mu = (1-self.params['target_eps']) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -388,7 +388,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
                           reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01, n_iter = 121, target_eps = 1):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 5e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-3, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 50, 'learning_rate': .001, 'reg_lambda': 1e-6,#reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
