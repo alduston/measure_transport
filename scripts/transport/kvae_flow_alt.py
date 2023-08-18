@@ -194,7 +194,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = self.X_mu
 
-        self.Y_eta *= (1 - self.params['target_eps'])
+        #self.Y_eta *= (1 - self.params['target_eps'])
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
@@ -224,7 +224,7 @@ class CondTransportKernel(nn.Module):
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
-        self.Y_eta_test *= (1 - self.params['target_eps'])
+        #self.Y_eta_test *= (1 - self.params['target_eps'])
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
 
