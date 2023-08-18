@@ -36,6 +36,13 @@ def shuffle(tensor):
         return tensor[torch.randperm(len(tensor))]
 
 
+def flip(tensor):
+    if geq_1d(tensor).shape[0] <=1:
+        return tensor
+    else:
+        return torch.flip(tensor, dims = [0])
+
+
 def geq_1d(tensor):
     if not len(tensor.shape):
         tensor = tensor.reshape(1)
@@ -100,7 +107,7 @@ class Comp_transport_model:
 
 
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
-        x_var = torch.concat([x_mu, shuffle(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
@@ -175,7 +182,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0 if (self.iters >= 1000) else 1
+        self.var_eps = 1 #if (self.iters >= 1000) else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -188,12 +195,12 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
-        self.Y_mu = (1 - self.noise_eps) * self.Y_mu +deepcopy(self.Y_eta) * self.noise_eps
+        self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
 
-        self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -287,7 +294,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
-        x_var = torch.concat([x_mu, shuffle(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
@@ -395,6 +402,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
+    n_iter = max(49, n_iter * target_eps)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
