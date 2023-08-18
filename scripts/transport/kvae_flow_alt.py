@@ -224,7 +224,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
