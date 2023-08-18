@@ -336,7 +336,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 10, 'learning_rate': .001, 'nugget': 1e-5, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .0004 ,'mmd_lambda': mmd_lambda}
+                        'iters': iters, 'grad_cutoff': .0002 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
     train_kernel(ctransport_kernel)#, n_iter=99)
     return ctransport_kernel
@@ -641,8 +641,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        plt.hist2d(x, y, density=True, bins=60, range=plt_range)
-                        #kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        #plt.hist2d(x, y, density=True, bins=60, range=plt_range)
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.3, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])

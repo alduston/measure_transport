@@ -709,8 +709,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        plt.hist2d(x,y, density=True, bins = 60, range = plt_range)
-                        #kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        #plt.hist2d(x,y, density=True, bins = 60, range = plt_range)
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.3, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])
