@@ -29,12 +29,11 @@ def format(n, n_digits = 5):
         return n
 
 
-def shuffle(tensor):
-    if geq_1d(tensor).shape[0] <=1:
+def shuffle(tensor, actually_tho = False):
+    if geq_1d(tensor).shape[0] <=1 and actually_tho:
         return tensor
     else:
-        return tensor
-        #return tensor[torch.randperm(len(tensor))]
+        return tensor[torch.randperm(len(tensor))]
 
 
 def geq_1d(tensor):
@@ -190,7 +189,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y_mu = (1-self.params['target_eps']) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
+        self.Y_mu = (((1-self.params['target_eps']) * .98) + .02) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
