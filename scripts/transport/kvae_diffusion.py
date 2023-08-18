@@ -138,13 +138,11 @@ class Comp_transport_model:
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
-        self.noise_eps *= self.noise_shrink_c
-
         if self.plot_steps and not step_idx % 5:
-            save_loc = f'../../data/kernel_transport/elden_movie2/elden_movie{step_idx}.png'
+            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=75, range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
+            plt.hist2d(x_plot, y_plot, density=True, bins=85, range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
@@ -181,7 +179,7 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0 if self.noise_eps==0 else 1
+        self.var_eps = 0 if self.noise_ep == 0 else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -198,7 +196,6 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = self.X_mu
 
-        #self.Y_eta *= (1 - self.params['target_eps'])
         self.X_var = torch.concat([self.X_mu, shuffle(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
@@ -219,7 +216,6 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
-        self.Y_var_test = 0 * self.Y_eta_test
 
         if self.approx:
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
@@ -371,6 +367,13 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        if not self.iters  % 500:
+            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie_train_step{self.iters//121}.png'
+            x_plot, y_plot = map_vec.detach().cpu().numpy().T
+            plt.hist2d(x_plot.flatten(), y_plot.flatten(), density=True, bins=85,
+                       range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
+            plt.savefig(save_loc)
+            clear_plt()
         return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
 
 
@@ -403,7 +406,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                final_eps=1e-6, n_transports=50, reg_lambda=1e-6, n_iter = 121):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 30))
+    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
     model_params['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
@@ -740,7 +743,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 def run():
     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie3', n_transports=70,
-             slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
+             slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
              plot_steps = True)
 
 
