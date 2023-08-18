@@ -115,15 +115,11 @@ class Comp_transport_model:
 
         if self.plot_steps and not step_idx%5:
             save_loc = f'../../data/kernel_transport/movies/elden_movie{step_idx}.png'
-            y_map = y.detach().cpu().numpy()
-            x_map = x_mu.detach().cpu().numpy()
-            try:
-                plt.hist2d(x_map, y_map, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
-                plt.savefig(save_loc)
-                clear_plt()
-            except BaseException:
-                print(f'y was shape {y.shape}')
-                print(f'x_mu was shape {x_mu.shape}')
+            y_map = y.flatten().detach().cpu().numpy()
+            x_map = x_mu.flatten().detach().cpu().numpy()
+            plt.hist2d(x_map, y_map, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
+            plt.savefig(save_loc)
+            clear_plt()
         return (y, y_eta)
 
 
