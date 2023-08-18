@@ -444,7 +444,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             target_eps = 0
         if n_transports - i < 1:
             print('Almost done!!!')
-            n_iter = np.infty
+            n_iter = 3000
 
 
     return Comp_transport_model(model_params)
