@@ -375,7 +375,7 @@ class CondTransportKernel(nn.Module):
             save_loc = f'../../data/kernel_transport/elden_movie4/elden_movie_train_epoch{self.iters}.png'
             x_plot, y_plot = map_vec.detach().cpu().numpy().T
             plt.hist2d(x_plot.flatten(), y_plot.flatten(), density=True, bins=85,
-                       range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
+                       range=[[-3, 3], [-3, 3]], vmin=0, vmax=.25)
             plt.savefig(save_loc)
             clear_plt()
             self.print_res = False
