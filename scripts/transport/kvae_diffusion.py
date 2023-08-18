@@ -237,6 +237,7 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
         self.iters = deepcopy(self.params['iters'])
+        self.print_res = True
 
 
     def total_grad(self):
@@ -362,13 +363,14 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        if not self.iters  % 500:
-            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie_train_step{self.iters//121}.png'
+        if self.print_res:
+            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie_train_epoch{self.iters}.png'
             x_plot, y_plot = map_vec.detach().cpu().numpy().T
             plt.hist2d(x_plot.flatten(), y_plot.flatten(), density=True, bins=85,
                        range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
+            self.print_res == False
         return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
 
 
