@@ -651,8 +651,8 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, bins = 85):
     plot_idx = torch.tensor([0, 1]).long()
     N_plot = min(10 * N, 8000)
 
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins=75, skip_idx=skip_idx,vmax=6,
-                                                         exp_name=exp_name, n_transports=n_transports, bins = bins,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins=bins, skip_idx=skip_idx,
+                                                         exp_name=exp_name, n_transports=n_transports, vmax=6,
                                                          cond_model_trainer=comp_cond_kernel_transport, N_plot=N_plot,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict)
     return trained_models
