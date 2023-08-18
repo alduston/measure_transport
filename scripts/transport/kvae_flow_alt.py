@@ -516,7 +516,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
+                              final_eps=1e-5, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
