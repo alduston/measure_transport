@@ -25,7 +25,8 @@ def format(n, n_digits = 5):
         scale = str[-4:]
         digits = str[:-4]
         return digits[:min(len(digits),n_digits)] + scale
-    except
+    except IndexError:
+        return n
 
 
 def shuffle(tensor):
