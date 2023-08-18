@@ -399,7 +399,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1e-5, n_transports=50, reg_lambda=1e-4):
+                               final_eps=1e-6, n_transports=50, reg_lambda=1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
@@ -516,7 +516,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1e-5, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
+                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
