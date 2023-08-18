@@ -387,7 +387,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 51, target_eps = 1):
+                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 101, target_eps = 1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
@@ -396,6 +396,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
+    n_iter = max(10, target_eps * n_iter)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
@@ -443,8 +444,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         target_eps *= noise_shrink_c
 
-        if n_transports - i < 30:
-            target_eps = 0
         if n_transports - i < 1:
             print('Almost done!!!')
             n_iter = 3000
