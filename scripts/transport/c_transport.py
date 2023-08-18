@@ -511,11 +511,10 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         N_plot=N_plot, reg_lambda=reg_lambda)
+                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
