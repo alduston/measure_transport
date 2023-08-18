@@ -108,7 +108,7 @@ class Comp_transport_model:
         x_var = torch.concat([x_mu, shuffle(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
-        return z_var 
+        return z_var
 
 
     def param_map(self, step_idx, param_dict):
@@ -184,7 +184,6 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
-        self.Y_eta *= self.params['target_eps']
         self.Y_var =  0 * self.Y_mean
         self.approx = self.params['approx']
         if self.approx:
@@ -219,7 +218,6 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
-        self.Y_eta_test *= self.params['target_eps']
         self.Y_var_test = 0 * self.Y_eta_test
 
         if self.approx:
