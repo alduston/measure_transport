@@ -205,13 +205,6 @@ class CondTransportKernel(nn.Module):
         self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
         self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
-        test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
-        test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
-        self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
-
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
-        self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
-
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
 
@@ -227,7 +220,13 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
+        test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
+        test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
+        self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
+
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
+        self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
+
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
