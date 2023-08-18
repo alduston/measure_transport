@@ -180,8 +180,8 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
-
         self.Y_mean = deepcopy(self.Y_eta)
+        self.Y_eta *= self.params['target_eps']
         self.Y_var =  0 * self.Y_mean
         self.approx = self.params['approx']
         if self.approx:
@@ -216,6 +216,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
+        self.Y_eta_test *= self.params['target_eps']
         self.Y_var_test = 0 * self.Y_eta_test
 
         if self.approx:
@@ -736,7 +737,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie2', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie3', n_transports=60,
              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
              plot_steps = True)
 
