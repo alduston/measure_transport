@@ -730,7 +730,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    elden_exp(N=4000, exp_name='elden_exp_2', n_transports=150)
+    #elden_exp(N=4000, exp_name='elden_exp_2', n_transports=150)
+
 
 
 if __name__ == '__main__':
