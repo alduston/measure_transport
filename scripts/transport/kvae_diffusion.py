@@ -205,7 +205,7 @@ class CondTransportKernel(nn.Module):
         self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
         self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
-        #self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -223,6 +223,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
@@ -386,7 +387,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 101, target_eps = 1):
+                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 99, target_eps = 1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
@@ -395,7 +396,6 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
-    n_iter = 50
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
