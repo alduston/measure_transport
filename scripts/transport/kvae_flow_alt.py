@@ -750,7 +750,7 @@ def run():
     #elden_exp(10000, exp_name='elden_diff', n_transports=180)
 
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=5000, exp_name='spiral_exp_alt4', n_transports=170,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=5000, exp_name='spiral_exp_alt4', n_transports=70,
               slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.15, skip_idx=1, N_plot=5000)
 
 
