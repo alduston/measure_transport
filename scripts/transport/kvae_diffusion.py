@@ -87,7 +87,9 @@ class Comp_transport_model:
         self.dtype = torch.float32
         self.plot_steps = False
 
-        self.noise_shrink_c = np.exp(np.log(1e-6) / (70 - 20))
+        n = len(self.submodel_params['Lambda_mean'])
+        final_eps = self.submodel_params['final_eps']
+        self.noise_shrink_c = np.exp(np.log(final_eps) / (n - 20))
         self.noise_eps = self.noise_shrink_c
 
         if device:
@@ -185,7 +187,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 1 #if (self.iters >= 1000) else 1
+        self.var_eps = 0 #if (self.iters >= 1000) else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -421,7 +423,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     E_mmd_yy = 0
     grad_cutoff = .0001
-    #target_eps = 1
     target_eps = noise_shrink_c
 
     for i in range(n_transports):
@@ -439,6 +440,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         if i == 0:
             model_params['mmd_func'] = model.mmd
+            model_params['final_eps'] = final_eps
+
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -448,14 +451,16 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         E_mmd_yy = model.E_mmd_YY
-        #if model.iters - iters < 2:
-            #return Comp_transport_model(model_params)
+
         iters = model.iters
         target_eps *= noise_shrink_c
 
+        if n_transports - i < 20:
+            target_eps = 0
+
         if n_transports - i < 1:
             print('Almost done!!!')
-            n_iter = 3000
+            n_iter = 2000
 
 
     return Comp_transport_model(model_params)
