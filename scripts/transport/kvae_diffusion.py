@@ -181,6 +181,7 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
         self.noise_eps = self.params['target_eps']
+        self.var_eps = 0 if self.noise_eps==0 else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -280,7 +281,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ (self.Z_var * self.noise_eps)
+        return self.fit_kXXvar_inv @ (self.Z_var * self.var_eps)
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -337,7 +338,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.noise_eps
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -402,7 +403,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                final_eps=1e-6, n_transports=50, reg_lambda=1e-6, n_iter = 121):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
+    noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 30))
     model_params['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
@@ -441,7 +442,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         target_eps *= noise_shrink_c
 
-        if n_transports - i < 20:
+        if n_transports - i < 30:
             target_eps = 0
         if n_transports - i < 1:
             print('Almost done!!!')
@@ -738,7 +739,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie3', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie3', n_transports=70,
              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
              plot_steps = True)
 
