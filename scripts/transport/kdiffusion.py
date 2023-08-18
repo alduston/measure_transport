@@ -122,7 +122,8 @@ class Comp_transport_model:
                 plt.savefig(save_loc)
                 clear_plt()
             except BaseException:
-                pass
+                print(f'y was shape {y.shape}')
+                print(f'x_mu was shape {x_mu.shape}')
         return (y, y_eta)
 
 
@@ -670,7 +671,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=90,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=50,
               slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
               plot_steps = True)
 
