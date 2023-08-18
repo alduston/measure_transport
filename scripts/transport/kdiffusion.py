@@ -115,8 +115,8 @@ class Comp_transport_model:
 
         if self.plot_steps and not step_idx%5:
             save_loc = f'../../data/kernel_transport/movies/elden_movie{step_idx}.png'
-            map_vec = y.detach().cpu().numpy()
-            x,y = map_vec.T
+            y_map = y.detach().cpu().numpy()
+            x_map = x_mu.detach().cpu().numpy()
             plt.hist2d(x, y, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
