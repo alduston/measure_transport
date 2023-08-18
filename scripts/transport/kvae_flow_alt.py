@@ -382,7 +382,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01,n_iter = 29, target_eps = 1):
+                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01,n_iter = 10, target_eps = 1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-5, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-6,#reg_lambda,
@@ -443,8 +443,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         E_mmd_yy = model.E_mmd_YY
-        if model.iters - iters < 2:
-            return Comp_transport_model(model_params)
+        #if model.iters - iters < 2:
+            #return Comp_transport_model(model_params)
         iters = model.iters
         target_eps *= noise_shrink_c
 
