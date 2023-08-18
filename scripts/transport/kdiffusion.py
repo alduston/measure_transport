@@ -342,8 +342,8 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0, m
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50, reg_lambda=1e-6,
-                               Y_eta_test = [], X_mu_test = [],Y_mu_test = [],final_eps=1e-6):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, Y_eta_test = [], X_mu_test = [],Y_mu_test = [],
+                               n_transports=50, final_eps=1e-6,reg_lambda=1e-6,):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
