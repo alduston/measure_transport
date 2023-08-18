@@ -125,7 +125,7 @@ def seaborne_hmap(sample, save_loc,  d = 2, range = None, scmap = 'Blues'):
 
 
 def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
-                cmap = None, scmap = 'Blues', bw_adjust=0.25):
+                cmap = None, scmap = 'Blues', bw_adjust=0.25, cbar = True):
     try:
         sample = sample.detach().cpu()
     except AttributeError:
@@ -137,7 +137,6 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
         x = np.asarray(x)
         y = np.asarray(y)
         plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax, cmap = cmap)
-        plt.colorbar()
 
         plt.subplot(1, 2, 2)
         kdeplot(x=x, y=y, fill=True,bw_adjust=bw_adjust, cmap=scmap)

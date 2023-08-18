@@ -75,6 +75,7 @@ class Comp_transport_model:
     def __init__(self, submodels_params, device = None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
+        self.plot_steps = False
 
         n = len(self.submodel_params['Lambda'])
         eps = 1
@@ -110,7 +111,16 @@ class Comp_transport_model:
 
         z = fit_kernel(X, x).T @ Lambda
         y_eta = self.noise_shrink_c * shuffle(y_eta)
-        return (z + y_approx, y_eta)
+        y = z + y_approx
+
+        if self.plot_steps and not step_idx%5:
+            save_loc = f'../../data/kernel_transport/movies/elden_movie{step_idx}.png'
+            map_vec = y.detach().cpu().numpy()
+            x,y = map_vec.T
+            plt.hist2d(x, y, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
+            plt.savefig(save_loc)
+            clear_plt()
+        return (y, y_eta)
 
 
     def c_map(self, x, y, no_x = False):
@@ -413,7 +423,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
     return trained_models
 
 
-def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
+def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = False):
     ref_indexes = idx_dict['ref']
     cond_indexes = idx_dict['cond']
     target_indexes = idx_dict['target']
@@ -424,6 +434,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
         model = trained_models[i]
         Y_eta = ref_sample[:, ref_indexes[i]]
         target_shape = X[:, target_indexes[i]].shape
+        model.plot_steps = plot_steps
         X[:, target_indexes[i]] = model.map(X[:, cond_indexes[i]], Y_eta, no_x=True) \
             .detach().cpu().numpy().reshape(target_shape)
 
@@ -432,7 +443,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict):
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}):
+                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}, plot_steps = False ):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -462,7 +473,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     target_sample = target_gen(N_plot)
     ref_sample = ref_gen(N_plot)
 
-    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
+    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = plot_steps)
     test_mmd = float(trained_models[0].mmd(gen_sample, target_sample).detach().cpu())
 
     try:
@@ -495,7 +506,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports=70, reg_lambda=1e-5, final_eps=1):
+              vmax=None, n_transports=70, reg_lambda=1e-5, final_eps=1, plot_steps = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -507,7 +518,8 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps)
+                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
+                                                         plot_steps = plot_steps)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
@@ -570,6 +582,7 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, N_plot = 0):
                                                          vmax=6, exp_name=exp_name, n_transports=n_transports,
                                                          cond_model_trainer=comp_cond_kernel_transport, N_plot=N_plot,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict)
+
     return trained_models
 
 
@@ -654,8 +667,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=170,
-              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=90,
+              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
+              plot_steps = True)
 
 
 if __name__ == '__main__':
