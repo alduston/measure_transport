@@ -88,7 +88,7 @@ class Comp_transport_model:
         self.plot_steps = False
 
         self.noise_shrink_c = np.exp(np.log(1e-6) / (70 - 20))
-        self.noise_eps = noise_shrink_c
+        self.noise_eps = self.noise_shrink_c
 
         if device:
             self.device = device
