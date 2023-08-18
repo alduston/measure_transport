@@ -401,7 +401,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1e-6, n_transports=50, reg_lambda=1e-4):
+                               final_eps=1e-6, n_transports=50, reg_lambda=1e-6, n_iter = 121):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
@@ -422,7 +422,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                       Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
-                                      grad_cutoff = grad_cutoff, target_eps = target_eps)[0]
+                                      grad_cutoff = grad_cutoff, target_eps = target_eps, n_iter = n_iter)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -454,6 +454,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         target_eps *= noise_shrink_c
         if n_transports - i < 20:
             target_eps = 0
+            n_iter = 1000
+
 
     return Comp_transport_model(model_params)
 
