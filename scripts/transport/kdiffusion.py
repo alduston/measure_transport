@@ -329,19 +329,20 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mmd_lambda=0,
-                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [], target_eps = 1):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': 5e-7, 'Y_approx': Y_approx,
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0, mmd_lambda=0,
+                          Y_eta_test = [], X_mu_test = [],Y_mu_test = [], Y_approx_test = [],
+                          reg_lambda = 1e-6, target_eps = 1, n_iter = 121):
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'reg_lambda': reg_lambda, 'Y_approx': Y_approx,
                         'fit_kernel_params': deepcopy(params['mmd']), 'mmd_kernel_params': deepcopy(params['fit']),
                         'print_freq': 10, 'learning_rate': .001, 'nugget': 1e-4, 'Y_eta_test': Y_eta_test,
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
-                        'iters': iters, 'grad_cutoff': .0002 ,'mmd_lambda': mmd_lambda,'target_eps': target_eps}
+                        'iters': iters, 'grad_cutoff': .0001,'mmd_lambda': mmd_lambda,'target_eps': target_eps}
     ctransport_kernel = CondTransportKernel(transport_params)
-    train_kernel(ctransport_kernel, n_iter=120)#, n_iter=99)
+    train_kernel(ctransport_kernel, n_iter=n_iter)
     return ctransport_kernel
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50, reg_lambda=1e-6,
                                Y_eta_test = [], X_mu_test = [],Y_mu_test = [],final_eps=1e-6):
     model_params = {'fit_kernel': [], 'Lambda': [], 'X': [],'Lambda1': [], 'X1': []}
     iters = 0
@@ -351,11 +352,13 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
     mmd_lambda = 0
 
     target_eps = 1
+    n_iter = 121
     for i in range(n_transports):
         print(f"Transport step {i}")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_eta_test = Y_eta_test, mmd_lambda=mmd_lambda,
                                       Y_approx = Y_approx , X_mu_test = X_mu_test, Y_mu_test = Y_mu_test,
-                                      Y_approx_test = Y_approx_test, iters = iters,target_eps = target_eps)
+                                      Y_approx_test = Y_approx_test, iters = iters,target_eps = target_eps,
+                                      reg_lambda = reg_lambda, n_iter = n_iter)
         model_params['Lambda'].append(model.get_Lambda().detach().cpu().numpy())
         model_params['fit_kernel'].append(model.fit_kernel)
         model_params['X'].append(model.X.detach().cpu().numpy())
@@ -390,8 +393,9 @@ def zero_pad(array):
     return np.concatenate([zero_array, array], axis=1)
 
 
-def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, n_transports=100):
+def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[], reg_lambda = 1e-6,
+                         final_eps=1e-6, cond_model_trainer=cond_kernel_transport, idx_dict={}, n_transports=100):
+
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -418,8 +422,8 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_transports,
-                                                 Y_eta_test, X_mu_test, Y_mu_test))
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, params, n_transports, Y_eta_test,
+                                                 X_mu_test, Y_mu_test, reg_lambda  = reg_lambda, final_eps = final_eps))
     return trained_models
 
 
@@ -443,7 +447,8 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}, plot_steps = False ):
+                              skip_idx=0, plot_idx=[], n_transports=50, idx_dict={}, plot_steps = False,
+                              reg_lambda = 1e-6, final_eps=1e-6):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -468,7 +473,8 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
-                                          process_funcs=process_funcs, idx_dict=idx_dict)
+                                          process_funcs=process_funcs, idx_dict=idx_dict, reg_lambda = reg_lambda,
+                                          final_eps = final_eps)
 
     target_sample = target_gen(N_plot)
     ref_sample = ref_gen(N_plot)
