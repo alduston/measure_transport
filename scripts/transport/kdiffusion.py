@@ -117,7 +117,7 @@ class Comp_transport_model:
             save_loc = f'../../data/kernel_transport/movies/elden_movie{step_idx}.png'
             y_map = y.detach().cpu().numpy()
             x_map = x_mu.detach().cpu().numpy()
-            plt.hist2d(x, y, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
+            plt.hist2d(x_map, y_map, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
         return (y, y_eta)
