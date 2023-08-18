@@ -338,7 +338,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, params, Y_approx = [], iters = 0,mm
                         'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'Y_approx_test': Y_approx_test,
                         'iters': iters, 'grad_cutoff': .0002 ,'mmd_lambda': mmd_lambda}
     ctransport_kernel = CondTransportKernel(transport_params)
-    train_kernel(ctransport_kernel)#, n_iter=99)
+    train_kernel(ctransport_kernel, n_iter=9999)#, n_iter=99)
     return ctransport_kernel
 
 
@@ -663,7 +663,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 def run():
     #elden_exp(N=4000, exp_name='elden_exp_2', n_transports=1)
     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=4000, exp_name='spirals_exp_2', n_transports=1,
-              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.15)
+              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.15, skip_idx=1)
 
 
 if __name__ == '__main__':

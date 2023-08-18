@@ -571,7 +571,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
-              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
+              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70,  final_eps=1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
