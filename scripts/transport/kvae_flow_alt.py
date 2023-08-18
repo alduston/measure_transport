@@ -224,7 +224,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
-        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
+        self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu_test).cpu()
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
@@ -399,7 +399,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
-                               final_eps=1e-6, n_transports=50, reg_lambda=1e-4):
+                               final_eps=1e-5, n_transports=50, reg_lambda=1e-4):
     model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 1))
@@ -738,10 +738,10 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    elden_exp(N=5000, exp_name='elden_exp_alt3', n_transports=150)
+    #elden_exp(N=5000, exp_name='elden_exp_alt3', n_transports=150)
 
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 100,
-              #slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 150,
+              slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
 
 
 
