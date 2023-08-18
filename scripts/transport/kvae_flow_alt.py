@@ -233,11 +233,12 @@ class CondTransportKernel(nn.Module):
             self.E_mmd_YY = self.params['E_mmd_YY']
 
         self.mmd_lambda = 1
-        if self.params['mmd_lambda'] != 0:
-            self.mmd_lambda = self.params['mmd_lambda']
-        else:
-            self.mmd_lambda = (1 / self.loss_mmd().detach())
-            self.params['mmd_lambda'] = self.mmd_lambda
+        self.mmd_lambda = (1 / self.loss_mmd().detach())
+        #if self.params['mmd_lambda'] != 0:
+            #self.mmd_lambda = self.params['mmd_lambda']
+        #else:
+            #self.mmd_lambda = (1 / self.loss_mmd().detach())
+            #self.params['mmd_lambda'] = self.mmd_lambda
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
         self.iters = deepcopy(self.params['iters'])
