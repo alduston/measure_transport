@@ -174,7 +174,7 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0 if self.noise_eps == 0 else 1
+        self.var_eps = 0 #if self.noise_eps == 0 else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
