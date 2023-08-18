@@ -82,7 +82,7 @@ class Comp_transport_model:
 
         n = len(self.submodel_params['Lambda_mean'])
         final_eps = self.submodel_params['final_eps']
-        self.noise_shrink_c = np.exp(np.log(final_eps)/(n-1))
+        self.noise_shrink_c = np.exp(np.log(final_eps)/(n-20))
 
         if device:
             self.device = device
@@ -387,10 +387,10 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-5, E_mmd_yy=0, grad_cutoff = .01, n_iter = 121, target_eps = 1):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-3, 'Y_var': Y_var, 'Y_mean': Y_mean,
+                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 121, target_eps = 1):
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 50, 'learning_rate': .001, 'reg_lambda': 1e-6,#reg_lambda,
+                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
@@ -406,19 +406,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
     model_params['final_eps'] = final_eps
-    Y_mean = 0
-    Y_mean_test = 0
-    Y_var = 0
-    Y_var_test = 0
+    Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
     mmd_lambda = 0
     E_mmd_yy = 0
     grad_cutoff = .0001
-
     target_eps = 1
 
     for i in range(n_transports):
-        #print(f"Transport step {i}:")
+        print(f"Transport step {i}:")
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                       Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
@@ -434,17 +430,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if i == 0:
             model_params['mmd_func'] = model.mmd
 
-        #map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-        #Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
-
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
 
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
-
-       #Y_eta *= noise_shrink_c
-       #Y_eta_test *= noise_shrink_c
 
         approx = True
         E_mmd_yy = model.E_mmd_YY
@@ -452,11 +442,12 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             #return Comp_transport_model(model_params)
         iters = model.iters
         target_eps *= noise_shrink_c
+
         if n_transports - i < 20:
             target_eps = 0
-        if n_transports - i < 5:
+        if n_transports - i < 1:
             print('Almost done!!!')
-            n_iter = 700
+            n_iter = np.infty
 
 
     return Comp_transport_model(model_params)
@@ -471,9 +462,8 @@ def zero_pad(array):
     return np.concatenate([zero_array, array], axis=1)
 
 
-def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],
-                         cond_model_trainer=cond_kernel_transport,final_eps=1e-6,
-                         idx_dict={}, reg_lambda=1e-6, n_transports=100):
+def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],final_eps=1e-6,
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -550,7 +540,6 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           final_eps=final_eps, process_funcs=process_funcs, idx_dict=idx_dict)
-
     target_sample = target_gen(N_plot)
     ref_sample = ref_gen(N_plot)
 
@@ -746,13 +735,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    #elden_exp(N=8000, exp_name='elden_dif', n_transports=180, skip_idx = 1)
-    #elden_exp(10000, exp_name='elden_diff', n_transports=180)
-    spheres_exp(5000, exp_name='spheres_diff', n_transports=140)
-
-
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='spiral_exp_alt4', n_transports=70,
-             # slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.15, skip_idx=1, N_plot=5000)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='spiral_exp_alt4', n_transports=50,
+             slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.15, skip_idx=1, N_plot=5000)
 
 
 

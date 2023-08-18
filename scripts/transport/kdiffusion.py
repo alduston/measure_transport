@@ -114,7 +114,7 @@ class Comp_transport_model:
         y = z + y_approx
 
         if self.plot_steps and not step_idx%5:
-            save_loc = f'../../data/kernel_transport/movies/elden_movie{step_idx}.png'
+            save_loc = f'../../data/kernel_transport/elden_movie/elden_movie{step_idx}.png'
             y_map = y.flatten().detach().cpu().numpy()
             x_map = x_mu.flatten().detach().cpu().numpy()
             plt.hist2d(x_map, y_map, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
@@ -374,9 +374,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta,  params, n_transports=50,
 
         if n_transports - i < 20:
             target_eps = 0
-        if n_transports - i < 5:
+        if n_transports - i < 2:
             print('Almost done!!!')
-            n_iter = 700
+            n_iter = np.infty
 
     return Comp_transport_model(model_params)
 
@@ -506,7 +506,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
-              vmax=None, n_transports=70, reg_lambda=1e-5, final_eps=1, plot_steps = False):
+              vmax=None, n_transports=70, reg_lambda=1e-6, final_eps=1e-6, plot_steps = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -519,7 +519,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         plot_steps = plot_steps)
+                                                         plot_steps = plot_steps, reg_lambda = reg_lambda)
 
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
@@ -646,8 +646,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        plt.hist2d(x, y, density=True, bins=60, range=plt_range)
-                        #kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        #plt.hist2d(x, y, density=True, bins=60, range=plt_range)
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:
                             plt.xlim(plt_range[0][0], plt_range[0][1])
@@ -667,8 +667,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100, N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt4', n_transports=50,
-              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie', n_transports=60,
+              slice_vals=[0], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
               plot_steps = True)
 
 
