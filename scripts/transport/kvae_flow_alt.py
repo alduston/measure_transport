@@ -189,7 +189,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y_mu = (1-self.params['target_eps']) * self.Y_mu  + shuffle(self.Y_eta) * self.params['target_eps']
+        self.Y_mu = (1-self.params['target_eps']) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.params['target_eps']
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -220,6 +220,8 @@ class CondTransportKernel(nn.Module):
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
+        self.Y_eta *= (1 - self.params['target_eps'])
+        self.Y_eta_test *= (1 - self.params['target_eps'])
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -740,7 +742,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 def run():
     #elden_exp(N=5000, exp_name='elden_exp_alt3', n_transports=150)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 200,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 180,
               slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
 
 
