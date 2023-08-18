@@ -187,7 +187,8 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
+        #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
+        self.Y_mu = (1 - self.noise_eps) * self.Y_mu +deepcopy(self.Y_eta) * self.noise_eps
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -240,7 +241,6 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
-        self.print_res = True
 
 
     def total_grad(self):
@@ -371,15 +371,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        if self.print_res:
-            save_loc = f'../../data/kernel_transport/elden_movie4/elden_movie_train_epoch{self.iters}.png'
-            x_plot, y_plot = map_vec.detach().cpu().numpy().T
-            plt.hist2d(x_plot.flatten(), y_plot.flatten(), density=True, bins=85,
-                       range=[[-3, 3], [-3, 3]], vmin=0, vmax=.25)
-            plt.savefig(save_loc)
-            clear_plt()
-            self.print_res = False
-        return  self.mmd(map_vec, target, test = True)  #* self.mmd_lambda_test
+        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
 
 
     def loss(self):
@@ -418,7 +410,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     E_mmd_yy = 0
     grad_cutoff = .0001
-    target_eps = 1
+    #target_eps = 1
+    target_eps = noise_shrink_c
 
     for i in range(n_transports):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
@@ -744,8 +737,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=5000, exp_name='swiss_movie', n_transports=70,
-             slice_vals=[], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1, 1], vmax=.25, skip_idx=1, N_plot=10000,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie4', n_transports=70,
+             slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
              plot_steps = True)
 
 
