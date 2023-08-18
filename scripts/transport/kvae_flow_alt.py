@@ -745,12 +745,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    elden_exp(N=8000, exp_name='elden_dif', n_transports=180, skip_idx = 1)
+    #elden_exp(N=8000, exp_name='elden_dif', n_transports=180, skip_idx = 1)
     #elden_exp(10000, exp_name='elden_diff', n_transports=180)
 
 
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 180,
-              #slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name='elden_exp_alt3', n_transports = 180,
+              slice_vals = [], plt_range = [[-1,1],[-1,1]], slice_range = [-1,1], vmax=6, skip_idx=1, N_plot = 5000)
 
 
 
