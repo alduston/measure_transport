@@ -741,7 +741,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 def run():
     #elden_exp(N=5000, exp_name='elden_exp_alt3', n_transports=150)
-    vl_exp(5000, exp_name='kvl_exp_diff')
+    vl_exp(5000, exp_name='kvl_exp_diff', n_transports = 150)
 
 
     #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_exp_alt3', n_transports = 180,
