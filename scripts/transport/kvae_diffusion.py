@@ -174,7 +174,7 @@ class CondTransportKernel(nn.Module):
         self.params = base_params
         base_params['device'] = self.device
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0 #if self.noise_eps == 0 else 1
+        self.var_eps = 0  if (self.iters >= 1500) else 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -364,7 +364,7 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         if self.print_res:
-            save_loc = f'../../data/kernel_transport/elden_movie3/elden_movie_train_epoch{self.iters}.png'
+            save_loc = f'../../data/kernel_transport/elden_movie4/elden_movie_train_epoch{self.iters}.png'
             x_plot, y_plot = map_vec.detach().cpu().numpy().T
             plt.hist2d(x_plot.flatten(), y_plot.flatten(), density=True, bins=85,
                        range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
@@ -641,7 +641,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100):
     return True
 
 
-def elden_exp(N=4000, exp_name='elden_exp', n_transports=100):
+def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, bins = 85):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]], 'target': [[0, 1]]}
@@ -651,8 +651,8 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100):
     plot_idx = torch.tensor([0, 1]).long()
     N_plot = min(10 * N, 8000)
 
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins=75, skip_idx=skip_idx,
-                                                         vmax=6, exp_name=exp_name, n_transports=n_transports,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, bins=75, skip_idx=skip_idx,vmax=6,
+                                                         exp_name=exp_name, n_transports=n_transports, bins = bins,
                                                          cond_model_trainer=comp_cond_kernel_transport, N_plot=N_plot,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict)
     return trained_models
@@ -739,8 +739,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie3', n_transports=70,
-             slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie4', n_transports=70,
+             slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
              plot_steps = True)
 
 
