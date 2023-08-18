@@ -140,9 +140,9 @@ class Comp_transport_model:
 
         if self.plot_steps and not step_idx % 5:
             save_loc = f'../../data/kernel_transport/elden_movie2/elden_movie{step_idx}.png'
-            y_map = param_dict['y'].flatten().detach().cpu().numpy()
-            x_map = param_dict['x_mu'].flatten().detach().cpu().numpy()
-            plt.hist2d(x_map, y_map, density=True, bins=75, range=[[-1, 1], [-1, 1]], cmin=0, vmin=0, vmax=6)
+            y_map = param_dict['y'].detach().cpu().numpy()
+            x_plot,y_plot = y_map.T
+            plt.hist2d(x_plot, y_plot, density=True, bins=75, range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
@@ -736,7 +736,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie2', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=50, exp_name='elden_movie2', n_transports=1,
              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=5000,
              plot_steps = True)
 
