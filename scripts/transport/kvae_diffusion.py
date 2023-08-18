@@ -173,6 +173,7 @@ class CondTransportKernel(nn.Module):
         self.dtype = torch.float32
         self.params = base_params
         base_params['device'] = self.device
+        self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
         self.var_eps = 0  if (self.iters >= 1500) else 1
 
@@ -236,7 +237,6 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
-        self.iters = deepcopy(self.params['iters'])
         self.print_res = True
 
 
