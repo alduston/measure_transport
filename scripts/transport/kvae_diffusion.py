@@ -480,6 +480,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if n_transports - i < 10:
             target_eps = 0
         validation_losses.append(loss_dict['test'][-1])
+        if n_transports - i <= 2:
+            n_iter = 1000
+
+
 
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
@@ -627,6 +631,8 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     except OSError:
         pass
 
+    if normal:
+        target_gen = lambda N: normalize(target_gen(N))
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
@@ -790,8 +796,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = mgan2 #lambda N: mgan2(N)
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='mgan2_diff', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.1, 1.1]], slice_range=[-1.5,1.5], vmax=2,
-              skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = False)
+              slice_vals=[-1,0,1], plt_range=[[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7,1.7], vmax=8.25,
+              skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = True)
 
     #vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
