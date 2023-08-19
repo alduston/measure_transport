@@ -605,7 +605,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=70, reg_lambda=1e-6, final_eps=1e-6,plot_steps = False):
+              vmax=None, n_transports=60, reg_lambda=1e-6, final_eps=1e-6,plot_steps = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -634,7 +634,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N=N, d=2, n=2)
     target_gen = lambda N: sample_spheres(N=N, n=n)
@@ -671,7 +671,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
     return True
 
 
-def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, bins = 85):
+def elden_exp(N=4000, exp_name='elden_exp', n_transports=60, bins = 85):
     ref_gen = sample_normal
     target_gen = sample_elden_ring
     idx_dict = {'ref': [[0, 1]], 'cond': [[]], 'target': [[0, 1]]}
@@ -688,7 +688,7 @@ def elden_exp(N=4000, exp_name='elden_exp', n_transports=100, bins = 85):
     return trained_models
 
 
-def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_plot = 0):
+def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_plot = 0):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=normal, Yd=Yd)
 
@@ -769,13 +769,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    target_gen = lambda N: normalize(sample_spirals(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='spiral_diff', n_transports=60,
-              slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
-              N_plot=10000, plot_steps = False, bins= 75)
+    #target_gen = lambda N: normalize(sample_spirals(N))
+    #two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='spiral_diff', n_transports=60,
+              #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
+              #N_plot=10000, plot_steps = False, bins= 75)
 
-    #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
-    #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
+    vl_exp(N = 5000, n_transports=60, N_plot= 5000)
 
 
 
