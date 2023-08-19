@@ -281,7 +281,7 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
 
 
-        noise_levels = np.linspace(0,1, 50)
+        noise_levels = np.linspace(0,1, 500)
         noisy_mmds = []
         for noise_level in noise_levels:
             noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + self.Y_eta * noise_level)
