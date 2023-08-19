@@ -469,12 +469,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         target_eps *= noise_shrink_c
 
-        if n_transports - i < 20:
+        if n_transports - i < 10:
             target_eps = 0
-
-        if n_transports - i < 1:
-            print('Almost done!!!')
-            n_iter = 2000
 
     return Comp_transport_model(model_params)
 
@@ -773,11 +769,10 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    target_gen = lambda N: normalize(sample_elden_ring(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=10000, exp_name='elden_diff', n_transports=70,
-              slice_vals=[], plt_range= [[-3.25,3.25],[-2.3,2.3]], slice_range=[-1.5, 1.5], vmax= .9, skip_idx=1,
-              N_plot=10000, plot_steps = False, bins= 100)
-
+    target_gen = lambda N: normalize(sample_spirals(N))
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='spiral_diff', n_transports=60,
+              slice_vals=[], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
+              N_plot=10000, plot_steps = False, bins= 75)
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
     #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
