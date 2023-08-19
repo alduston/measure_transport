@@ -694,8 +694,6 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
-
-    slice_vals = normalize(slice_vals)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
