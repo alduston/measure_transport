@@ -283,7 +283,7 @@ class CondTransportKernel(nn.Module):
         noise_levels = np.linspace(0,1, 50)
         noisy_mmds = []
         for noise_level in noise_levels:
-            noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + deepcopy(self.Y_eta) * noise_level)
+            noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + self.Y_eta * noise_level)
             noisy_vec = torch.concat([self.X_mu,  noisy_Y], dim = 1)
             noisy_mmds.appned(self.test_mmd_kernel(self.Y_test, noisy_vec).cpu().detach().numpy())
         plt.plot(noisy_mmds)
@@ -800,9 +800,9 @@ def run():
 
     #ref_gen = lambda N: normalize(sample_elden_ring(N))
     ref_gen = lambda N: normalize(sample_spirals(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=5000, exp_name='exp', n_transports=5,
+    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=2000, exp_name='exp', n_transports=5,
               slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
-              N_plot=5000, plot_steps = False)
+              N_plot=2000, plot_steps = False)
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
     #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
