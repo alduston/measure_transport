@@ -632,15 +632,18 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         pass
 
     if normal:
-        target_gen = lambda N: normalize(target_gen(N))
+        ftarget_gen = lambda N: normalize(target_gen(N))
+    else:
+        ftarget_gen = target_gen
+
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
                                                          reg_lambda=reg_lambda, plot_steps = plot_steps)
 
-    cond_gen = lambda N: ref_gen(N)[:, idx_dict['cond'][0]]
+    cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     mu, sigma = 0,1
     if normal:
         mu,sigma = get_base_stats(cond_gen, 5000)
@@ -648,7 +651,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
 
     for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
-        ref_slice_sample = target_gen(N_plot)
+        ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
