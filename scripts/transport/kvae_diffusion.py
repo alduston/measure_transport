@@ -431,32 +431,34 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
                                final_eps=1e-6, n_transports=50, reg_lambda=1e-6, n_iter = 121):
-    model_params = {'fit_kernel': [], 'Lambda_mean': [], 'X_mean': [], 'Lambda_var': [], 'X_var': []}
+    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var']
+    models_param_dict = {key: [] for key in param_keys}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 20))
-    model_params['final_eps'] = final_eps
+    models_param_dict['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
     mmd_lambda = 0
     grad_cutoff = .0001
     target_eps = noise_shrink_c
+    validation_losses = []
 
     for i in range(n_transports):
-        model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
+        model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                       Y_mu_test, Y_mean_test, Y_var_test, params=params, iters=iters,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,
-                                      grad_cutoff = grad_cutoff, target_eps = target_eps, n_iter = n_iter)[0]
+                                      grad_cutoff = grad_cutoff, target_eps = target_eps, n_iter = n_iter)
 
-        model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
-        model_params['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
-        model_params['fit_kernel'].append(model.fit_kernel)
-        model_params['X_mean'].append(model.X_mean.detach().cpu().numpy())
-        model_params['X_var'].append(model.X_var.detach().cpu().numpy())
+        models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
+        models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
+        models_param_dict['fit_kernel'].append(model.fit_kernel)
+        models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
+        models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
         mmd_lambda = model.mmd_lambda
 
         if i == 0:
-            model_params['mmd_func'] = model.mmd
-            model_params['final_eps'] = final_eps
+            models_param_dict['mmd_func'] = model.mmd
+            models_param_dict['final_eps'] = final_eps
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -471,8 +473,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         if n_transports - i < 10:
             target_eps = 0
+        validation_losses.append(loss_dict['test'][-1])
 
-    return Comp_transport_model(model_params)
+    print(validation_losses)
+    val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
+    print(val_best_idx)
+    for key in param_keys:
+        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
+    print(len(models_param_dict['X_mean']))
+    return Comp_transport_model(models_param_dict)
 
 
 def get_idx_tensors(idx_lists):
@@ -733,7 +742,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
 
-    ranges1 = {'alpha': [.5, 1.4], 'beta': [0.02, 0.07], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
+    ranges1 = {'alpha': [.5, 1.305], 'beta': [0.02, 0.0705], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
 
     for range_idx, ranges in enumerate([ranges1]):
         for i, key_i in enumerate(params_keys):
@@ -774,7 +783,7 @@ def run():
               #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
               #N_plot=10000, plot_steps = False, bins= 75)
 
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
+    vl_exp(N = 10000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
