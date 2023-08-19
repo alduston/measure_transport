@@ -140,8 +140,9 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
 
         plt.subplot(1, 2, 2)
         kdeplot(x=x, y=y, fill=True,bw_adjust=bw_adjust, cmap=scmap)
-        plt.xlim(range[0][0],range[0][1])
-        plt.ylim(range[1][0], range[1][1])
+        if range != None:
+            plt.xlim(range[0][0],range[0][1])
+            plt.ylim(range[1][0], range[1][1])
 
     elif d == 1:
         plt.subplot(1, 2, 1)
@@ -151,7 +152,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None,
 
         plt.subplot(1, 2, 2)
         kdeplot(data = x, fill=True, bw_adjust=bw_adjust)
-        if range:
+        if range != None:
             plt.xlim(range[0], range[1])
     plt.savefig(save_loc)
     clear_plt()
