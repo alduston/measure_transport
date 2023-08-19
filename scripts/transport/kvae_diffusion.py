@@ -491,9 +491,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
 
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
-    print(f'Best validation loss was step {val_best_idx} out of {n_transports}')
     for key in param_keys:
-        models_param_dict[key] = models_param_dict[key]#[:val_best_idx + 1]
+        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
 
 
@@ -806,7 +805,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
+    spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
 
 
 
