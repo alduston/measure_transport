@@ -801,7 +801,7 @@ def run():
 
     #ref_gen = lambda N: normalize(sample_elden_ring(N))
     ref_gen = sample_normal
-    target_gen = lambda N: normalize(sample_spirals(N))
+    target_gen = lambda N: normalize(sample_elden_ring(N))
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_diff', n_transports=70,
               slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
               N_plot=5000, plot_steps = False)
