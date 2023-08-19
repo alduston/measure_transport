@@ -543,7 +543,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
-                              process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
+                              process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
                               plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -572,6 +572,9 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           final_eps=final_eps, process_funcs=process_funcs, idx_dict=idx_dict,
                                           reg_lambda = reg_lambda)
+
+    if not N_plot:
+        N_plot = min(10 * N, 4000)
 
     target_sample = target_gen(N_plot)
     ref_sample = ref_gen(N_plot)
@@ -617,9 +620,6 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
         os.mkdir(save_dir)
     except OSError:
         pass
-    #mu, sigma = get_base_stats(target_gen)
-    #target_gen = lambda N: normalize(target_gen(N))
-
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
@@ -780,7 +780,7 @@ def run():
               #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
               #N_plot=10000, plot_steps = False, bins= 75)
 
-    vl_exp(N = 10000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
+    vl_exp(N = 8000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
