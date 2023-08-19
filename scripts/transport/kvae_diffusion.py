@@ -400,7 +400,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return  self.mmd(map_vec, target)  #* self.mmd_lambda_test
+        return  self.mmd(map_vec, target, test = True)  #* self.mmd_lambda_test
 
 
     def loss(self):
@@ -475,9 +475,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             target_eps = 0
         validation_losses.append(loss_dict['test'][-1])
 
-    val_best_idx = len(validation_losses)-1 #min(np.argmin(validation_losses), len(validation_losses)-1)
+    val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
-        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
+        models_param_dict[key] = models_param_dict[key][:]#val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
 
 
@@ -780,7 +780,7 @@ def run():
               #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
               #N_plot=10000, plot_steps = False, bins= 75)
 
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
+    vl_exp(N = 9000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
