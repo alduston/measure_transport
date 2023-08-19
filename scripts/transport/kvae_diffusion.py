@@ -94,9 +94,9 @@ def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
     return normal_tensor
 
 def check_normal(tensor, eps = 1e-2):
-    mu = torch.mean(tensor, dim  = 0 )
+    mu = torch.mean(tensor, dim  = 0)
     sigma = torch.std(tensor, dim = 0) - 1
-    if torch.linalg.norm(sigma) > eps:
+    if torch.linalg.norm(mu) > eps:
         return False
     if torch.linalg.norm(sigma) > eps:
         return False
@@ -788,7 +788,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
+    target_gen = mgan2 #lambda N: mgan2(N)
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='mgan2_diff', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.1, 1.1]], slice_range=[-1.5,1.5], vmax=2,
+              skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = False)
+
+    #vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
