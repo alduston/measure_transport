@@ -655,7 +655,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)]
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         slice_sample = (slice_sample * sigma) + mu
         plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
     if len(slice_vals):
