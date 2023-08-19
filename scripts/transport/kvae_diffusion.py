@@ -776,7 +776,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 def run():
     target_gen = lambda N: normalize(sample_elden_ring(N))
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_diff', n_transports=70,
-              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
+              slice_vals=[], plt_range= None, slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
               N_plot=5000, plot_steps = False)
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
