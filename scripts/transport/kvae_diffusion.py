@@ -226,6 +226,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         normal = check_normal(self.Y_mu)
+        print(normal)
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         if normal:
             self.Y_mu = torch_normalize(self.Y_mu)
@@ -800,11 +801,6 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    #target_gen = mgan2 #lambda N: mgan2(N)
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_diff2', n_transports=60,
-              #slice_vals=[-1,0,1], plt_range=[[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7,1.7], vmax=8.25,
-              #skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = True)
-
     vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
 
 
