@@ -774,7 +774,7 @@ def run():
               #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
               #N_plot=10000, plot_steps = False, bins= 75)
 
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000)
+    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
