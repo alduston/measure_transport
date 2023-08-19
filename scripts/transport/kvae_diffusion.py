@@ -16,6 +16,13 @@ from datetime import datetime as dt
 from seaborn import kdeplot
 
 
+def get_base_stats(gen, N = 10000):
+    gen_sample = geq_1d(torch.tensor(gen(N)))
+    mu = torch.mean(gen_sample, dim = 1)
+    std = torch.std(gen_sample, dim = 1)
+    return mu, std
+
+
 def format(n, n_digits = 5):
     try:
         if n > 1e-3:
@@ -200,7 +207,7 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
-        self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
+        self.Y_mu = normalize((1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps)
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -530,7 +537,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=4000, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
-                              plot_steps = False, reg_lambda = 1e-6):
+                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -562,6 +569,8 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     ref_sample = ref_gen(N_plot)
 
     gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = plot_steps)
+    gen_sample = gen_sample * sigma + mu
+    target_sample = target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(gen_sample, target_sample).detach().cpu())
 
     try:
@@ -600,6 +609,9 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
         os.mkdir(save_dir)
     except OSError:
         pass
+    #mu, sigma = get_base_stats(target_gen)
+    #target_gen = lambda N: normalize(target_gen(N))
+
 
     slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
@@ -608,7 +620,6 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
                                                          reg_lambda=reg_lambda, plot_steps = plot_steps)
-
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
@@ -625,6 +636,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N=N, d=2, n=2)
     target_gen = lambda N: sample_spheres(N=N, n=n)
+
+
 
     idx_dict = {'ref': [[0, 1]],
                 'cond': [list(range(2, 2 + (2 * n)))],
@@ -754,15 +767,14 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    '''
+
     ref_gen = lambda N: normalize(sample_elden_ring(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=5000, exp_name='spiral_diff', n_transports=70,
+    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=5000, exp_name='elden_diff', n_transports=70,
               slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
               N_plot=10000, plot_steps = False)
-    '''
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
-    spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
+    #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
 
 
 
