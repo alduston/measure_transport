@@ -222,8 +222,11 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
+
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
+        print(self.Y_mu.shape)
         self.Y_mu = torch_normalize(self.Y_mu)
+        print(self.Y_mu.shape)
 
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
