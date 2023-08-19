@@ -286,7 +286,7 @@ class CondTransportKernel(nn.Module):
         for noise_level in noise_levels:
             noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + self.Y_eta * noise_level)
             noisy_vec = torch.concat([self.X_mu,  noisy_Y], dim = 1)
-            noisy_mmds.appned(self.test_mmd_kernel(self.Y_test, noisy_vec).cpu().detach().numpy())
+            noisy_mmds.append(self.test_mmd_kernel(self.Y_test, noisy_vec).cpu().detach().numpy())
         plt.plot(noisy_mmds)
         plt.savefig('denoising_info_gain.png')
         clear_plt()
