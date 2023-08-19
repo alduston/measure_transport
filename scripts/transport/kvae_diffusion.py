@@ -226,7 +226,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         normal = check_normal(self.Y_mu)
-        print(normal)
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         if normal:
             self.Y_mu = torch_normalize(self.Y_mu)
@@ -487,6 +486,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
 
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
+    print(f'Best validation loss was step {val_best_idx} out of {n_transports}')
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
