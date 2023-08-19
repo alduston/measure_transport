@@ -372,6 +372,11 @@ class CondTransportKernel(nn.Module):
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
 
+    def inverse_loss(self):
+
+        pass
+
+
     def loss_mmd(self):
         Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
@@ -488,7 +493,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     print(f'Best validation loss was step {val_best_idx} out of {n_transports}')
     for key in param_keys:
-        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
+        models_param_dict[key] = models_param_dict[key]#[:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
 
 
