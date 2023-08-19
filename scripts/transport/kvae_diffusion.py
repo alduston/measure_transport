@@ -146,10 +146,10 @@ class Comp_transport_model:
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
         if self.plot_steps and not step_idx % 5:
-            save_loc = f'../../data/kernel_transport/elden_movie4/elden_movie{step_idx}.png'
+            save_loc = f'../../data/kernel_transport/elden_movie2/elden_movie{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=85, range=[[-1, 1], [-1, 1]], vmin=0, vmax=6)
+            plt.hist2d(x_plot, y_plot, density=True, bins=85, range=[[-1.05, 1.05], [-1, 1]], vmin=0, vmax=6)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
@@ -407,7 +407,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
-    n_iter = max(99, n_iter * target_eps)
+    n_iter = max(49, n_iter * target_eps)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
@@ -753,7 +753,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie4', n_transports=70,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_movie2', n_transports=70,
              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1, 1], vmax=6, skip_idx=1, N_plot=10000,
              plot_steps = True)
 
