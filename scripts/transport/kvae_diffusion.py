@@ -60,8 +60,12 @@ def geq_1d(tensor):
 
 def replace_zeros(array, eps = 1e-5):
     for i,val in enumerate(array):
-        if np.abs(val) < eps:
-            array[i] = 1.0
+        try:
+            if np.abs(val) < eps:
+                array[i] = 1.0
+        except BaseException:
+            if torch.abs(val) < eps:
+                array[i] = 1.0
     return array
 
 
@@ -79,6 +83,17 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     if len(keep_axes):
         normal_array = np.concatenate([normal_array, keep_array], axis = 1)
     return normal_array
+
+
+def torch_normalize(tensor, just_var = False, just_mean = False):
+    normal_tensor= deepcopy(tensor)
+    if not just_var:
+        normal_tensor = normal_tensor - torch.mean(normal_tensor, dim = 1)
+    std_vec = replace_zeros(torch.std(normal_tensor, dim = 1))
+    if not just_mean:
+        normal_array = normal_tensor/std_vec
+    return normal_array
+
 
 
 def flip_2tensor(tensor):
@@ -207,7 +222,10 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
         #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
-        self.Y_mu = normalize((1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps)
+        self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
+        self.Y_mu = torch_normalize(self.Y_mu)
+
+
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -260,6 +278,18 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
+
+
+        noise_levels = np.linspace(0,1, 50)
+        noisy_mmds = []
+        for noise_level in noise_levels:
+            noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + deepcopy(self.Y_eta) * noise_level)
+            noisy_vec = torch.concat([self.X_mu,  noisy_Y], dim = 1)
+            noisy_mmds.appned(self.test_mmd_kernel(self.Y_test, noisy_vec).cpu().detach().numpy())
+        plt.plot(noisy_mmds)
+        plt.savefig('denoising_info_gain.png')
+        clear_plt()
+
 
 
     def total_grad(self):
@@ -768,10 +798,11 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 def run():
 
-    ref_gen = lambda N: normalize(sample_elden_ring(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=5000, exp_name='elden_diff', n_transports=70,
+    #ref_gen = lambda N: normalize(sample_elden_ring(N))
+    ref_gen = lambda N: normalize(sample_spirals(N))
+    two_d_exp(ref_gen=sample_normal, target_gen=ref_gen, N=5000, exp_name='exp', n_transports=5,
               slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
-              N_plot=10000, plot_steps = False)
+              N_plot=5000, plot_steps = False)
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
     #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
