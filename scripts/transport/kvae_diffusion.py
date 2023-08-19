@@ -760,7 +760,8 @@ def run():
               N_plot=10000, plot_steps = False)
     '''
 
-    vl_exp(N = 5000, n_transports=70, N_plot= 5000)
+    #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
+    spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
 
 
 
