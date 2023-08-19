@@ -777,13 +777,15 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
+    '''
     target_gen = lambda N: normalize(mgan2(N))
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=700, exp_name='mgan2_diff', n_transports=60,
               slice_vals=[-1,0,1], plt_range=  [[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7, 1.7], vmax= 8.25, skip_idx=1,
               N_plot=200, plot_steps = False, bins= 60)
+    '''
 
 
-    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
+    vl_exp(N = 8000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
 
 
 
