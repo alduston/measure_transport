@@ -85,13 +85,12 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     return normal_array
 
 
-def torch_normalize(tensor, just_var = False, just_mean = False):
-    normal_tensor= deepcopy(tensor)
-    if not just_var:
-        normal_tensor = normal_tensor - torch.mean(normal_tensor, dim = 0)
-    std_vec = replace_zeros(torch.std(normal_tensor, dim = 0))
-    if not just_mean:
-        normal_tensor = normal_tensor/std_vec
+def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
+    device = tensor.device
+    dtype = tensor.dtype
+    tensor = tensor.detach().cpu().numpy()
+    normal_tensor = normalize(tensor, keep_axes, just_var, just_mean)
+    normal_tensor = torch.tensor(normal_tensor, device = device, dtype = dtype)
     return normal_tensor
 
 
@@ -223,7 +222,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        #self.Y_mu = torch_normalize(self.Y_mu)
+        self.Y_mu = torch_normalize(self.Y_mu)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
@@ -775,10 +774,10 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 def run():
     target_gen = lambda N: normalize(sample_elden_ring(N))
-    #two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_diff', n_transports=70,
-             # slice_vals=[], plt_range= None, slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
-              #N_plot=5000, plot_steps = False)
-    sample_hmap(target_gen(5000), save_loc='elden_normal.png')
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_diff', n_transports=70,
+              slice_vals=[], plt_range= [[-3.25,3.25],[-2.3,2.3]], slice_range=[-1.5, 1.5], vmax= .9, skip_idx=1,
+              N_plot=5000, plot_steps = False)
+
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
     #spheres_exp(N = 5000, n_transports=70, N_plot= 5000)
