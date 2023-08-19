@@ -399,7 +399,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
                           reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 99, target_eps = 1):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 3e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
@@ -759,7 +759,7 @@ def run():
               slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
               N_plot=10000, plot_steps = False)
     '''
-    
+
     vl_exp(N = 5000, n_transports=70, N_plot= 5000)
 
 
