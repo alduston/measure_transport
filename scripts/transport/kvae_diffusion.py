@@ -280,7 +280,7 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
 
-        '''
+
         noise_levels = np.linspace(0,1, 50)
         noisy_mmds = []
         for noise_level in noise_levels:
@@ -290,7 +290,6 @@ class CondTransportKernel(nn.Module):
         plt.plot(noisy_mmds)
         plt.savefig('denoising_info_gain.png')
         clear_plt()
-        '''
 
 
 
