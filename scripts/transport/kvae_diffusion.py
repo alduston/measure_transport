@@ -221,14 +221,12 @@ class CondTransportKernel(nn.Module):
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
-        #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
 
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        self.Y_mu = torch_normalize(self.Y_mu)
+        #self.Y_mu = torch_normalize(self.Y_mu)
 
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
-
         self.X_mu = self.X_mu
 
         self.X_var = torch.concat([self.X_mu, self.noise_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
@@ -269,29 +267,12 @@ class CondTransportKernel(nn.Module):
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
 
-        if self.params['E_mmd_YY'] == 0:
-            self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
-            self.params['E_mmd_YY'] = float(self.E_mmd_YY.detach().cpu())
-        else:
-            self.E_mmd_YY = self.params['E_mmd_YY']
+        self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
 
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
-
-        '''
-        noise_levels = np.linspace(1,0, 500)
-        noisy_mmds = []
-        for noise_level in noise_levels:
-            noisy_Y = torch_normalize((1 - noise_level) * self.Y_mu + self.Y_eta * noise_level)
-            noisy_vec = torch.concat([self.X_mu,  noisy_Y], dim = 1)
-            noisy_mmds.append(float(self.mmd(self.Y_test, noisy_vec, test = True).cpu().detach()))
-        plt.plot(noisy_mmds)
-        plt.savefig('denoising_info_gain.png')
-        clear_plt()
-        '''
-
 
 
     def total_grad(self):
@@ -437,13 +418,13 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
-                          reg_lambda=1e-6, E_mmd_yy=0, grad_cutoff = .0001, n_iter = 99, target_eps = 1):
+                          reg_lambda=1e-6, grad_cutoff = .0001, n_iter = 99, target_eps = 1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 3e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
-                        'Y_var_test': Y_var_test, 'iters': iters, 'E_mmd_YY': E_mmd_yy, 'grad_cutoff': grad_cutoff}
+                        'Y_var_test': Y_var_test, 'iters': iters 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
     n_iter = max(49, n_iter * target_eps)
@@ -460,14 +441,13 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
     mmd_lambda = 0
-    E_mmd_yy = 0
     grad_cutoff = .0001
     target_eps = noise_shrink_c
 
     for i in range(n_transports):
         model = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
-                                      Y_mu_test,Y_mean_test, Y_var_test, params=params, E_mmd_yy=E_mmd_yy,
-                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, iters=iters,
+                                      Y_mu_test, Y_mean_test, Y_var_test, params=params, iters=iters,
+                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,
                                       grad_cutoff = grad_cutoff, target_eps = target_eps, n_iter = n_iter)[0]
 
         model_params['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
@@ -481,7 +461,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             model_params['mmd_func'] = model.mmd
             model_params['final_eps'] = final_eps
 
-
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
 
@@ -489,7 +468,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
         approx = True
-        E_mmd_yy = model.E_mmd_YY
 
         iters = model.iters
         target_eps *= noise_shrink_c
@@ -500,7 +478,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if n_transports - i < 1:
             print('Almost done!!!')
             n_iter = 2000
-
 
     return Comp_transport_model(model_params)
 
@@ -799,12 +776,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_
 
 
 def run():
-
-    #ref_gen = lambda N: normalize(sample_elden_ring(N))
-    ref_gen = sample_normal
     target_gen = lambda N: normalize(sample_elden_ring(N))
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_diff', n_transports=70,
-              slice_vals=[0], plt_range=[[-1.5, 1.5], [-1.5, 1.5]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
+              slice_vals=[], plt_range=[[-1, 1], [-1, 1]], slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
               N_plot=5000, plot_steps = False)
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)

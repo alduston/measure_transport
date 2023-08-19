@@ -1,8 +1,16 @@
 import numpy as np
 import PIL
 from PIL import Image,ImageOps
-from unif_transport import resample
 import matplotlib.pyplot as plt
+
+
+def resample(Y, alpha = [], N = 10000):
+    n = len(Y.T)
+    if not len(alpha):
+        alpha = np.full(n, 1/n)
+    resample_indexes = np.random.choice(np.arange(n), size=N, replace=True, p=alpha)
+    Y_resample = Y[:, resample_indexes]
+    return Y_resample
 
 
 def clear_plt():
