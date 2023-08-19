@@ -96,7 +96,7 @@ def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
 def check_normal(tensor, eps = 1e-2):
     mu = torch.mean(tensor, dim  = 0)
     sigma = torch.std(tensor, dim = 0) - 1
-    if abs(mu) > eps:
+    if torch.linalg.norm(sigma) > eps:
         return False
     if torch.linalg.norm(sigma) > eps:
         return False
