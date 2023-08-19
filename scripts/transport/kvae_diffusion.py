@@ -225,7 +225,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         #self.Y_mu = torch_normalize(self.Y_mu)
 
-
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
 
@@ -266,7 +265,6 @@ class CondTransportKernel(nn.Module):
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
-
         self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
 
         self.mmd_lambda = 1
@@ -424,7 +422,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
-                        'Y_var_test': Y_var_test, 'iters': iters 'grad_cutoff': grad_cutoff}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
     n_iter = max(49, n_iter * target_eps)
