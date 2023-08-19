@@ -776,7 +776,7 @@ def run():
     target_gen = lambda N: normalize(sample_elden_ring(N))
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=10000, exp_name='elden_diff', n_transports=70,
               slice_vals=[], plt_range= [[-3.25,3.25],[-2.3,2.3]], slice_range=[-1.5, 1.5], vmax= .9, skip_idx=1,
-              N_plot=5000, plot_steps = False, bins= 100)
+              N_plot=10000, plot_steps = False, bins= 100)
 
 
     #vl_exp(N = 5000, n_transports=70, N_plot= 5000)
