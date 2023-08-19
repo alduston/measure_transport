@@ -487,7 +487,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
-        models_param_dict[key] = models_param_dict[key][:]#val_best_idx + 1]
+        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
 
 
@@ -800,12 +800,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = mgan2 #lambda N: mgan2(N)
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='mgan2_diff', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7,1.7], vmax=8.25,
-              skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = True)
+    #target_gen = mgan2 #lambda N: mgan2(N)
+    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=5000, exp_name='elden_diff2', n_transports=60,
+              #slice_vals=[-1,0,1], plt_range=[[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7,1.7], vmax=8.25,
+              #skip_idx = 1, N_plot=5000, plot_steps=False, bins=60, normal = True)
 
-    #vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff ')
+    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
 
 
 
