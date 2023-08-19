@@ -631,7 +631,9 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     except OSError:
         pass
 
+    mu, sigma = 0, 1
     if normal:
+        mu,sigma = get_base_stats(target_gen, 5000)
         ftarget_gen = lambda N: normalize(target_gen(N))
     else:
         ftarget_gen = target_gen
@@ -644,16 +646,17 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          reg_lambda=reg_lambda, plot_steps = plot_steps)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
-    mu, sigma = 0,1
+    cmu, csigma = 0,1
     if normal:
-        mu,sigma = get_base_stats(cond_gen, 5000)
-    normal_slice_vals = (np.asarray(slice_vals)-mu)/sigma
+        cmu,csigma = get_base_stats(cond_gen, 5000)
+    normal_slice_vals = (np.asarray(slice_vals)-cmu)/csigma
 
     for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)]
+        slice_sample = (slice_sample * sigma) + mu
         plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
     if len(slice_vals):
         plt.legend()
