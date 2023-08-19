@@ -88,8 +88,8 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 def torch_normalize(tensor, just_var = False, just_mean = False):
     normal_tensor= deepcopy(tensor)
     if not just_var:
-        normal_tensor = normal_tensor - torch.mean(normal_tensor, dim = 1)
-    std_vec = replace_zeros(torch.std(normal_tensor, dim = 1))
+        normal_tensor = normal_tensor - torch.mean(normal_tensor, dim = 0)
+    std_vec = replace_zeros(torch.std(normal_tensor, dim = 0))
     if not just_mean:
         normal_tensor = normal_tensor/std_vec
     return normal_tensor
@@ -224,9 +224,7 @@ class CondTransportKernel(nn.Module):
         #self.Y_mu = (1-self.noise_eps) * self.Y_mu  + shuffle(deepcopy(self.Y_eta)) * self.noise_eps
 
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        print(self.Y_mu.shape)
         self.Y_mu = torch_normalize(self.Y_mu)
-        print(self.Y_mu.shape)
 
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
