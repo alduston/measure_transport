@@ -93,6 +93,15 @@ def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
     normal_tensor = torch.tensor(normal_tensor, device = device, dtype = dtype)
     return normal_tensor
 
+def check_normal(tensor, eps = 1e-2):
+    mu = torch.mean(tensor, dim  = 0)
+    sigma = torch.std(tensor, dim = 0) - 1
+    if abs(mu) > eps:
+        return False
+    if torch.linalg.norm(sigma) > eps:
+        return False
+    return True
+
 
 
 def flip_2tensor(tensor):
@@ -216,8 +225,10 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
+        normal = check_normal(self.Y_mu)
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        self.Y_mu = torch_normalize(self.Y_mu)
+        if normal:
+            self.Y_mu = torch_normalize(self.Y_mu)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
@@ -608,7 +619,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     return trained_models, idx_dict
 
 
-def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
+def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=60, reg_lambda=1e-6, final_eps=1e-6,plot_steps = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
@@ -625,7 +636,9 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
                                                          reg_lambda=reg_lambda, plot_steps = plot_steps)
 
     cond_gen = lambda N: ref_gen(N)[:, idx_dict['cond'][0]]
-    mu,sigma = get_base_stats(cond_gen, 5000)
+    mu, sigma = 0,1
+    if normal:
+        mu,sigma = get_base_stats(cond_gen, 5000)
     normal_slice_vals = (np.asarray(slice_vals)-mu)/sigma
 
     for i,slice_val in enumerate(normal_slice_vals):
@@ -645,7 +658,6 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N=N, d=2, n=2)
     target_gen = lambda N: sample_spheres(N=N, n=n)
-
 
 
     idx_dict = {'ref': [[0, 1]],
@@ -777,15 +789,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    '''
-    target_gen = lambda N: normalize(mgan2(N))
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=700, exp_name='mgan2_diff', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=  [[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7, 1.7], vmax= 8.25, skip_idx=1,
-              N_plot=200, plot_steps = False, bins= 60)
-    '''
-
-
-    vl_exp(N = 8000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
+    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
 
 
 
