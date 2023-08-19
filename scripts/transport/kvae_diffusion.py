@@ -18,9 +18,9 @@ from seaborn import kdeplot
 
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))
-    mu = torch.mean(gen_sample, dim = 1)
-    std = torch.std(gen_sample, dim = 1)
-    return mu, std
+    mu = torch.mean(gen_sample, dim = 0).detach().numpy()
+    sigma = torch.std(gen_sample, dim = 0).detach().numpy()
+    return mu, sigma
 
 
 def format(n, n_digits = 5):
@@ -108,11 +108,6 @@ class Comp_transport_model:
         self.dtype = torch.float32
         self.plot_steps = False
 
-        n = len(self.submodel_params['Lambda_mean'])
-        final_eps = self.submodel_params['final_eps']
-        self.noise_shrink_c = np.exp(np.log(final_eps) / (n - 10))
-        self.noise_eps = self.noise_shrink_c
-
         if device:
             self.device = device
         else:
@@ -132,8 +127,8 @@ class Comp_transport_model:
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel):
-        x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, noise_eps):
+        x_var = torch.concat([x_mu, noise_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
@@ -147,6 +142,7 @@ class Comp_transport_model:
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
         X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
+        noise_eps = self.submodel_params['noise_eps'][step_idx]
 
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
@@ -158,11 +154,10 @@ class Comp_transport_model:
             y_var = 0 * y_mean
 
         z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, noise_eps)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
-        self.noise_eps *= self.noise_shrink_c
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
@@ -431,7 +426,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params,
                                final_eps=1e-6, n_transports=50, reg_lambda=1e-6, n_iter = 121):
-    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var']
+    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'noise_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
     noise_shrink_c = np.exp(np.log(final_eps) / (n_transports - 10))
@@ -454,11 +449,12 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['fit_kernel'].append(model.fit_kernel)
         models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
+        models_param_dict['noise_eps'].append(model.noise_eps)
         mmd_lambda = model.mmd_lambda
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
-            models_param_dict['final_eps'] = final_eps
+            #models_param_dict['noise_eps'] = final_eps
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -621,20 +617,25 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
     except OSError:
         pass
 
-    slice_vals = np.asarray(slice_vals)
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
                                                          reg_lambda=reg_lambda, plot_steps = plot_steps)
-    for slice_val in slice_vals:
+
+    cond_gen = lambda N: ref_gen(N)[:, idx_dict['cond'][0]]
+    mu,sigma = get_base_stats(cond_gen, 5000)
+    normal_slice_vals = (np.asarray(slice_vals)-mu)/sigma
+
+    for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = target_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-        plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_val}')
+        plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
     if len(slice_vals):
+        plt.legend()
         plt.savefig(f'{save_dir}/slice_posteriors.png')
         clear_plt()
     return True
@@ -666,6 +667,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
 
     save_dir = f'../../data/kernel_transport/{exp_name}'
 
+    slice_vals = normalize(slice_vals)
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
@@ -775,12 +777,13 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    #target_gen = lambda N: normalize(sample_spirals(N))
-    #two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='spiral_diff', n_transports=60,
-              #slice_vals=[0], plt_range= [[-2.25,2.25],[-2.05,2.05]], slice_range=[-2.25, 2.25], vmax= .65, skip_idx=1,
-              #N_plot=10000, plot_steps = False, bins= 75)
+    target_gen = lambda N: normalize(mgan2(N))
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=700, exp_name='mgan2_diff', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=  [[-1.7,1.7],[-1.3,1.3]], slice_range=[-1.7, 1.7], vmax= 8.25, skip_idx=1,
+              N_plot=200, plot_steps = False, bins= 60)
 
-    vl_exp(N = 9000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff')
+
+    vl_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='kvl_exp_diff2')
 
 
 
