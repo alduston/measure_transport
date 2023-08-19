@@ -621,7 +621,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[],
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
     n = 10
     ref_gen = lambda N: sample_base_mixtures(N=N, d=2, n=2)
     target_gen = lambda N: sample_spheres(N=N, n=n)
@@ -633,7 +633,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100):
     plt_range = [[.5, 1.5], [-1.5, 1.5]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
-    N_plot = min(10 * N, 4000)
+    if not N_plot:
+        N_plot = min(10 * N, 4000)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
