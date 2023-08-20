@@ -117,6 +117,8 @@ class Comp_transport_model:
         self.dtype = torch.float32
         self.plot_steps = False
         self.save_dir ='../../data/kernel_transport/exp/'
+        self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
+        self.vmax = None
 
         if device:
             self.device = device
@@ -175,7 +177,7 @@ class Comp_transport_model:
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=90, range=[[-3, 3], [-3, 3]], vmin=0, vmax=None)
+            plt.hist2d(x_plot, y_plot, density=True, bins=90, range=self.plt_range, vmin=0, vmax=self.vmax)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
@@ -213,7 +215,6 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 1
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -312,7 +313,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ (self.Z_var * self.var_eps)
+        return self.fit_kXXvar_inv @ (self.Z_var)
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -379,7 +380,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -507,8 +508,7 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],final_eps=1e-6,
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100,
-                         save_dir = '../../data/kernel_transport/exp/'):
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -537,7 +537,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params=params,
                                                  reg_lambda=reg_lambda, n_transports=n_transports, final_eps=final_eps))
-        trained_models[i].save_dir = save_dir
+
     return trained_models
 
 
@@ -563,7 +563,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
-                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1):
+                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1, vmax = None):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -590,6 +590,12 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           final_eps=final_eps, process_funcs=process_funcs, idx_dict=idx_dict,
                                           reg_lambda = reg_lambda, save_dir = save_dir)
+
+    for model in trained_models:
+        model.save_dir = save_dir
+        model.plt_range = plt_range
+        model.vmax = vmax
+
 
     if not N_plot:
         N_plot = min(10 * N, 4000)
@@ -651,7 +657,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         reg_lambda=reg_lambda, plot_steps = plot_steps)
+                                                         reg_lambda=reg_lambda, plot_steps = plot_steps, vmax=vmax)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
@@ -807,7 +813,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = sample_elden_ring
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='elden_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
+              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=.9, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
     #spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')

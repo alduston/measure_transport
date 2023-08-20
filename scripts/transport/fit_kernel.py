@@ -182,6 +182,8 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     return True
 
 
+def denoising_movie(saveloc):
+
 def dict_to_np(dict):
     for key,val in dict.items():
         try:
