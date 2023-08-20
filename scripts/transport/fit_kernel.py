@@ -199,7 +199,7 @@ def add_base_frame(save_loc, n = 7):
     return True
 
 
-def mutl_frames(save_loc, k = 3):
+def copy_frames(save_loc, k = 3):
     frames = os.listdir(save_loc)
     frame_dir = f'{save_loc}/frames'
     try:
@@ -226,14 +226,14 @@ def dict_to_np(dict):
 
 
 def process_frames(save_loc, n = 12, k = 3):
-    mult_frames(save_loc, k = k)
+    copy_frames(save_loc, k = k)
     frame_dir = f'{save_loc}/frames'
-    add_base_frame(save_loc, n = n)
+    add_base_frame(frame_dir, n = n)
     return True
 
 
 def run():
-    save_loc = '../../data/kernel_transport/spiral_movie'
+    save_loc = '../../data/kernel_transport/boob_movie'
     process_frames(save_loc)
 
 

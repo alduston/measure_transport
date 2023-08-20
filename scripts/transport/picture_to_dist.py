@@ -91,12 +91,20 @@ def sample_bambdad(N, p = 2, M = 300):
     return sample.T
 
 
+def sample_boobs(N, p = 2, M = 300):
+    img_array = process_img('Boobs', q= .15)
+    #base_val = np.min(img_array)
+    img_base_sample = array_to_sample(img_array, p = p, M = M)
+    sample = resample(img_base_sample.T, N=N)
+    return sample.T
+
+
 def run():
-    N = 500000
-    twisted_sample = sample_twisted_rings(N)
+    N = 50000
+    boob_sample = sample_boobs(N)
     plt_range = None
-    save_loc = '../../data/images/twisted_sample.png'
-    sample_hmap(twisted_sample.T, save_loc,  d=2, bins=100, range=plt_range)
+    save_loc = '../../data/images/boob_sample.png'
+    sample_hmap(boob_sample, save_loc,  d=2, bins=100, range=plt_range)
 
 if __name__=='__main__':
     run()
