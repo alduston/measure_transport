@@ -119,6 +119,8 @@ class Comp_transport_model:
         self.save_dir ='../../data/kernel_transport/exp/'
         self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
         self.vmax = None
+        self.mu = 0
+        self.sigma = 1
 
         if device:
             self.device = device
@@ -176,7 +178,7 @@ class Comp_transport_model:
         if self.plot_steps:
             plt.figure(figsize=(10,10))
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = param_dict['y'].detach().cpu().numpy()
+            y_map = param_dict['y'].detach().cpu().numpy()*self.sigma + self.mu
             x_plot,y_plot = y_map.T
             plt.hist2d(x_plot, y_plot, density=True, bins=90, range=self.plt_range, vmin=0, vmax=self.vmax)
             plt.savefig(save_loc)
@@ -495,7 +497,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
     val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
-        models_param_dict[key] = models_param_dict[key][:val_best_idx + 1]
+        models_param_dict[key] = models_param_dict[key]#[:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
 
 
@@ -596,6 +598,8 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         model.save_dir = save_dir
         model.plt_range = plt_range
         model.vmax = vmax
+        model.mu = mu
+        model.sigma = sigma
 
 
     if not N_plot:
@@ -655,10 +659,10 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
 
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot,
-                                                         bins=bins, exp_name=exp_name, plt_range=plt_range,
+                                                         skip_idx=skip_idx, exp_name=exp_name, reg_lambda=reg_lambda,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         reg_lambda=reg_lambda, plot_steps = plot_steps)
+                                                         plot_idx=plot_idx, skip_idx=skip_idx, plot_steps = plot_steps,
+                                                         plt_range=plt_range,  bins=bins, mu = mu,  sigma = sigma)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
@@ -814,7 +818,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = sample_elden_ring
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=.9, skip_idx=1,
+              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=None, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=90)
 
     #spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
