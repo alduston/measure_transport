@@ -174,6 +174,7 @@ class Comp_transport_model:
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
         if self.plot_steps:
+            plt.figure(figsize=(10,10))
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
@@ -811,9 +812,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = sample_swiss_roll
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='swiss_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=None, skip_idx=1,
+    target_gen = sample_elden_ring
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_movie', n_transports=60,
+              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=.9, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=90)
 
     #spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
