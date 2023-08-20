@@ -563,7 +563,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=1e-6, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
-                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1, vmax = None):
+                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -657,7 +657,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          bins=bins, exp_name=exp_name, plt_range=plt_range,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plot_idx=plot_idx, skip_idx=skip_idx, final_eps=final_eps,
-                                                         reg_lambda=reg_lambda, plot_steps = plot_steps, vmax=vmax)
+                                                         reg_lambda=reg_lambda, plot_steps = plot_steps)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
