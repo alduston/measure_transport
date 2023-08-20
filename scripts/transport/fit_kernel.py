@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 #import cv2
 import os
+import shutil
 
 #from kernel_geodesics import geo_diffs, boosted_geo_diffs
 from seaborn import kdeplot
@@ -184,8 +185,32 @@ def sample_scatter(sample, save_loc, bins = 20, d = 2, range = None):
     return True
 
 
-def denoising_movie(saveloc):
-    pass
+def add_base_frame(save_loc, n = 7):
+    frames = os.listdir(save_loc)
+    for frame_name in frames:
+        if frame_name.startswith('new_frame'):
+            frame_num = frame_name[9:-4]
+            new_frame_name = f'frame{int(frame_num) + n}.png'
+            os.rename(f'{save_loc}/{frame_name}', f'{save_loc}/{new_frame_name}')
+    base_frame_loc = f'{save_loc}/frame{n}.png'
+    for i in range(n):
+        target_loc = f'{save_loc}/frame{i}.png'
+        shutil.copyfile(base_frame_loc, target_loc)
+    return True
+
+
+def double_frames(save_loc):
+    frames = os.listdir(save_loc)
+    for frame_name in frames:
+        if frame_name.startswith('frame'):
+            frame_num = frame_name[5:-4]
+            new_frame_name = f'new_frame{2 * int(frame_num)}.png'
+            alt_frame_name = f'new_frame{(2 * int(frame_num)) + 1}.png'
+            shutil.copyfile(f'{save_loc}/{frame_name}', f'{save_loc}/{new_frame_name}')
+            shutil.copyfile(f'{save_loc}/{frame_name}', f'{save_loc}/{alt_frame_name}')
+            os.remove(f'{save_loc}/{frame_name}')
+    return True
+
 
 def dict_to_np(dict):
     for key,val in dict.items():
@@ -197,7 +222,8 @@ def dict_to_np(dict):
 
 
 def run():
-   pass
+    double_frames('../../data/kernel_transport/elden_movie')
+    add_base_frame('../../data/kernel_transport/elden_movie', n=12)
 
 
 

@@ -218,6 +218,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
+        self.var_eps = 0
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -330,7 +331,7 @@ class CondTransportKernel(nn.Module):
         x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
-        return z_var
+        return z_var * self.var_eps
 
 
     def map(self, x_mu, y_eta, y_mean = 0, y_var = 0):
@@ -383,7 +384,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -815,9 +816,11 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
     return True
 
 
+
+
 def run():
     target_gen = sample_elden_ring
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='elden_movie', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='elden_movie2', n_transports=60,
               slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
