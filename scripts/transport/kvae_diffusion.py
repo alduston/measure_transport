@@ -658,11 +658,11 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ftarget_gen = target_gen
 
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot, 
                                                          skip_idx=skip_idx, exp_name=exp_name, reg_lambda=reg_lambda,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plot_idx=plot_idx, skip_idx=skip_idx, plot_steps = plot_steps,
-                                                         plt_range=plt_range,  bins=bins, mu = mu,  sigma = sigma)
+                                                         plt_range=plt_range,  bins=bins, mu = mu,  sigma = sigma,
+                                                         plot_idx=plot_idx, plot_steps = plot_steps)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
