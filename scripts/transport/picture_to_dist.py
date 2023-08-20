@@ -103,12 +103,18 @@ def sample_dobby(N, p = 2, M = 300):
     sample = resample(img_base_sample.T, N=N)
     return sample.T
 
+def sample_tito_mesage(N, p = 2, M = 300):
+    img_array = process_img('tito_mesage', q= .15)
+    img_base_sample = array_to_sample(img_array, p = p, M = M)
+    sample = resample(img_base_sample.T, N=N)
+    return sample.T
+
 
 def run():
     N = 10000
-    dobby_sample = sample_dobby(N)
-    plt_range = [[-1,1.1],[-.7,.7]]
-    save_loc = '../../data/images/dobby_sample.png'
+    dobby_sample = sample_tito_mesage(N)
+    plt_range = [[-1,1],[-.5,.5]]
+    save_loc = '../../data/images/tito_sample.png'
     sample_hmap(dobby_sample, save_loc,  d=2, bins=100, range=plt_range)
 
 if __name__=='__main__':
