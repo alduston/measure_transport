@@ -92,7 +92,7 @@ def sample_bambdad(N, p = 2, M = 300):
 
 
 def sample_boobs(N, p = 2, M = 300):
-    img_array = process_img('Boobs', q= .15)
+    img_array = process_img('boobs', q= .15)
     #base_val = np.min(img_array)
     img_base_sample = array_to_sample(img_array, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
