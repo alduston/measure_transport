@@ -221,9 +221,15 @@ def dict_to_np(dict):
     return dict
 
 
+def process_frames(save_loc, n = 12):
+    double_frames(save_loc)
+    add_base_frame(save_loc, n = n)
+    return True
+
+
 def run():
-    double_frames('../../data/kernel_transport/elden_movie')
-    add_base_frame('../../data/kernel_transport/elden_movie', n=12)
+    save_loc = '../../data/kernel_transport/elden_movie2'
+    process_frames(save_loc)
 
 
 
