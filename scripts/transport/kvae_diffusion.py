@@ -116,6 +116,7 @@ class Comp_transport_model:
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
+        self.save_dir ='../../data/kernel_transport/exp/'
 
         if device:
             self.device = device
@@ -170,8 +171,8 @@ class Comp_transport_model:
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
 
-        if self.plot_steps and not step_idx % 5:
-            save_loc = f'../../data/kernel_transport/elden_movie2/elden_movie{step_idx}.png'
+        if self.plot_steps:
+            save_loc = f'{self.save_dir}/frame{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
             plt.hist2d(x_plot, y_plot, density=True, bins=85, range=[[-1.05, 1.05], [-1, 1]], vmin=0, vmax=6)
@@ -506,7 +507,8 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],final_eps=1e-6,
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100):
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100,
+                         save_dir = '../../data/kernel_transport/exp/'):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -535,6 +537,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, params=params,
                                                  reg_lambda=reg_lambda, n_transports=n_transports, final_eps=final_eps))
+        trained_models[i].save_dir = save_dir
     return trained_models
 
 
@@ -586,7 +589,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           final_eps=final_eps, process_funcs=process_funcs, idx_dict=idx_dict,
-                                          reg_lambda = reg_lambda)
+                                          reg_lambda = reg_lambda, save_dir = save_dir)
 
     if not N_plot:
         N_plot = min(10 * N, 4000)
@@ -692,7 +695,6 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
                                                          n_transports=n_transports)
 
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
-
     save_dir = f'../../data/kernel_transport/{exp_name}'
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
@@ -803,7 +805,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
+    target_gen = sample_elden_ring
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='elden_movie', n_transports=3,
+              slice_vals=[], plt_range=[[-3.3, 3.3], [-2.4, 2.4]], slice_range=[-1.5, 1.5], vmax=6, skip_idx=1,
+              N_plot=10000, plot_steps = True, normal = True, bins=90)
+
+    #spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
 
 
 
