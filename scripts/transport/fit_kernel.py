@@ -199,15 +199,19 @@ def add_base_frame(save_loc, n = 7):
     return True
 
 
-def double_frames(save_loc):
+def mutl_frames(save_loc, k = 3):
     frames = os.listdir(save_loc)
+    frame_dir = f'{save_loc}/frames'
+    try:
+        os.mkdir(frame_dir)
+    except OSError:
+        pass
     for frame_name in frames:
         if frame_name.startswith('frame'):
             frame_num = frame_name[5:-4]
-            new_frame_name = f'new_frame{2 * int(frame_num)}.png'
-            alt_frame_name = f'new_frame{(2 * int(frame_num)) + 1}.png'
-            shutil.copyfile(f'{save_loc}/{frame_name}', f'{save_loc}/{new_frame_name}')
-            shutil.copyfile(f'{save_loc}/{frame_name}', f'{save_loc}/{alt_frame_name}')
+            for i in range(k):
+                new_frame_name = f'new_frame{(k * int(frame_num)) + i}.png'
+                shutil.copyfile(f'{save_loc}/{frame_name}', f'{frame_dir}/{new_frame_name}')
             os.remove(f'{save_loc}/{frame_name}')
     return True
 
@@ -221,8 +225,9 @@ def dict_to_np(dict):
     return dict
 
 
-def process_frames(save_loc, n = 12):
-    double_frames(save_loc)
+def process_frames(save_loc, n = 12, k = 3):
+    mult_frames(save_loc, k = k)
+    frame_dir = f'{save_loc}/frames'
     add_base_frame(save_loc, n = n)
     return True
 
