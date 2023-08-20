@@ -228,7 +228,7 @@ def process_frames(save_loc, n = 12):
 
 
 def run():
-    save_loc = '../../data/kernel_transport/elden_movie2'
+    save_loc = '../../data/kernel_transport/spiral_movie'
     process_frames(save_loc)
 
 
