@@ -821,7 +821,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = sample_dobby
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='dobby_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-1,1.1],[-.7,.7]], slice_range=[-3, 3], vmax=None, skip_idx=1,
+              slice_vals=[], plt_range=[[-1,1.1],[-.7,.7]], slice_range=[-3, 3], vmax=5.2, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
 
