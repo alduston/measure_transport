@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import cv2
+#import cv2
 import os
 
 #from kernel_geodesics import geo_diffs, boosted_geo_diffs
