@@ -175,7 +175,7 @@ class Comp_transport_model:
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()
             x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=90, range=[[-3, 3], [-3, 3]], vmin=0, vmax=6)
+            plt.hist2d(x_plot, y_plot, density=True, bins=90, range=[[-3, 3], [-3, 3]], vmin=0, vmax=None)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
