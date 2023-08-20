@@ -658,11 +658,11 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ftarget_gen = target_gen
 
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot, 
-                                                         skip_idx=skip_idx, exp_name=exp_name, reg_lambda=reg_lambda,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, ftarget_gen, N=N, vmax=vmax,N_plot=N_plot,
+                                                         skip_idx=skip_idx, exp_name=exp_name, plot_steps = plot_steps,
                                                          n_transports=n_transports, process_funcs=process_funcs,
-                                                         plt_range=plt_range,  bins=bins, mu = mu,  sigma = sigma,
-                                                         plot_idx=plot_idx, plot_steps = plot_steps)
+                                                         plt_range=plt_range,  bins=bins, mu = mu, sigma = sigma,
+                                                         plot_idx=plot_idx, reg_lambda=reg_lambda, final_eps= final_eps)
 
     cond_gen = lambda N: ftarget_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
@@ -817,9 +817,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = sample_elden_ring
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='elden_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=None, skip_idx=1,
-              N_plot=5000, plot_steps = True, normal = True, bins=90)
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='elden_movie', n_transports=60,
+              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+              N_plot=10000, plot_steps = True, normal = True, bins=90)
 
     #spheres_exp(N = 5000, n_transports=60, N_plot= 5000, exp_name='spheres_diff2')
 
