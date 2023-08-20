@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from lk_sim import get_VL_data, sample_VL_prior
-from picture_to_dist import sample_elden_ring,sample_boobs
+from picture_to_dist import sample_elden_ring,sample_dobby
 from datetime import datetime as dt
 from seaborn import kdeplot
 
@@ -819,9 +819,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = sample_boobs
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='boob_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-1, 1], [-.5, .5]], slice_range=[-3, 3], vmax=None, skip_idx=1,
+    target_gen = sample_dobby
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='dobby_movie', n_transports=60,
+              slice_vals=[], plt_range=[[-1,1.1],[-.7,.7]], slice_range=[-3, 3], vmax=None, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
 

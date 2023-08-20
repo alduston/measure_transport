@@ -85,7 +85,6 @@ def sample_twisted_rings(N):
 
 def sample_bambdad(N, p = 2, M = 300):
     img_array = process_img('Bambdad', q= .15)
-    #base_val = np.min(img_array)
     img_base_sample = array_to_sample(img_array, base_val=193, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
     return sample.T
@@ -93,18 +92,24 @@ def sample_bambdad(N, p = 2, M = 300):
 
 def sample_boobs(N, p = 2, M = 300):
     img_array = process_img('boobs', q= .15)
-    #base_val = np.min(img_array)
+    img_base_sample = array_to_sample(img_array, p = p, M = M)
+    sample = resample(img_base_sample.T, N=N)
+    return sample.T
+
+
+def sample_dobby(N, p = 2, M = 300):
+    img_array = process_img('dobby', q= .15)
     img_base_sample = array_to_sample(img_array, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
     return sample.T
 
 
 def run():
-    N = 50000
-    boob_sample = sample_boobs(N)
-    plt_range = None
-    save_loc = '../../data/images/boob_sample.png'
-    sample_hmap(boob_sample, save_loc,  d=2, bins=100, range=plt_range)
+    N = 10000
+    dobby_sample = sample_dobby(N)
+    plt_range = [[-1,1.1],[-.7,.7]]
+    save_loc = '../../data/images/dobby_sample.png'
+    sample_hmap(dobby_sample, save_loc,  d=2, bins=100, range=plt_range)
 
 if __name__=='__main__':
     run()
