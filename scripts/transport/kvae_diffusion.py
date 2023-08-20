@@ -589,7 +589,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           final_eps=final_eps, process_funcs=process_funcs, idx_dict=idx_dict,
-                                          reg_lambda = reg_lambda, save_dir = save_dir)
+                                          reg_lambda = reg_lambda)
 
     for model in trained_models:
         model.save_dir = save_dir
