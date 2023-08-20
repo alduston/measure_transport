@@ -317,7 +317,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ (self.Z_var)
+        return self.fit_kXXvar_inv @ (self.Z_var * self.var_eps)
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -331,7 +331,7 @@ class CondTransportKernel(nn.Module):
         x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
-        return z_var * self.var_eps
+        return z_var
 
 
     def map(self, x_mu, y_eta, y_mean = 0, y_var = 0):
