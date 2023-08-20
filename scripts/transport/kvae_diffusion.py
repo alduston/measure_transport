@@ -822,7 +822,7 @@ def run():
     target_gen = sample_spirals
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='spiral_movie', n_transports=60,
               slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=None, skip_idx=1,
-              N_plot=1000, plot_steps = True, normal = True, bins=90)
+              N_plot=10000, plot_steps = True, normal = True, bins=90)
 
 
 
