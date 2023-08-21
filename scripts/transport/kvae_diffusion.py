@@ -819,9 +819,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = sample_swiss_roll
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='swiss_movie', n_transports=60,
-              slice_vals=[0], plt_range=[[-3,3],[-3,3]], slice_range=[-3, 3], vmax=None, skip_idx=1,
+    target_gen = mgan2
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='mgan2_movie', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-3, 3], vmax=None, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
 
