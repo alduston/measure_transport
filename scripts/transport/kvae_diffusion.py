@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from lk_sim import get_VL_data, sample_VL_prior
-from picture_to_dist import sample_elden_ring,sample_dobby, sample_tito_mesage
+from picture_to_dist import sample_elden_ring,sample_dobby, sample_tito_mesage, sample_apu
 from datetime import datetime as dt
 from seaborn import kdeplot
 
@@ -819,7 +819,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = sample_tito_mesage
+    target_gen = sample_apu
     two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='apu', n_transports=60,
               slice_vals=[], plt_range=[[-1,.8],[-.65,.65]], slice_range=[-3, 3], vmax=7.2, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
