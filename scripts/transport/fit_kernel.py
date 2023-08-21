@@ -233,8 +233,8 @@ def process_frames(save_loc, n = 12, k = 3):
 
 
 def run():
-    save_loc = '../../data/kernel_transport/dobby_movie'
-    process_frames(save_loc, k = 2)
+    save_loc = '../../data/kernel_transport/tito_message'
+    process_frames(save_loc, k = 3)
 
 
 

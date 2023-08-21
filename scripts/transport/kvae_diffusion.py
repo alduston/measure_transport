@@ -820,8 +820,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = sample_tito_mesage
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='tito_message', n_transports=60,
-              slice_vals=[], plt_range=[[-1,1],[-.5,.5]], slice_range=[-3, 3], vmax=None, skip_idx=1,
+    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='apu', n_transports=60,
+              slice_vals=[], plt_range=[[-1,.8],[-.65,.65]], slice_range=[-3, 3], vmax=7.2, skip_idx=1,
               N_plot=10000, plot_steps = True, normal = True, bins=90)
 
 
