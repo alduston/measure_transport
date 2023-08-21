@@ -116,11 +116,18 @@ def sample_apu(N, p = 2, M = 300):
     return sample.T
 
 
+def sample_ween(N, p = 2, M = 300):
+    img_array = process_img('ween', q= .15)
+    img_base_sample = array_to_sample(img_array, p = p, M = M)
+    sample = resample(img_base_sample.T, N=N)
+    return sample.T
+
+
 def run():
     N = 10000
-    dobby_sample = sample_apu(N)
+    dobby_sample = sample_ween(N)
     plt_range = None #[[-1,1],[-.5,.5]]
-    save_loc = '../../data/images/apu_sample.png'
+    save_loc = '../../data/images/ween_sample.png'
     sample_hmap(dobby_sample, save_loc,  d=2, bins=100, range=plt_range)
 
 if __name__=='__main__':
