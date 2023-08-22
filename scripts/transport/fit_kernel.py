@@ -233,7 +233,7 @@ def process_frames(save_loc, n = 12, k = 3):
 
 
 def run():
-    save_loc = '../../data/kernel_transport/mgan2_movie'
+    save_loc = '../../data/kernel_transport/mgan1_movie'
     process_frames(save_loc, k = 3)
 
 
