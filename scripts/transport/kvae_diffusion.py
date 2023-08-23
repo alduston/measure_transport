@@ -148,7 +148,8 @@ class Comp_transport_model:
 
 
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, noise_eps):
-        x_var = torch.concat([x_mu, noise_eps * flip(y_eta), y_mean + y_var], dim=1)
+        #x_var = torch.concat([x_mu, noise_eps * flip(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
@@ -245,7 +246,8 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
 
-        self.X_var = torch.concat([self.X_mu, self.noise_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        #self.X_var = torch.concat([self.X_mu, self.noise_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -334,7 +336,8 @@ class CondTransportKernel(nn.Module):
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
-        x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
+        #x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
@@ -694,8 +697,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                          mu= mu, sigma = sigma)
-        plt.hist(slice_sample[:, 1], bins=bins,
-                 range=plt_range[1], label=f'x = {slice_vals[i]}')
+        plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
 
         #sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
                     #range=plt_range, vmax=None)
@@ -844,9 +846,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = mgan2
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=8000, exp_name='mgan2_movie', n_transports=60,
               slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
-              N_plot=10000, plot_steps = True, normal = True, bins=80 )
+              N_plot=10000, plot_steps = True, normal = True, bins=70)
 
 
     '''
