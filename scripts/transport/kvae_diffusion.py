@@ -62,8 +62,6 @@ def geq_1d(tensor, np = False):
     return tensor
 
 
-
-
 def replace_zeros(array, eps = 1e-5):
     for i,val in enumerate(array):
         try:
@@ -224,7 +222,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 1
+        self.var_eps = self.noise_eps
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -836,7 +834,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #target_gen = mgan2
-    vl_exp(9000, exp_name='lokta_voltera')
+    vl_exp(9000, exp_name='lokta_voltera2')
     #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
               #slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
               #N_plot=5000, plot_steps = True, normal = True, bins=100)
