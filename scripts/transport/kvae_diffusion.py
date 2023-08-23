@@ -835,7 +835,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = sample_spirals
     two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='exp', n_transports=60,
-              slice_vals=[0], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
+              slice_vals=[0], plt_range=[[-3,3],[-3,3]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=80)
 
 
