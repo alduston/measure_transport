@@ -144,10 +144,15 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
         if cbar:
             plt.colorbar()
         plt.subplot(1, 2, 2)
-        kdeplot(x=x, y=y, fill=True,bw_adjust=bw_adjust, cmap=scmap)
-        if range != None:
-            plt.xlim(range[0][0],range[0][1])
-            plt.ylim(range[1][0], range[1][1])
+        try:
+            kdeplot(x=x, y=y, fill=True,bw_adjust=bw_adjust, cmap=scmap)
+            if range != None:
+                plt.xlim(range[0][0],range[0][1])
+                plt.ylim(range[1][0], range[1][1])
+        except ValueError:
+            pass
+
+
 
     elif d == 1:
         plt.subplot(1, 2, 1)
