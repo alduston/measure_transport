@@ -846,8 +846,8 @@ def run():
               slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
               N_plot=4000, plot_steps = True, normal = True, bins=100, var_eps = .4)
 
-    target_gen = sample_elden_ring
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='elden_movie', n_transports=60,
+   target_gen = sample_elden_ring
+   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='elden_movie', n_transports=60,
         slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
         N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
 
