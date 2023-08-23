@@ -235,10 +235,10 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        #normal = check_normal(self.Y_mu)
+        normal = check_normal(self.Y_mu)
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        #if normal:
-            #self.Y_mu = torch_normalize(self.Y_mu)
+        if normal:
+            self.Y_mu = torch_normalize(self.Y_mu)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
@@ -321,7 +321,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ (self.Z_var * self.var_eps)
+        return self.fit_kXXvar_inv @ (self.Z_var)
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -383,7 +383,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var 
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
