@@ -865,6 +865,7 @@ def run():
     plt.legend()
     plt.savefig(f'../../data/kernel_transport/mgan2_movie/true_slice_posteriors.png')
     clear_plt()
+    
     '''
 
 if __name__ == '__main__':
