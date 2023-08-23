@@ -836,10 +836,14 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
    #spheres_exp(4000, exp_name='spheres_exp3')
-    target_gen = mgan2
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie2', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-              N_plot=5000, plot_steps = True, normal = True, bins=100)
+    #target_gen = mgan2
+    #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie2', n_transports=100,
+              #slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+              #N_plot=5000, plot_steps = True, normal = True, bins=100)
+    target_gen = sample_elden_ring
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='elden_movie2', n_transports=100,
+        slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+        N_plot=5000, plot_steps = True, normal = True, bins=100)
 
 if __name__ == '__main__':
     run()
