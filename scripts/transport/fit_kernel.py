@@ -152,8 +152,6 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
         except ValueError:
             pass
 
-
-
     elif d == 1:
         plt.subplot(1, 2, 1)
         x =  sample
