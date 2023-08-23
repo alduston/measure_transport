@@ -238,9 +238,13 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         if normal:
             self.Y_mu = torch_normalize(self.Y_mu)
-
+        
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
+
+        self.var_eps = l_scale(self.Y_mu).cpu() * self.params['mmd_kernel_params']['l']
+
+        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -274,7 +278,6 @@ class CondTransportKernel(nn.Module):
 
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
         self.var_eps = self.params['mmd_kernel_params']['l']
-        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
 
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
