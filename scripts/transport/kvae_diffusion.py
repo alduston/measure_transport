@@ -676,10 +676,10 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          plt_range=plt_range,  bins=bins, mu = mu, sigma = sigma,
                                                          plot_idx=plot_idx, reg_lambda=reg_lambda, final_eps= final_eps)
 
-    cond_gen = lambda N: target_gen(N)[:, idx_dict['cond'][0]]
     cmu, csigma = 0,1
     if normal:
-        cmu,csigma = get_base_stats(cond_gen, 5000)
+        cmu = mu[idx_dict['cond'][0]]
+        csigma = sigma[idx_dict['cond'][0]]
     normal_slice_vals = (np.asarray(slice_vals)-cmu)/csigma
 
     print(f'cmu = {cmu}')
@@ -845,7 +845,7 @@ def run():
     target_gen = mgan2
     two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
               slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
-              N_plot=500, plot_steps = True, normal = True, bins=80)
+              N_plot=500, plot_steps = True, normal = True, bins=80 )
 
 
     '''
