@@ -123,6 +123,7 @@ class Comp_transport_model:
         self.save_dir ='../../data/kernel_transport/exp/'
         self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
         self.vmax = None
+        self.bins = 75
         self.mu = 0
         self.sigma = 1
 
@@ -184,7 +185,7 @@ class Comp_transport_model:
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
             y_map = param_dict['y'].detach().cpu().numpy()*self.sigma + self.mu
             x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=90, range=self.plt_range, vmin=0, vmax=self.vmax)
+            plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
             plt.savefig(save_loc)
             clear_plt()
         return param_dict
@@ -612,6 +613,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         model.vmax = vmax
         model.mu = mu
         model.sigma = sigma
+        model.bins = bins
 
 
     if not N_plot:
@@ -839,15 +841,15 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
    #spheres_exp(4000, exp_name='spheres_exp3')
-   target_gen = mgan2
-   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=4000, exp_name='mgan2_movie2', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-              N_plot=4000, plot_steps = True, normal = True, bins=100, var_eps = .4)
+   #target_gen = mgan2
+   #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=4000, exp_name='mgan2_movie2', n_transports=60,
+             # slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+              #N_plot=4000, plot_steps = True, normal = True, bins=100, var_eps = .5)
 
    target_gen = sample_elden_ring
    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='elden_movie', n_transports=60,
         slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-        N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
+        N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .07)
 
 if __name__ == '__main__':
     run()
