@@ -681,8 +681,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         cmu,csigma = get_base_stats(cond_gen, 5000)
     normal_slice_vals = (np.asarray(slice_vals)-cmu)/csigma
 
-    clear_plt()
-
+    print(normal_slice_vals)
 
     for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
@@ -690,10 +689,11 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         #ref_slice_sample[:, idx_dict['cond'][0]] += 1e-3 * np.random(ref_slice_sample[:, idx_dict['cond'][0]].shape)
 
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
+        slice_sample = (compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) * sigma) + mu
         sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
                     range=plt_range, vmax=None)
-        #plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
+        sample_hmap(slice_sample[:, 1], f'{save_dir}/slice={round(slice_val,2)}_posteriors.png', bins=bins, d = 1,
+                    range=plt_range, vmax=None)
 
     if len(slice_vals):
         plt.legend()

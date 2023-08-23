@@ -159,9 +159,13 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
         plt.hist(x, bins = bins, range = range)
 
         plt.subplot(1, 2, 2)
-        kdeplot(data = x, fill=True, bw_adjust=bw_adjust)
-        if range != None:
-            plt.xlim(range[0], range[1])
+        try:
+            kdeplot(data = x, fill=True, bw_adjust=bw_adjust)
+            if range != None:
+                plt.xlim(range[0], range[1])
+        except ValueError:
+            pass
+        
     plt.savefig(save_loc)
     clear_plt()
     return True
