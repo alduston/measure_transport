@@ -50,12 +50,18 @@ def flip(tensor):
         return torch.flip(tensor, dims = [0])
 
 
-def geq_1d(tensor):
+def geq_1d(tensor, np = False):
+    if np:
+        tensor = torch.tensor(tensor)
     if not len(tensor.shape):
         tensor = tensor.reshape(1)
     elif len(tensor.shape) == 1:
         tensor = tensor.reshape(len(tensor), 1)
+    if np:
+        tensor = tensor.detach().cpu().numpy()
     return tensor
+
+
 
 
 def replace_zeros(array, eps = 1e-5):
@@ -378,11 +384,6 @@ class CondTransportKernel(nn.Module):
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
 
-    def inverse_loss(self):
-
-        pass
-
-
     def loss_mmd(self):
         Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var * self.var_eps
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
@@ -494,9 +495,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if n_transports - i <= 2:
             n_iter = 1000
 
-
-
-    val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
+    #val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]#[:val_best_idx + 1]
     return Comp_transport_model(models_param_dict)
@@ -543,6 +542,17 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
                                                  reg_lambda=reg_lambda, n_transports=n_transports, final_eps=final_eps))
 
     return trained_models
+
+
+def MC_cond_sample(target_gen, slice_val, cond_idx, N = 5000, eps = 1e-3):
+    cond_sample = np.empty([0] + list(target_gen(5).shape[1:]))
+    while len(cond_sample) < N:
+        target_sample = target_gen(10 * N)
+        cond_bool = np.linalg.norm(geq_1d(target_sample[:, cond_idx] - slice_val, np = True), axis = 1) < eps
+        cond_sample = np.concatenate([cond_sample, target_sample[cond_bool]], axis = 0)
+    return cond_sample[:N]
+
+
 
 
 def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = False):
@@ -644,7 +654,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=60, reg_lambda=1e-6, final_eps=1e-6,plot_steps = False):
+              vmax=None, n_transports=60, reg_lambda=1e-6, final_eps=1e-6, plot_steps = False):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -671,17 +681,23 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         cmu,csigma = get_base_stats(cond_gen, 5000)
     normal_slice_vals = (np.asarray(slice_vals)-cmu)/csigma
 
+    clear_plt()
     for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
+
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         slice_sample = (slice_sample * sigma) + mu
         plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
+
     if len(slice_vals):
         plt.legend()
         plt.savefig(f'{save_dir}/slice_posteriors.png')
         clear_plt()
+
+    if plot_steps:
+        process_frames(save_dir)
     return True
 
 
@@ -796,7 +812,6 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
                     if i < j:
                         x, y = slice_sample[:, torch.tensor([i, j]).long()].T
                         plt_range = [ranges[key_i], ranges[key_j]]
-                        #plt.hist2d(x,y, density=True, bins = 60, range = plt_range)
                         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
                         plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
                         if plt_range[0][0] != None:
@@ -819,11 +834,22 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = mgan1
-    two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=8000, exp_name='mgan1_movie', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1,3]], slice_range=[-1.1, 2.5], vmax=1.2, skip_idx=1,
-              N_plot=10000, plot_steps = True, normal = True, bins=90)
+    target_gen = mgan2
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=8000, exp_name='mgan2_movie', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
+              N_plot=10000, plot_steps = True, normal = True, bins=80)
 
+    target_gen = mgan2
+    slice_vals = [-1,0,1]
+    cond_idx = 0
+    plt.figure(figsize=(10, 4))
+    for slice_val in slice_vals:
+        slice_sample = MC_cond_sample(target_gen, slice_val, cond_idx, N = 2000)
+        plt.hist(slice_sample[:, 1], label = f'x = {slice_val}', bins = 80)
+    plt.xlim(-1.5, 1.5)
+    plt.legend()
+    plt.savefig(f'../../data/kernel_transport/mgan2_movie/true_slice_posteriors.png')
+    clear_plt()
 
 
 if __name__ == '__main__':

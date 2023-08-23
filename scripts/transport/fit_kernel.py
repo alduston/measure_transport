@@ -29,6 +29,7 @@ def clear_plt():
     plt.close()
     plt.cla()
     plt.clf()
+    #plt.figure(plt.rcParams.get('figure.figsize'))
     return True
 
 
