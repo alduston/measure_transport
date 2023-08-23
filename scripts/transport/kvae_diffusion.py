@@ -226,7 +226,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
-        self.Y_var =  0 * self.Y_mean
+        self.Y_var = self.noise_eps ** (.3)
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
@@ -833,11 +833,11 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    spheres_exp(4000, exp_name='spheres_exp3')
-
-    #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
-              #slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-              #N_plot=5000, plot_steps = True, normal = True, bins=100)
+   #spheres_exp(4000, exp_name='spheres_exp3')
+    targen_gen = mgan2
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie2', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+              N_plot=5000, plot_steps = True, normal = True, bins=100)
 
 if __name__ == '__main__':
     run()
