@@ -618,8 +618,8 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     target_sample = target_gen(N_plot)
     ref_sample = ref_gen(N_plot)
 
-    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = plot_steps)
-    gen_sample = gen_sample * sigma + mu
+    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict,
+                                   plot_steps = plot_steps, mu = mu, sigma = sigma)
     target_sample = target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(gen_sample, target_sample).detach().cpu())
 
@@ -695,7 +695,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                          mu= mu, sigma = sigma)
         plt.hist(slice_sample[:, idx_dict['cond'][0]], bins=bins,
                  range=plt_range[1], label=f'x = {slice_vals[i]}')
-    
+
         #sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
                     #range=plt_range, vmax=None)
 
@@ -843,8 +843,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = mgan2
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=1,
-              slice_vals=[0], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
               N_plot=500, plot_steps = True, normal = True, bins=80)
 
 
