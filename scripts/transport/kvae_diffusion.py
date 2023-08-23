@@ -147,9 +147,8 @@ class Comp_transport_model:
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, noise_eps):
-        #x_var = torch.concat([x_mu, noise_eps * flip(y_eta), y_mean + y_var], dim=1)
-        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps):
+        x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
@@ -163,7 +162,7 @@ class Comp_transport_model:
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
         X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
-        noise_eps = self.submodel_params['noise_eps'][step_idx]
+        var_eps = self.submodel_params['var_eps'][step_idx]
 
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
@@ -175,7 +174,7 @@ class Comp_transport_model:
             y_var = 0 * y_mean
 
         z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, noise_eps)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
@@ -225,7 +224,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 1
+        self.var_eps =  1 #self.noise_eps
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -246,8 +245,7 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
 
-        #self.X_var = torch.concat([self.X_mu, self.noise_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_var = torch.concat([self.X_mu, flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -336,8 +334,7 @@ class CondTransportKernel(nn.Module):
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
-        #x_var = torch.concat([x_mu, self.noise_eps * flip(y_eta), y_mean + y_var], dim=1)
-        x_var = torch.concat([x_mu, flip(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
@@ -475,7 +472,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['fit_kernel'].append(model.fit_kernel)
         models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
-        models_param_dict['noise_eps'].append(model.noise_eps)
+        models_param_dict['var_eps'].append(model.var_eps)
         mmd_lambda = model.mmd_lambda
 
         if i == 0:
@@ -641,6 +638,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     if not len(plot_idx):
         return trained_models, idx_dict
+
     gen_sample = gen_sample[:, plot_idx]
     target_sample = target_sample[:, plot_idx]
     try:
@@ -837,36 +835,10 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    target_gen = sample_elden_ring
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='elden_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-              N_plot=10000, plot_steps = True, normal = True, bins=100)
-
-
-    '''
-    target_gen = mgan2
-    slice_vals = [-1,0,1]
-    cond_idx = 0
-    plt.figure(figsize=(10, 4))
-    for slice_val in slice_vals:
-        slice_sample = MC_cond_sample(target_gen, slice_val, cond_idx, N = 2000)
-        plt.hist(slice_sample[:, 1], label = f'x = {slice_val}', bins = 80)
-    plt.xlim(-1.5, 1.5)
-    plt.legend()
-    plt.savefig(f'../../data/kernel_transport/mgan2_movie/true_slice_posteriors.png')
-    clear_plt()
-
-mu = [-0.00011557  0.00332935]
-sigma = [1.70894781 0.81387095]
-
-
-cmu = -0.00011556821586192996
-csigma = 1.7089478067032773
-slice_vals = [-1, 0, 1]
-normal slice vals = [-5.85087753e-01  6.76253631e-05  5.85223003e-01]
-
-
-    '''
+    target_gen = sample_spirals
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='spiral_movie', n_transports=60,
+              slice_vals=[], plt_range=[[-3,3],[-3,3]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
+              N_plot=5000, plot_steps = True, normal = True, bins=100)
 
 if __name__ == '__main__':
     run()
