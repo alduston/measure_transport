@@ -223,7 +223,6 @@ class CondTransportKernel(nn.Module):
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
-        print(self.var_eps)
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -275,9 +274,7 @@ class CondTransportKernel(nn.Module):
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
         self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
-
         self.params['mmd_kernel_params']['l'] *= l_scale(self.Y_mu).cpu()
-        self.var_eps = self.params['mmd_kernel_params']['l']
 
         self.mmd_kernel = get_kernel(self.params['mmd_kernel_params'], self.device)
 
