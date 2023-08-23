@@ -684,29 +684,19 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     clear_plt()
 
 
-    def model_gen(N, ref_gen, slice_val, idx_dict, ftarget_gen, trained_models):
-        ref_sample = ref_gen(N)
-        target_sample = ftarget_gen(N)
-        gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict)
-        return gen_sample
-
-
     for i,slice_val in enumerate(normal_slice_vals):
-        #ref_sample = ref_gen(N_plot)
-        #ref_slice_sample = ftarget_gen(N_plot)
-        #ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
+        ref_sample = ref_gen(N_plot)
+        ref_slice_sample = ftarget_gen(N_plot)
+        ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         #ref_slice_sample[:, idx_dict['cond'][0]] += 1e-3 * np.random(ref_slice_sample[:, idx_dict['cond'][0]].shape)
 
-        #slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-        gen = lambda N: model_gen(N, ref_gen, slice_val,idx_dict, ftarget_gen, trained_models)
-        slice_sample = MC_cond_sample(gen, slice_val, 0, N = N_plot, eps=3e-3)
-
-        slice_sample = (slice_sample * sigma) + mu
-        plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
+        sample_hmap(slice_sample,f'{save_dir}/2d_slice={slice_val}_posteriors.png',  bins=bins, d=2, range=plt_range, vmax=vmax)
+        #plt.hist(slice_sample[:, 1], bins=bins, range=slice_range, label=f'x ={slice_vals[i]}')
 
     if len(slice_vals):
         plt.legend()
-        plt.savefig(f'{save_dir}/alt_slice_posteriors.png')
+        plt.savefig(f'{save_dir}/slice_posteriors.png')
         clear_plt()
 
     if plot_steps:
@@ -848,9 +838,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = mgan2
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='exp', n_transports=60,
-              slice_vals=[-1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
-              N_plot=2000, plot_steps = True, normal = True, bins=80)
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
+              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
+              N_plot=5000, plot_steps = True, normal = True, bins=80)
 
 
     '''
