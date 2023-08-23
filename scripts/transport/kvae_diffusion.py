@@ -222,7 +222,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps = 0
+        self.var_eps = self.noise_eps
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -841,9 +841,9 @@ def run():
               #slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
               #N_plot=5000, plot_steps = True, normal = True, bins=100)
     target_gen = sample_elden_ring
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='elden_movie2', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='elden_movie2', n_transports=60,
         slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-        N_plot=5000, plot_steps = True, normal = True, bins=100)
+        N_plot=10000, plot_steps = True, normal = True, bins=100)
 
 if __name__ == '__main__':
     run()
