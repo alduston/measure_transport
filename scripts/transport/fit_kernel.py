@@ -202,7 +202,7 @@ def add_base_frame(save_loc, n = 7):
 
 def copy_frames(save_loc, k = 3):
     frames = os.listdir(save_loc)
-    frame_dir = f'{save_loc}/frames'
+    frame_dir = f'{save_loc}/diff_frames'
     try:
         os.mkdir(frame_dir)
     except OSError:
@@ -228,7 +228,7 @@ def dict_to_np(dict):
 
 def process_frames(save_loc, n = 12, k = 3):
     copy_frames(save_loc, k = k)
-    frame_dir = f'{save_loc}/frames'
+    frame_dir = f'{save_loc}/diff_frames'
     add_base_frame(frame_dir, n = n)
     return True
 

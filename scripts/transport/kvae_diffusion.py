@@ -686,6 +686,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
+        #ref_slice_sample[:, idx_dict['cond'][0]] += 1e-3 * np.random(ref_slice_sample[:, idx_dict['cond'][0]].shape)
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
         slice_sample = (slice_sample * sigma) + mu
@@ -835,7 +836,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     target_gen = mgan2
-    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='exp', n_transports=60,
               slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=80)
 
@@ -850,7 +851,6 @@ def run():
     plt.legend()
     plt.savefig(f'../../data/kernel_transport/mgan2_movie/true_slice_posteriors.png')
     clear_plt()
-
 
 if __name__ == '__main__':
     run()
