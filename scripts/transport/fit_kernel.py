@@ -165,7 +165,7 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
                 plt.xlim(range[0], range[1])
         except ValueError:
             pass
-        
+
     plt.savefig(save_loc)
     clear_plt()
     return True
