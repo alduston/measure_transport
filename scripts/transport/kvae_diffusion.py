@@ -223,7 +223,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps =  self.noise_eps #self.params['var_eps']
+        self.var_eps =  self.params['var_eps']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -849,7 +849,7 @@ def run():
    target_gen = sample_spirals
    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='spiral_movie', n_transports=60,
         slice_vals=[0], plt_range=[[-3,3],[-3,3]], slice_range=[-3, 3], vmax=.33, skip_idx=1,
-        N_plot=5000, plot_steps = True, normal = True, bins=80, var_eps = .2)
+        N_plot=5000, plot_steps = True, normal = True, bins=80, var_eps = .3)
 
 if __name__ == '__main__':
     run()
