@@ -666,6 +666,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         normal_target_gen = lambda N: normalize(target_gen(N))
     else:
         normal_target_gen = target_gen
+
     print(f'mu = {mu}')
     print(f'sigma = {sigma}')
 
@@ -693,7 +694,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                          mu= mu, sigma = sigma)
-        plt.hist(slice_sample[:, idx_dict['cond'][0]], bins=bins,
+        plt.hist(slice_sample[:, 1], bins=bins,
                  range=plt_range[1], label=f'x = {slice_vals[i]}')
 
         #sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
@@ -845,7 +846,7 @@ def run():
     target_gen = mgan2
     two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
               slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8.2, skip_idx=1,
-              N_plot=500, plot_steps = True, normal = True, bins=80 )
+              N_plot=10000, plot_steps = True, normal = True, bins=80 )
 
 
     '''
@@ -860,7 +861,17 @@ def run():
     plt.legend()
     plt.savefig(f'../../data/kernel_transport/mgan2_movie/true_slice_posteriors.png')
     clear_plt()
-    
+
+mu = [-0.00011557  0.00332935]
+sigma = [1.70894781 0.81387095]
+
+
+cmu = -0.00011556821586192996
+csigma = 1.7089478067032773
+slice_vals = [-1, 0, 1]
+normal slice vals = [-5.85087753e-01  6.76253631e-05  5.85223003e-01]
+
+
     '''
 
 if __name__ == '__main__':
