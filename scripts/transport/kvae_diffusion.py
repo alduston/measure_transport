@@ -489,8 +489,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         target_eps *= noise_shrink_c
 
-        if n_transports - i < 10:
-            target_eps = 0
+        #if n_transports - i < 10:
+            #target_eps = 0
         validation_losses.append(loss_dict['test'][-1])
         if n_transports - i <= 2:
             n_iter = 1000
@@ -837,7 +837,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
     target_gen = sample_spirals
     two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='spiral_movie', n_transports=60,
-              slice_vals=[], plt_range=[[-3,3],[-3,3]], slice_range=[-1.5, 1.5], vmax=.15, skip_idx=1,
+              slice_vals=[0], plt_range=[[-3,3],[-3,3]], slice_range=[-1.5, 1.5], vmax=.3, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=100)
 
 if __name__ == '__main__':
