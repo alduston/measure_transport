@@ -555,7 +555,7 @@ def MC_cond_sample(target_gen, slice_val, cond_idx, N = 5000, eps = 1e-3):
 
 
 
-def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = False):
+def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_steps = False, sigma = 1, mu = 0):
     ref_indexes = idx_dict['ref']
     cond_indexes = idx_dict['cond']
     target_indexes = idx_dict['target']
@@ -570,8 +570,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
         X[:, target_indexes[i]] = model.map(X[:, cond_indexes[i]], Y_eta, no_x=True) \
             .detach().cpu().numpy().reshape(target_shape)
         model.plot_steps = False
-
-    return X
+    return X * sigma + mu
 
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
@@ -687,11 +686,11 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
-        slice_sample = (compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) * sigma) + mu
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, mu= mu, sigma = sigma)
 
         #sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
                     #range=plt_range, vmax=None)
-        
+
         plt.hist(slice_sample[:, 1].flatten(), bins=bins, range=plt_range[1], label= f'x = {slice_val}')
         clear_plt()
 
