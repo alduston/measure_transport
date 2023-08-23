@@ -235,10 +235,10 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        normal = check_normal(self.Y_mu)
+        #normal = check_normal(self.Y_mu)
         self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
-        if normal:
-            self.Y_mu = torch_normalize(self.Y_mu)
+        #if normal:
+            #self.Y_mu = torch_normalize(self.Y_mu)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
         self.X_mu = self.X_mu
@@ -700,9 +700,9 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0, normal = False):
     n = 10
-    ref_gen = lambda N: sample_base_mixtures(N=N, d=2, n=2)
+    ref_gen = sample_normal
     target_gen = lambda N: sample_spheres(N=N, n=n)
 
 
@@ -834,6 +834,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     spheres_exp(4000, exp_name='spheres_exp3')
+
     #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
               #slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
               #N_plot=5000, plot_steps = True, normal = True, bins=100)
