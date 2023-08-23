@@ -686,13 +686,13 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         ref_sample = ref_gen(N_plot)
         ref_slice_sample = ftarget_gen(N_plot)
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, mu= mu, sigma = sigma)
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
+                                         mu= mu, sigma = sigma)
+        plt.hist(slice_sample[:, idx_dict['cond'][0]].flatten(), bins=bins,
+                 range=plt_range[1], label=f'x = {slice_val}')
 
         #sample_hmap(slice_sample,f'{save_dir}/2d_slice={round(slice_val,2)}_posteriors.png',  bins=bins, d=2,
                     #range=plt_range, vmax=None)
-
-        plt.hist(slice_sample[:, 1].flatten(), bins=bins, range=plt_range[1], label= f'x = {slice_val}')
-        clear_plt()
 
     if len(slice_vals):
         plt.legend()
