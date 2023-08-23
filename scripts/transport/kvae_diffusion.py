@@ -669,10 +669,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         normal_target_gen = lambda N: normalize(target_gen(N))
     else:
         normal_target_gen = target_gen
-
-    print(f'mu = {mu}')
-    print(f'sigma = {sigma}')
-
+        
     plot_idx = torch.tensor([0, 1]).long()
     trained_models, idx_dict = conditional_transport_exp(ref_gen, normal_target_gen, N=N, vmax=vmax,N_plot=N_plot,
                                                          skip_idx=skip_idx, exp_name=exp_name, plot_steps = plot_steps,
@@ -685,11 +682,6 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         cmu = mu[idx_dict['cond'][0]]
         csigma = sigma[idx_dict['cond'][0]]
     normal_slice_vals = (np.asarray(slice_vals)-cmu)/csigma
-
-    print(f'cmu = {cmu}')
-    print(f'csigma = {csigma}')
-    print(f'slice_vals = {slice_vals}')
-    print(f'normal slice vals = {normal_slice_vals}')
 
     for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
