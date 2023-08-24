@@ -450,7 +450,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=1e-2, n_transports=50, reg_lambda=1e-6, n_iter = 125,var_eps = .1):
+                               final_eps=1e-2, n_transports=50, reg_lambda=1e-6, n_iter = 150,var_eps = .1):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
@@ -662,7 +662,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=60, reg_lambda=7e-7, final_eps=1e-3, plot_steps = False, var_eps = 1/3):
+              vmax=None, n_transports=60, reg_lambda=7e-7, final_eps=3e-3, plot_steps = False, var_eps = 1/3):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -843,9 +843,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #arget_gen = sample_swiss_roll()
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=7000, exp_name='exp', n_transports=60,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=40,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=7000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
+              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
     pass
 
