@@ -223,7 +223,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps =  self.params['var_eps'] * min((1 - self.noise_eps), self.noise_eps)
+        self.var_eps =  self.params['var_eps'] if self.noise_eps > 0 else 0
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -839,7 +839,7 @@ def run():
     #arget_gen = sample_swiss_roll()
     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=5000, exp_name='exp', n_transports=60,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=.5)
+              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/3)
 
     pass
 
