@@ -436,7 +436,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
-                          reg_lambda=4e-7, grad_cutoff = .0001, n_iter = 100, target_eps = 1, var_eps = .1):
+                          reg_lambda=4e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = .1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
@@ -450,11 +450,11 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=1e-2, n_transports=50, reg_lambda=4e-7, n_iter = 100,var_eps = .1):
+                               final_eps=1e-2, n_transports=50, reg_lambda=4e-7, n_iter = 200,var_eps = .1):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports//2) - 10))
+    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports - 10))
     models_param_dict['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
@@ -489,8 +489,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        if i%2 == 1:
-            target_eps *= noise_shrink_c
+        target_eps *= noise_shrink_c
 
         if n_transports - i < 10:
             target_eps = 0
@@ -844,9 +843,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #arget_gen = sample_swiss_roll()
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=5000, exp_name='exp', n_transports=65,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=7000, exp_name='exp', n_transports=40,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
+              skip_idx=1, N_plot=7000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
     pass
 
