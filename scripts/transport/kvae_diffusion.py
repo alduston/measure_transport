@@ -837,13 +837,14 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-   spheres_exp(5000, exp_name='spheres_exp')
+   #spheres_exp(5000, exp_name='spheres_exp')
    #lv_exp(5000, exp_name='lv_exp')
    #target_gen = sample_checkerboard
 
-   #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='checkerboard_movie', n_transports=60,
-              #slice_vals=[], plt_range=[[-4.1,4.1],[-4.1,4.1]], slice_range=[-1.5, 1.5], vmax=.12, skip_idx=1,
-              #N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
+   target_gen = mgan2
+   two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='exp', n_transports=60,
+             slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
+             N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=.5)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
 if __name__ == '__main__':
