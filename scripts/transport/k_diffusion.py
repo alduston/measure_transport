@@ -854,7 +854,7 @@ def run():
 
     target_gen = mgan2
     two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 5000, exp_name='exp', n_transports=60,
-    slice_vals=[-1,0,1], plt_range= [[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=.32, skip_idx=1,
+    slice_vals=[-1,0,1], plt_range= [[-2.5,2.5],[-1.05,1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
     N_plot= 5000, plot_steps = False, normal = True, bins=100, var_eps = .5)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
