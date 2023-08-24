@@ -320,7 +320,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        return self.fit_kXXmean_inv @ (self.Z_mean )
+        return self.fit_kXXmean_inv @ (self.Z_mean * 0 )
 
 
     def get_Lambda_var(self):
@@ -387,7 +387,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean) + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean * 0) + self.Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
