@@ -435,13 +435,12 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-6, grad_cutoff = .0001, n_iter = 125, target_eps = 1, var_eps = .1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 1000, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff}
 
     model = CondTransportKernel(transport_params)
-    #n_iter = max(n_iter, n_iter * target_eps)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
@@ -841,10 +840,10 @@ def run():
    #lv_exp(5000, exp_name='lv_exp')
    #target_gen = sample_checkerboard
 
-   target_gen = mgan2
-   two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=5000, exp_name='exp', n_transports=60,
-             slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8, skip_idx=1,
-             N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=.5)
+   target_gen = sample_swiss_roll
+   two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=10000, exp_name='swiss_movie', n_transports=60,
+             slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[3, 3], vmax=.35, skip_idx=1,
+             N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
 if __name__ == '__main__':
