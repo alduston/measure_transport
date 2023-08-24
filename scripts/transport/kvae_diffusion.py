@@ -292,7 +292,7 @@ class CondTransportKernel(nn.Module):
         Y_mu_test_noisy = (1 - self.noise_eps) * self.Y_mu_test + deepcopy(self.Y_eta_test) * self.noise_eps
         if normal:
             Y_mu_test_noisy = torch_normalize(Y_mu_test_noisy)
-        goal_mmd = self.mmd(self.Y_test, torch.concat([self.X_mu_test, self.Y_mu_test_noisy], dim=1))
+        goal_mmd = self.mmd(self.Y_test, torch.concat([self.X_mu_test, Y_mu_test_noisy], dim=1))
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
