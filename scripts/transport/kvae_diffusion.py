@@ -26,7 +26,7 @@ def get_base_stats(gen, N = 10000):
 def format(n, n_digits = 5):
     try:
         if n > 1e-3:
-            return round(n,4)
+            return round(n,n_digits)
         a = '%E' % n
         str =  a.split('E')[0].rstrip('0').rstrip('.') + 'E' + a.split('E')[1]
         scale = str[-4:]
@@ -436,7 +436,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-6, grad_cutoff = .0001, n_iter = 125, target_eps = 1, var_eps = .1):
+                          reg_lambda=7e-7, grad_cutoff = .0001, n_iter = 125, target_eps = 1, var_eps = .1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
@@ -450,11 +450,11 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=1e-2, n_transports=50, reg_lambda=1e-6, n_iter = 150,var_eps = .1):
+                               final_eps=5e-3, n_transports=50, reg_lambda=7e-7, n_iter = 150,var_eps = .1):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports - 10)))
+    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports)))
     models_param_dict['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
@@ -491,13 +491,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         iters = model.iters
         target_eps *= noise_shrink_c
 
-        if n_transports - i < 10:
-            target_eps = 0
 
         validation_losses.append(loss_dict['test'][-1])
-        if n_transports - i <= 2:
-            pass
-            #n_iter = 1000
 
     #val_best_idx = min(np.argmin(validation_losses), len(validation_losses)-1)
     for key in param_keys:
@@ -514,8 +509,8 @@ def zero_pad(array):
     return np.concatenate([zero_array, array], axis=1)
 
 
-def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],final_eps=1e-3,var_eps = .1,
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-6, n_transports=100):
+def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],final_eps=5e-3,var_eps = .1,
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=7e-7, n_transports=100):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -551,7 +546,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
     return trained_models
 
 
-def MC_cond_sample(target_gen, slice_val, cond_idx, N = 5000, eps = 1e-3):
+def MC_cond_sample(target_gen, slice_val, cond_idx, N = 5000, eps = 5e-3):
     cond_sample = np.empty([0] + list(target_gen(5).shape[1:]))
     while len(cond_sample) < N:
         target_sample = target_gen(10 * N)
@@ -582,7 +577,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
-                              final_eps=1e-2, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
+                              final_eps=5e-3, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
                               plot_steps = False, reg_lambda = 7e-7, mu = 0, sigma = 1,var_eps = .1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
@@ -662,7 +657,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=60, reg_lambda=7e-7, final_eps=3e-3, plot_steps = False, var_eps = 1/3):
+              vmax=None, n_transports=60, reg_lambda=7e-7, final_eps=1e-3, plot_steps = False, var_eps = 1/3):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -843,7 +838,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #arget_gen = sample_swiss_roll()
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=40,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=50,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
