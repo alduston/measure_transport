@@ -476,8 +476,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
 
-        Y_mean = model.Y_mean + model.Z_mean
-        Y_var = model.Y_var + model.Z_var
+        #Y_mean = model.Y_mean + model.Z_mean
+        #Y_var = model.Y_var + model.Z_var
+
+        Y_mean = model.Y_mu
+        Y_var = 0 * model.Y_mu
 
         test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
@@ -836,16 +839,13 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-   #spheres_exp(5000, exp_name='spheres_exp')
-   #lv_exp(5000, exp_name='lv_exp')
-   #target_gen = sample_checkerboard
+    arget_gen = sample_swiss_roll()
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name='exp', n_transports=60,
+              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=False, normal=True, bins=100, var_eps=.1)
 
-   target_gen = sample_swiss_roll
-   two_d_exp(ref_gen=sample_normal, target_gen=target_gen, N=10000, exp_name='swiss_movie', n_transports=60,
-             slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[3, 3], vmax=.35, skip_idx=1,
-             N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+    pass
 
-#Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
+
 if __name__ == '__main__':
     run()
-    # common commit
