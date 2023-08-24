@@ -4,7 +4,7 @@ from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
 from fit_kernel import train_kernel, sample_scatter, sample_hmap,seaborne_hmap, process_frames
 import os
 from copy import deepcopy,copy
-from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
+from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_checkerboard, mgan1, sample_rings, \
     rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll
 
 import matplotlib.pyplot as plt
@@ -841,10 +841,11 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
    #spheres_exp(5000, exp_name='spheres_exp')
-   #vl_exp(5000, exp_name='vl_exp')
-   target_gen = mgan1
-   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan1_movie', n_transports=60,
-              slice_vals=[-1,0,1], plt_range=[[-2.5,2.5],[-1.0,3.0]], slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1,
+   #lv_exp(5000, exp_name='lv_exp')
+   target_gen = sample_checkerboard
+
+   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='checkerboard_movie', n_transports=60,
+              slice_vals=[], plt_range=[[-4.1,4.1],[-4.1,4.1]], slice_range=[-1.5, 1.5], vmax=.12, skip_idx=1,
               N_plot=5000, plot_steps = True, normal = True, bins=100, var_eps = 1/3)
 
    #target_gen = sample_elden_ring

@@ -664,7 +664,7 @@ def elden_exp(N=10000, n_iter=101, exp_name='elden_exp', n_transports=55):
     return trained_models
 
 
-def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='vl_exp'):
+def vl_exp(N=10000, n_iter=101, Yd=18, normal=True, exp_name='lv_exp'):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, Yd=Yd, normal=normal, T = 20)
 

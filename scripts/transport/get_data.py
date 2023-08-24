@@ -455,6 +455,10 @@ def sample_pinweel(N):
     return inf_train_gen("pinwheel", batch_size=N)
 
 
+def sample_checkerboard(N):
+    return inf_train_gen("checkerboard", batch_size=N)
+
+
 def sample_torus(N, n_grid = 333, eps_scale = .01):
     theta = np.linspace(0, 2. * np.pi, n_grid)
     phi = np.linspace(0, 2. * np.pi, n_grid)
