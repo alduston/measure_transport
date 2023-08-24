@@ -420,9 +420,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        #if not (self.iters - 1)%300:
-            #sample_hmap(map_vec, f'../../data/kernel_transport/exp/map_vec_{self.iters}.png', bins = 100, range=[[-2.5,2.5],[-2.5,2.5]])
-        return  self.mmd(map_vec, target, test = True)  #* self.mmd_lambda_test
+        return  self.mmd(map_vec, target, test = True)
 
 
     def loss(self):
@@ -853,10 +851,11 @@ def run():
               #slice_vals=[], plt_range=[[-4.1,4.1],[-4.1,4.1]], slice_range=[-1.5, 1.5], vmax=.12, skip_idx=1,
               #N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
 
-   target_gen = sample_elden_ring
-   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 10000, exp_name='exp', n_transports=60,
-        slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-3, 3], vmax=8, skip_idx=1,
-        N_plot= 10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
+   target_gen = sample_spirals
+   for i in range(5):
+        two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 3000, exp_name='exp', n_transports=60,
+        slice_vals=[], plt_range= [[-1,1],[-1.05,1.05]], slice_range=[-3, 3], vmax=8, skip_idx=1,
+        N_plot= 1000, plot_steps = False, normal = True, bins=100, var_eps = .1)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
 if __name__ == '__main__':
