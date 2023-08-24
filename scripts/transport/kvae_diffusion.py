@@ -454,7 +454,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
-    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports//3) - 10))
+    noise_shrink_c = np.exp(np.log(final_eps) / ((n_transports//2) - 10))
     models_param_dict['final_eps'] = final_eps
     Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
     approx = False
@@ -489,7 +489,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        if i%3 == 1:
+        if i%2 == 1:
             target_eps *= noise_shrink_c
 
         if n_transports - i < 10:
@@ -584,7 +584,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=1e-2, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
-                              plot_steps = False, reg_lambda = 1e-6, mu = 0, sigma = 1,var_eps = .1):
+                              plot_steps = False, reg_lambda = 1e-5, mu = 0, sigma = 1,var_eps = .1):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -663,7 +663,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=60, reg_lambda=1e-6, final_eps=1e-2, plot_steps = False, var_eps = 1/3):
+              vmax=None, n_transports=60, reg_lambda=1e-5, final_eps=1e-2, plot_steps = False, var_eps = 1/3):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -844,7 +844,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #arget_gen = sample_swiss_roll()
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=7000, exp_name='exp', n_transports=99,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=7000, exp_name='exp', n_transports=65,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
