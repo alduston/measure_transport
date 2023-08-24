@@ -782,7 +782,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx=[], plt_range=None, idx_dict=idx_dict,
-                                                         n_transports=n_transports, var_eps = .6)
+                                                         n_transports=n_transports, var_eps = .1)
 
     target_sample = get_VL_data(N_plot, normal=False, Yd=Yd)
     mu = np.mean(target_sample, axis=0)
