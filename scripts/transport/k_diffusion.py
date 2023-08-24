@@ -320,7 +320,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        return self.fit_kXXmean_inv @ (self.Z_mean )
+        return self.fit_kXXmean_inv @ (self.Z_mean ) * 0
 
 
     def get_Lambda_var(self):
@@ -387,7 +387,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean ) + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean * 0) + self.Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -854,9 +854,9 @@ def run():
               #N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
 
    target_gen = sample_elden_ring
-   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 5000, exp_name='exp', n_transports=60,
+   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 10000, exp_name='exp', n_transports=60,
         slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-3, 3], vmax=8, skip_idx=1,
-        N_plot= 5000, plot_steps = True, normal = True, bins=100, var_eps = .1)
+        N_plot= 10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
 if __name__ == '__main__':
