@@ -141,8 +141,7 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        #x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
-        x_mean = torch.concat([x_mu, y_mean], dim=1)
+        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -319,7 +318,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        return self.fit_kXXmean_inv @ (self.Z_mean * 0)
+        return self.fit_kXXmean_inv @ (self.Z_mean)
 
 
     def get_Lambda_var(self):
@@ -385,7 +384,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean * 0) + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -406,7 +405,7 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
 
-        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean * 0)
+        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
         reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
         return  self.reg_lambda * (reg_1 + reg_2)
 
@@ -836,27 +835,15 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
         clear_plt()
     return True
 
-def test_medly(N = 5000):
-
-    losses_1 = 0.017 + 0.0107 + 0.0123 + 0.0163 + 0.0059 + 0.0129 + 0.0137 + 0.0115 + 0.0125 + 0.0104
-    losses_2 = 0.0157 + 0.0122 + 0.0143 + 0.0075 + 0.0123 + 0.0204 + 0.0063 + 0.0126
-    pass
-
 
 def run():
-   #spheres_exp(5000, exp_name='spheres_exp')
+   spheres_exp(5000, exp_name='spheres_exp')
    #lv_exp(5000, exp_name='lv_exp')
    #target_gen = sample_checkerboard
 
    #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='checkerboard_movie', n_transports=60,
               #slice_vals=[], plt_range=[[-4.1,4.1],[-4.1,4.1]], slice_range=[-1.5, 1.5], vmax=.12, skip_idx=1,
               #N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
-
-   target_gen = sample_elden_ring
-   for i in range(10):
-        two_d_exp(ref_gen=sample_spirals, target_gen = target_gen, N = 10000, exp_name='exp', n_transports=60,
-        slice_vals=[0], plt_range= [[-3,3],[-3,3]], slice_range=[-3, 3], vmax=.3, skip_idx=1,
-        N_plot= 10000, plot_steps = False, normal = True, bins=100, var_eps = 1/3)
 
 #Test mmd :0.0021, Base mmd: 0.0105, NTest mmd :0.2039
 if __name__ == '__main__':
