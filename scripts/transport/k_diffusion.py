@@ -320,7 +320,7 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        return self.fit_kXXmean_inv @ (self.Z_mean )
+        return self.fit_kXXmean_inv @ (self.Z_mean * 0)
 
 
     def get_Lambda_var(self):
@@ -387,7 +387,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_mmd(self):
-        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean ) + self.Z_var
+        Y_approx = self.Y_var + self.Y_mean + (self.Z_mean * 0 ) + self.Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
@@ -839,6 +839,8 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
     return True
 
 def test_medly(N = 5000):
+
+    losses_1 = 0.017 + 0.0107 + 0.0123 + 0.0163 + 0.0059 + 0.0129 + 0.0137 + 0.0115 + 0.0125
     pass
 
 
