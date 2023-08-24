@@ -840,7 +840,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-   spheres_exp(5000, exp_name='spheres_exp')
+   #spheres_exp(5000, exp_name='spheres_exp')
    vl_exp(5000, exp_name='vl_exp')
    #target_gen = mgan2
    #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='mgan2_movie', n_transports=60,
