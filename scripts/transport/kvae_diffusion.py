@@ -461,6 +461,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     grad_cutoff = .0001
     target_eps = noise_shrink_c
+    print(noise_shrink_c)
     validation_losses = []
 
     for i in range(n_transports):
@@ -838,7 +839,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
     #arget_gen = sample_swiss_roll()
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=50,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=55,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
