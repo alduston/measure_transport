@@ -844,9 +844,9 @@ def run():
    #lv_exp(5000, exp_name='lv_exp')
    target_gen = sample_checkerboard
 
-   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=5000, exp_name='checkerboard_movie', n_transports=60,
+   two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N=10000, exp_name='checkerboard_movie', n_transports=60,
               slice_vals=[], plt_range=[[-4.1,4.1],[-4.1,4.1]], slice_range=[-1.5, 1.5], vmax=.12, skip_idx=1,
-              N_plot=5000, plot_steps = True, normal = True, bins=100, var_eps = 1/3)
+              N_plot=10000, plot_steps = True, normal = True, bins=100, var_eps = .1)
 
    #target_gen = sample_elden_ring
    #two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 10000, exp_name='elden_movie', n_transports=60,
