@@ -289,10 +289,7 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
         self.step_num = self.params['step_num']
 
-        Y_mu_test_noisy = (1 - self.noise_eps) * self.Y_mu_test + deepcopy(self.Y_eta_test) * self.noise_eps
-        if normal:
-            Y_mu_test_noisy = torch_normalize(Y_mu_test_noisy)
-        goal_mmd = self.mmd(self.Y_test, torch.concat([self.X_mu_test, Y_mu_test_noisy], dim=1))
+        goal_mmd = self.mmd(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
@@ -417,7 +414,8 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.X_mu_test
+        #x_mu = self.X_mu_test
+        x_mu = self.X_mu
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
         y_var = self.Y_var_test
@@ -485,7 +483,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
 
-        test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
+        #test_map_dict = model.map(X_mu_test, Y_eta_test, Y_mean_test, Y_var_test)
+        test_map_dict = model.map(X_mu, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
         approx = True
@@ -521,9 +520,10 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
-    N_test = min(4000, 10 * N)
+    N_test = N #min(4000, 10 * N)
     test_sample = ref_gen(N_test)
     test_target_sample = target_gen(N_test)
+    test_val_sample = target_gen(N_test)
 
     if len(process_funcs):
         forward = process_funcs[0]
