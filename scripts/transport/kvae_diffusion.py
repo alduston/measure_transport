@@ -849,7 +849,7 @@ def run():
    target_gen = sample_elden_ring
    two_d_exp(ref_gen=sample_normal, target_gen = target_gen, N = 10000, exp_name='elden_movie', n_transports=60,
         slice_vals=[], plt_range=[[-1,1],[-1.05,1.05]], slice_range=[-3, 3], vmax=8, skip_idx=1,
-        N_plot= 10000, plot_steps = True, normal = True, bins=100, var_eps = 1/3)
+        N_plot= 10000, plot_steps = True, normal = True, bins=100, var_eps = 1/10)
 
 
 if __name__ == '__main__':
