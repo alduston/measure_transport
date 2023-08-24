@@ -223,8 +223,7 @@ class CondTransportKernel(nn.Module):
         base_params['device'] = self.device
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
-        self.var_eps =  self.params['var_eps'] if self.noise_eps > 0 else 0
-        print(self.var_eps)
+        self.var_eps =  self.params['var_eps']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -238,11 +237,11 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         normal = check_normal(self.Y_mu)
-        self.Y_mu = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
+        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
         if normal:
-            self.Y_mu = torch_normalize(self.Y_mu)
+            self.Y_mu_noisy = torch_normalize(self.Y_mu_noise)
 
-        self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
+        self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
 
         self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
@@ -288,7 +287,13 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
+        self.step_num = self.params['step_num']
 
+        Y_mu_test_noisy = (1 - self.noise_eps) * self.Y_mu_test + deepcopy(self.Y_eta_test) * self.noise_eps
+        if normal:
+            Y_mu_test_noisy = torch_normalize(Y_mu_test_noisy)
+        goal_mmd = self.mmd(self.Y_test, torch.concat([self.X_mu_test, self.Y_mu_test_noisy], dim=1))
+        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
         total_norm = 0
@@ -432,14 +437,14 @@ class CondTransportKernel(nn.Module):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                          Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0,
+                          Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-6, grad_cutoff = .0001, n_iter = 125, target_eps = 1, var_eps = .1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
-                        'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -462,7 +467,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
-                                      Y_mu_test, Y_mean_test, Y_var_test, params=params, iters=iters,
+                                      Y_mu_test, Y_mean_test, Y_var_test, params=params, iters=iters, step_num = i + 1,
                                       approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                       grad_cutoff = grad_cutoff, target_eps = target_eps, n_iter = n_iter)
 
