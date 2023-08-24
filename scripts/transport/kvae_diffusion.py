@@ -489,7 +489,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        if not i%2:
+        if i%2:
             target_eps *= noise_shrink_c
 
         if n_transports - i < 10:
