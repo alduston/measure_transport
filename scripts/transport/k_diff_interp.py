@@ -239,8 +239,8 @@ class CondTransportKernel(nn.Module):
         normal = check_normal(self.Y_mu)
         self.Y_approx = self.Y_mean + self.Y_var
 
-        self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
-        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_mu_noisy) * self.noise_eps
+        #self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
+        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_approx) * self.noise_eps
         if normal:
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
@@ -856,7 +856,7 @@ def run():
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/10)
 
     two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_movie2', n_transports=90,
-              slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.3,
+              slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.32,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_movie2', n_transports=90,
