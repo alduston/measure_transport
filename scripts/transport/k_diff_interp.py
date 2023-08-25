@@ -468,7 +468,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     grad_cutoff = .0001
-    noise_shrink_c = .7 #.93
+    noise_shrink_c = .93
     target_eps = noise_shrink_c
     validation_losses = []
     Y_mu_noisy = []
@@ -501,7 +501,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         iters = model.iters
         #target_eps *= noise_shrink_c
-        Y_mu_noisy = Y_mean + Y_var #model.Y_mu_noisy
+        Y_mu_noisy = model.Y_mu_noisy
 
         validation_losses.append(loss_dict['test'][-1])
 
@@ -851,7 +851,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    
+
     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_movie2', n_transports=90,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/10)
