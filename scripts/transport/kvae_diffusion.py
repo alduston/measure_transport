@@ -630,9 +630,13 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
         base_mmd = float(trained_models[0].mmd(cref_sample, target_sample).detach().cpu())
         ntest_mmd = test_mmd / base_mmd
+        print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
         print(f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}')
     except BaseException:
-        print(f'Test mmd :{format(test_mmd)}')
+        print_str = f'Test mmd :{format(test_mmd)}'
+
+    print(print_str)
+    os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
     if len(process_funcs):
         backward = process_funcs[1]

@@ -636,14 +636,18 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     target_sample = target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(gen_sample, target_sample).detach().cpu())
 
+
     try:
         cref_sample = deepcopy(ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
         base_mmd = float(trained_models[0].mmd(cref_sample, target_sample).detach().cpu())
         ntest_mmd = test_mmd / base_mmd
-        print(f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}')
+        print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
     except BaseException:
-        print(f'Test mmd :{format(test_mmd)}')
+        print_str = f'Test mmd :{format(test_mmd)}'
+    print(print_str)
+    os.system(f'echo {print_str} > {save_dir}/test_res.txt')
+
 
     if len(process_funcs):
         backward = process_funcs[1]
@@ -716,7 +720,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0, normal = False):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
     n = 10
     ref_gen = sample_normal
     target_gen = lambda N: sample_spheres(N=N, n=n)
@@ -745,7 +749,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=60, N_plot = 0, nor
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
 
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-        sample_hmap(slice_sample[:, np.asarray([0, 1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=60, d=2,
+        sample_hmap(slice_sample[:, np.asarray([0, 1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=100, d=2,
                     range=plt_range)
     return True
 
@@ -851,8 +855,20 @@ def run():
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/10)
 
-    pass
+    two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_movie2', n_transports=90,
+              slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.3,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
+    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_movie2', n_transports=90,
+              slice_vals=[-1, 0, 1], plt_range=[[-1, 3], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=1.2,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+
+    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_movie2', n_transports=90,
+              slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+
+    spheres_exp(9000, exp_name='spheres_exp2', n_transports=90)
+    vl_exp(9000, exp_name='vl_exp2', n_transports=90)
 
 if __name__ == '__main__':
     run()
