@@ -866,7 +866,7 @@ def run():
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     spheres_exp(9000, exp_name='spheres_expp2', n_transports=100)
-    vl_exp(9000, exp_name='vl_expp2', n_transports==100)
+    vl_exp(9000, exp_name='vl_expp2', n_transports=100)
 
 if __name__ == '__main__':
     run()
