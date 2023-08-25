@@ -239,7 +239,8 @@ class CondTransportKernel(nn.Module):
         normal = check_normal(self.Y_mu)
         self.Y_approx = self.Y_mean + self.Y_var
 
-        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_eta) * self.noise_eps
+        self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
+        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_mu_noisy) * self.noise_eps
         if normal:
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
@@ -420,15 +421,13 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        #x_mu = self.X_mu_val
-        #y_eta = self.Y_eta_test
-        #y_mean = self.Y_mean_test
-        #y_var = self.Y_var_test
-        #target = self.Y_test
+        x_mu = self.X_mu_val
+        y_eta = self.Y_eta_test
+        y_mean = self.Y_mean_test
+        y_var = self.Y_var_test
+        target = self.Y_test
         target = self.Y_target
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
-        #map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         return  self.mmd(map_vec, target, test = True)
 
 
@@ -444,13 +443,17 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 100, target_eps = 1, var_eps = .1):
+                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 100, target_eps = 1, var_eps = .1,
+                          Y_mu_noisy = []):
+    if not len(Y_mu_noisy):
+        Y_mu_noisy = deepcopy(Y_eta)
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
-                        'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num}
+                        'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
+                        'Y_mu_noisy': Y_mu_noisy}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -470,12 +473,14 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     noise_shrink_c = .1
     target_eps = noise_shrink_c
     validation_losses = []
+    Y_mu_noisy = []
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
                                      Y_mu_test, X_mu_val, Y_mean_test, Y_var_test, n_iter = n_iter, params=params,
                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
-                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1)
+                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1,
+                                     Y_mu_noisy = Y_mu_noisy)
 
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -498,7 +503,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         iters = model.iters
         #target_eps *= noise_shrink_c
-
+        Y_mu_noisy = model.Y_mu_noisy
 
         validation_losses.append(loss_dict['test'][-1])
 
