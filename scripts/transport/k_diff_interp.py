@@ -869,7 +869,6 @@ def run():
 
     spheres_exp(9000, exp_name='spheres_expp2', n_transports=90)
     vl_exp(9000, exp_name='vl_expp2', n_transports=90)
-    '''
 
 if __name__ == '__main__':
     run()
