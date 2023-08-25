@@ -293,8 +293,6 @@ class CondTransportKernel(nn.Module):
         self.step_num = self.params['step_num']
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        base_mmd = self.mmd(self.Y_approx, self.Y_test)
-
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
