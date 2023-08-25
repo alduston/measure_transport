@@ -18,6 +18,5 @@
 # Modules to use (optional).
 
 # Your programs to run.
-rm ./job_outputs/job0.out ./job_outputs/job0.err
 source activate /mmfs1/gscratch/dynamicsai/ald6fd/SindyTorch
 python k_diff_interp.py
