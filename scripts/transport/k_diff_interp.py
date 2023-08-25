@@ -239,6 +239,8 @@ class CondTransportKernel(nn.Module):
         normal = check_normal(self.Y_mu)
         self.Y_approx = self.Y_mean + self.Y_var
 
+        print(1 - self.noise_eps)
+
         #self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
         self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_approx) * self.noise_eps
         if normal:
