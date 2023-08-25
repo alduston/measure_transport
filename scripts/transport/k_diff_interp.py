@@ -237,7 +237,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         normal = check_normal(self.Y_mu)
-        self.Y_approx = self.Y_mean + self.Y_var
 
         self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
         self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_mu_noisy) * self.noise_eps
@@ -500,7 +499,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        #target_eps *= noise_shrink_c
         Y_mu_noisy = model.Y_mu_noisy
 
         validation_losses.append(loss_dict['test'][-1])
@@ -851,19 +849,19 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=90,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/10)
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
-    two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=90,
-              slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.32,
+    two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
+              slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_moviep2', n_transports=90,
+    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_moviep2', n_transports=100,
               slice_vals=[-1, 0, 1], plt_range=[[-1, 3], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=1.2,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_moviep2', n_transports=90,
+    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_moviep2', n_transports=100,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
