@@ -239,8 +239,8 @@ class CondTransportKernel(nn.Module):
         normal = check_normal(self.Y_mu)
         self.Y_approx = self.Y_mean + self.Y_var
         self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_approx) * self.noise_eps
-        if normal:
-            self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+        #if normal:
+            #self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
