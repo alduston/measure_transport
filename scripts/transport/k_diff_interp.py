@@ -420,13 +420,15 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.X_mu_val
-        y_eta = self.Y_eta_test
-        y_mean = self.Y_mean_test
-        y_var = self.Y_var_test
+        #x_mu = self.X_mu_val
+        #y_eta = self.Y_eta_test
+        #y_mean = self.Y_mean_test
+        #y_var = self.Y_var_test
         #target = self.Y_test
         target = self.Y_target
-        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
+        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+        #map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         return  self.mmd(map_vec, target, test = True)
 
 
@@ -456,7 +458,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 500,var_eps = 1/3):
+                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 100,var_eps = 1/3):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
