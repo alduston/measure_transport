@@ -426,6 +426,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        print(self.Y_mu_noisy[0])
         return  self.mmd(map_vec, target, test = True)
 
 
