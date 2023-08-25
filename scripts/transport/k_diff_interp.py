@@ -238,9 +238,10 @@ class CondTransportKernel(nn.Module):
 
         normal = check_normal(self.Y_mu)
         self.Y_approx = self.Y_mean + self.Y_var
+
         self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_approx) * self.noise_eps
-        #if normal:
-            #self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+        if normal:
+            self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -454,7 +455,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 100,var_eps = 1/3):
+                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 500,var_eps = 1/3):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
