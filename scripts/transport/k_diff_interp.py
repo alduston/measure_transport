@@ -840,9 +840,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll , N=5000, exp_name='exp', n_transports=70,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll , N=5000, exp_name='exp', n_transports=30,
               slice_vals=[], plt_range=[[-3,3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/3)
+              skip_idx=1, N_plot=5000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     pass
 
