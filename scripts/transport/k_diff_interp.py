@@ -237,7 +237,8 @@ class CondTransportKernel(nn.Module):
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
         normal = check_normal(self.Y_mu)
-        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_mean + self.Y_var) * self.noise_eps
+        self.Y_approx = self.Y_mean + self.Y_var
+        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + deepcopy(self.Y_mean + self.Y_approx) * self.noise_eps
         if normal:
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
@@ -291,7 +292,10 @@ class CondTransportKernel(nn.Module):
         self.step_num = self.params['step_num']
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
+        base_mmd = self.mmd(self.Y_approx, self.Y_test)
+
+        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}, "
+              f" Base mmd is {format(float(base_mmd.detach().cpu()))}")
 
     def total_grad(self):
         total_norm = 0
@@ -450,7 +454,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 100,var_eps = .1):
+                               final_eps=5e-3, n_transports=50, reg_lambda=1e-7, n_iter = 100,var_eps = 1/3):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
@@ -836,9 +840,9 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=70,
-              slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll , N=5000, exp_name='exp', n_transports=70,
+              slice_vals=[], plt_range=[[-3,3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/3)
 
     pass
 
