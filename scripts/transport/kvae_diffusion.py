@@ -491,7 +491,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         iters = model.iters
         print(f'Target eps = {target_eps}')
-        eps = 1-noise_shrink_c
         noise_eps = ((i+1) * eps)/(1 + (i * eps))
         target_eps = 1 - noise_eps
 
