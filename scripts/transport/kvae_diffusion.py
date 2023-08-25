@@ -489,7 +489,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        target_eps *= noise_shrink_c
+
+        eps = 1-noise_shrink_c
+        noise_eps = ((i+1) * eps)/(1 + (i * eps))
+        target_eps = 1 - noise_eps
 
 
         validation_losses.append(loss_dict['test'][-1])
@@ -840,7 +843,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=70,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=90,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=5000, plot_steps=False, normal=True, bins=100, var_eps=1/9)
 
