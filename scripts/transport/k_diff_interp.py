@@ -470,7 +470,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     grad_cutoff = .0001
-    noise_shrink_c = .1
+    noise_shrink_c = .9
     target_eps = noise_shrink_c
     validation_losses = []
     Y_mu_noisy = []
