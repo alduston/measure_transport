@@ -851,9 +851,6 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    vl_exp(2000, exp_name='lv_exp2', n_transports=100)
-
-    '''
     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
@@ -871,7 +868,6 @@ def run():
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     vl_exp(9000, exp_name='vl_expp2', n_transports=100)
-    '''
 
 
 if __name__ == '__main__':
