@@ -120,7 +120,7 @@ class Comp_transport_model:
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
-        self.save_dir ='../../data/kernel_transport/exp/'
+        self.save_dir ='../../data/transport/exp/'
         self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
         self.vmax = None
         self.bins = 75
@@ -576,7 +576,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3):
-    save_dir = f'../../data/kernel_transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -659,7 +659,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=60, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3):
-    save_dir = f'../../data/kernel_transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -728,7 +728,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
-    save_dir = f'../../data/kernel_transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'
     for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
@@ -753,7 +753,7 @@ def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    save_dir = f'../../data/kernel_transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -815,7 +815,7 @@ def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N
                         plt.axvline(slice_val[i], color='red', linewidth=3)
 
         plt.tight_layout(pad=0.3)
-        plt.savefig(f'../../data/kernel_transport/{exp_name}/posterior_samples{range_idx}hmap.png')
+        plt.savefig(f'../../data/transport/{exp_name}/posterior_samples{range_idx}hmap.png')
         clear_plt()
     return True
 

@@ -8,7 +8,7 @@
 #SBATCH --partition=gpu-a40
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=20G
+#SBATCH --mem=40G
 #SBATCH --gpus=1
 #SBATCH --time=00-24:00:00
 
