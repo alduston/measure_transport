@@ -739,7 +739,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
-                                                         n_transports=n_transports)
+                                                         n_transports=n_transports, mu = mu, sigma=sigma)
 
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
     normal_slice_vals = (slice_vals - mu[:2])/sigma[:2]
