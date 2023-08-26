@@ -237,12 +237,17 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        normal = check_normal(self.Y_mu)
+        #normal = check_normal(self.Y_mu)
+
+        eps = 1 - self.noise_eps
+        mu_coeff = eps * (sum([(1+alpha)**-i for i in range(self.step_num - 1)]))
+        approx_coeff = (1-eps)/((1 + eps)**(self.step_num - 1))
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
-        self.Y_mu_approx  = torch_normalize(((self.noise_eps **(self.step_num-1))* self.Y_mu_approx) + self.Y_mu)
+        self.Y_mu_approx  = torch_normalize(((approx_coeff * self.Y_mu_approx) + (mu_coeff) * self.Y_mu))
         self.Y_mu_noisy = self.Y_mu_approx
 
+        # normal = check_normal(self.Y_mu)
         #self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_approx * self.noise_eps)
         #if normal:
             #self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
@@ -851,23 +856,24 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
-              #slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_movie_a,t', n_transports=100,
+              slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
-    two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_movie_alt', n_transports=100,
               slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
+
+    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_movie_alt', n_transports=100,
+              slice_vals=[-1, 0, 1], plt_range=[[2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_moviep2', n_transports=100,
-              slice_vals=[-1, 0, 1], plt_range=[[-1, 3], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=1.2,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
-
-    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_moviep2', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    vl_exp(9000, exp_name='vl_expp2', n_transports=100)
+    vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
+    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100)
 
 
 if __name__ == '__main__':
