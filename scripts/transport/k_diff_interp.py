@@ -588,7 +588,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               final_eps=5e-3, skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},
-                              plot_steps = False, reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = .1):
+                              plot_steps = False, reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3):
     save_dir = f'../../data/kernel_transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -857,8 +857,8 @@ def run():
               #slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
-    spheres_exp(8000, exp_name='spheres_expp2', n_transports=100)
-    vl_exp(8000, exp_name='vl_expp2', n_transports=100)
+    spheres_exp(9000, exp_name='spheres_expp2', n_transports=100)
+    vl_exp(9000, exp_name='vl_expp2', n_transports=100)
 
     two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
               slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
