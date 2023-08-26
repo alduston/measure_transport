@@ -866,9 +866,9 @@ def run():
               #slice_vals=[-1, 0, 1], plt_range=[[2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
               #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=3000, exp_name='mgan2_movie_alt', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=3000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
 
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
     #spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100)
