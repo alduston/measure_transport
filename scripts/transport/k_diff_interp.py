@@ -239,7 +239,6 @@ class CondTransportKernel(nn.Module):
 
         normal = check_normal(self.Y_mu)
 
-
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
         self.Y_mu_approx  = torch_normalize(((self.noise_eps **(self.step_num-1))* self.Y_mu_approx) + self.Y_mu)
         self.Y_mu_noisy = self.Y_mu_approx
@@ -723,7 +722,8 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
 def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
     n = 10
     ref_gen = sample_normal
-    target_gen = lambda N: sample_spheres(N=N, n=n)
+    mu, sigma = get_base_stats(sample_spheres, 10000)
+    target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
 
 
     idx_dict = {'ref': [[0, 1]],
@@ -742,14 +742,15 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
                                                          n_transports=n_transports)
 
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
+    normal_slice_vals = (slice_vals - mu[:2])/sigma[:2]
     save_dir = f'../../data/kernel_transport/{exp_name}'
-    for slice_val in slice_vals:
+    for i,slice_val in normal_slice_vals:
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
 
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)
-        sample_hmap(slice_sample[:, np.asarray([0, 1])], f'{save_dir}/x={slice_val[1]}_map.png', bins=100, d=2,
+        slice_sample = sigma * compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) + mu
+        sample_hmap(slice_sample[:, np.asarray([0, 1])], f'{save_dir}/x={slice_vals[i][1]}_map.png', bins=100, d=2,
                     range=plt_range)
     return True
 
@@ -852,10 +853,12 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
 
+    spheres_exp(2000, exp_name='spheres_exp2')
 
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
-              #slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
+    '''
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
+              slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
     two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
               slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
@@ -870,6 +873,7 @@ def run():
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     vl_exp(9000, exp_name='vl_expp2', n_transports=100)
+    '''
 
 
 if __name__ == '__main__':
