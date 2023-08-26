@@ -857,7 +857,6 @@ def run():
               #slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
-    spheres_exp(9000, exp_name='spheres_expp2', n_transports=100)
     vl_exp(9000, exp_name='vl_expp2', n_transports=100)
 
     two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
@@ -871,6 +870,8 @@ def run():
     two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_moviep2', n_transports=100,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+
+    vl_exp(9000, exp_name='vl_expp2', n_transports=100)
 
 
 if __name__ == '__main__':
