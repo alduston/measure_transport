@@ -719,12 +719,11 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
     n = 10
     ref_gen = sample_normal
     mu, sigma = get_base_stats(sample_spheres, 10000)
     target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
-
 
     idx_dict = {'ref': [[0, 1]],
                 'cond': [list(range(2, 2 + (2 * n)))],
@@ -744,7 +743,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=90, N_plot = 0):
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
     normal_slice_vals = (slice_vals - mu[:2])/sigma[:2]
     save_dir = f'../../data/kernel_transport/{exp_name}'
-    for i,slice_val in normal_slice_vals:
+    for i,slice_val in enumerate(normal_slice_vals):
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
@@ -853,7 +852,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
 
-    spheres_exp(2000, exp_name='spheres_exp2')
+    spheres_exp(2000, exp_name='spheres_exp2', n_transports=20)
 
     '''
     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
