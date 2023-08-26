@@ -839,7 +839,7 @@ def run():
               n_transports=100, slice_vals=[-1,0,1], plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps= 1/3)
     
-
+    '''
     vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
     spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
     '''
