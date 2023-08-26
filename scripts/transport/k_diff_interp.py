@@ -491,7 +491,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         iters = model.iters
-        #Y_mu_approx = Y_mean + Y_var
+        Y_mu_approx = Y_mean + Y_var
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
@@ -821,29 +821,41 @@ def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N
         clear_plt()
     return True
 
-
-def run():
+def alt_test():
     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_movie_alt', n_transports=100,
-             slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
-             skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+              slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
               slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 2)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=10000, exp_name='swiss_movie_alt', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=10000, exp_name='swiss_movie_alt',
+              n_transports=100,
               slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=10000, exp_name='checkerboard_movie_alt',
-              n_transports=100, slice_vals=[-1,0,1], plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps= 1/3)
-    
-    '''
+              n_transports=100, slice_vals=[-1, 0, 1], plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4],
+              vmax=.12,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
+
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=10000, exp_name='spiral_movie_alt', n_transports=100,
+              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
+
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name='elden_movie_alt',
+              n_transports=100,
+              slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 12)
+
+    vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
+    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal=False)
+
+
+def run():
     vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
     spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
-    '''
-
 
 if __name__ == '__main__':
     run()
