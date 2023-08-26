@@ -237,20 +237,18 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        #normal = check_normal(self.Y_mu)
+        # normal = check_normal(self.Y_mu)
+        # self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_approx * self.noise_eps)
+        # if normal:
+        # self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         eps = 1 - self.noise_eps
         mu_coeff = eps * (sum([(1+alpha)**-i for i in range(self.step_num - 1)]))
         approx_coeff = (1-eps)/((1 + eps)**(self.step_num - 1))
 
-        self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
-        self.Y_mu_approx  = torch_normalize(((approx_coeff * self.Y_mu_approx) + (mu_coeff) * self.Y_mu))
+        self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
+        self.Y_mu_approx  = torch_normalize(((approx_coeff * self.Y_mu_approx) + (mu_coeff * self.Y_mu)))
         self.Y_mu_noisy = self.Y_mu_approx
-
-        # normal = check_normal(self.Y_mu)
-        #self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_approx * self.noise_eps)
-        #if normal:
-            #self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -447,16 +445,16 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 100, target_eps = 1, var_eps = .1,
-                          Y_mu_noisy = []):
-    if not len(Y_mu_noisy):
-        Y_mu_noisy = deepcopy(Y_eta)
+                          Y_mu_approx = []):
+    if not len(Y_mu_approx):
+        Y_mu_approx = deepcopy(Y_eta)
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_noisy': Y_mu_noisy}
+                        'Y_mu_approx': Y_mu_approx}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -483,7 +481,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                      Y_mu_test, X_mu_val, Y_mean_test, Y_var_test, n_iter = n_iter, params=params,
                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                      grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1,
-                                     Y_mu_noisy = Y_mu_noisy)
+                                     Y_mu_approx = Y_mu_approx)
 
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -505,7 +503,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
 
         iters = model.iters
-        Y_mu_noisy = Y_mean + Y_var #model.Y_mu_noisy
+        Y_mu_approx = Y_mean + Y_var
 
         validation_losses.append(loss_dict['test'][-1])
 
