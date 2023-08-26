@@ -237,18 +237,11 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        # normal = check_normal(self.Y_mu)
-        # self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_approx * self.noise_eps)
-        # if normal:
-        # self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
-
-        eps = 1 - self.noise_eps
-        mu_coeff = eps * (sum([(1+eps)**-i for i in range(1,self.step_num + 1)]))
-        approx_coeff = (1 + eps)**(-self.step_num)
+        mu_coeff = (1 - self.noise_eps)
+        approx_coeff = self.noise_eps ** (self.step_num)
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
-        self.Y_mu_approx  = torch_normalize(((approx_coeff * self.Y_mu_approx) + (mu_coeff * self.Y_mu)))
-        self.Y_mu_noisy = self.Y_mu_approx
+        self.Y_mu_noisy = torch_normalize(mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -866,9 +859,9 @@ def run():
               #slice_vals=[-1, 0, 1], plt_range=[[2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
               #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
-    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen= mgan2, N=1000, exp_name='exp', n_transports=20,
               slice_vals=[-1,0,1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
+              skip_idx=1, N_plot=1000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
 
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
     #spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100)
