@@ -97,7 +97,7 @@ def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
     normal_tensor = torch.tensor(normal_tensor, device = device, dtype = dtype)
     return normal_tensor
 
-def check_normal(tensor, eps = 1e-2):
+def is_normal(tensor, eps = 1e-2):
     mu = torch.mean(tensor, dim  = 0)
     sigma = torch.std(tensor, dim = 0) - 1
     if torch.linalg.norm(mu) > eps:
@@ -239,9 +239,14 @@ class CondTransportKernel(nn.Module):
 
         mu_coeff = self.noise_eps
         approx_coeff = (1-self.noise_eps) ** (self.step_num)
+        norm_factor = 1/(mu_coeff + approx_coeff)
+        mu_coeff *= norm_factor
+        approx_coeff *= norm_factor
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
-        self.Y_mu_noisy = torch_normalize(mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx)
+        self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx
+        if is_normal(self.Y_mu):
+            self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -698,11 +703,14 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, normal = False):
     n = 10
     ref_gen = sample_normal
-    mu, sigma = get_base_stats(sample_spheres, 10000)
-    target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
+    mu, sigma = 0,1
+    target_gen = sample_spheres
+    if normal:
+        mu, sigma = get_base_stats(sample_spheres, 10000)
+        target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
 
     idx_dict = {'ref': [[0, 1]],
                 'cond': [list(range(2, 2 + (2 * n)))],
@@ -720,16 +728,16 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0):
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
-    normal_slice_vals = (slice_vals - mu[:2])/sigma[:2]
     save_dir = f'../../data/kernel_transport/{exp_name}'
-    for i,slice_val in enumerate(normal_slice_vals):
+    for slice_val in slice_vals:
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
-
+        if normal:
+            ref_slice_sample = normalize(ref_slice_sample)
         slice_sample = sigma * compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) + mu
-        sample_hmap(slice_sample[:, np.asarray([0, 1])], f'{save_dir}/x={slice_vals[i][1]}_map.png', bins=100, d=2,
-                    range=plt_range)
+        save_loc = f'{save_dir}/x={slice_vals[1]}_map.png'
+        sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
     return True
 
 
@@ -832,7 +840,7 @@ def run():
     '''
 
     vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100)
+    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
 
 
 if __name__ == '__main__':
