@@ -852,7 +852,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 def run():
 
-    spheres_exp(2000, exp_name='spheres_exp2', n_transports=20)
+    vl_exp(2000, exp_name='lv_exp2', n_transports=30)
 
     '''
     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
