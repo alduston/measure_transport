@@ -847,28 +847,17 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 
 
 def run():
-    #two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
-              #slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
-
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_movie_alt', n_transports=100,
-              #slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
-              #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
-
-    #two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_movie_alt', n_transports=100,
-              #slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
-              #skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
 
     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=10000, exp_name='mgan1_movie_alt', n_transports=100,
              slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=10000, exp_name='mgan2_movie_alt', n_transports=100,
-              slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
+              slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
+              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/2)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=10000, exp_name='swiss_movie_alt', n_transports=100,
-              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
+              slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=10000, exp_name='checkerboard_movie_alt',
