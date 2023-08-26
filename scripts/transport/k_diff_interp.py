@@ -224,6 +224,7 @@ class CondTransportKernel(nn.Module):
         self.iters = deepcopy(self.params['iters'])
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
+        self.step_num = self.params['step_num']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_mean = deepcopy(self.Y_eta)
@@ -238,10 +239,13 @@ class CondTransportKernel(nn.Module):
 
         normal = check_normal(self.Y_mu)
 
-        self.Y_mu_noisy = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
-        self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_noisy * self.noise_eps)
-        if normal:
-            self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+
+        self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_noisy'], device=self.device, dtype=self.dtype))
+        self.Y_mu_approx  = torch_normalize(self.Y_mu_approx + (self.step_num * self.noise_eps * self.Y_mu))
+        self.Y_mu_noisy = self.Y_mu_approx
+        #self.Y_mu_noisy = (1 - self.noise_eps) * self.Y_mu + (self.Y_mu_approx * self.noise_eps)
+        #if normal:
+            #self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -290,7 +294,6 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
-        self.step_num = self.params['step_num']
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
@@ -849,10 +852,11 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
 def run():
 
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='elden_moviep2', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring , N=10000, exp_name='exp', n_transports=100,
               slice_vals=[], plt_range=[[-1,1], [-1.05, 1.05]], slice_range=[-1.5, 1.5], vmax=8,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/12)
 
+    '''
     two_d_exp(ref_gen=sample_normal, target_gen= sample_spirals , N=10000, exp_name='spiral_moviep2', n_transports=100,
               slice_vals=[0], plt_range=[[-3,3], [-3, 3]], slice_range=[-3, 3], vmax=.33,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1/3)
@@ -867,6 +871,7 @@ def run():
 
     spheres_exp(9000, exp_name='spheres_expp2', n_transports=100)
     vl_exp(9000, exp_name='vl_expp2', n_transports=100)
+    '''
 
 
 if __name__ == '__main__':
