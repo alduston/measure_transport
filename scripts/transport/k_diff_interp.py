@@ -243,8 +243,8 @@ class CondTransportKernel(nn.Module):
         # self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         eps = 1 - self.noise_eps
-        mu_coeff = eps * (sum([(1+alpha)**-i for i in range(self.step_num - 1)]))
-        approx_coeff = (1-eps)/((1 + eps)**(self.step_num - 1))
+        mu_coeff = eps * (sum([(1+eps)**-i for i in range(1,self.step_num + 1)]))
+        approx_coeff = (1 + eps)**(-self.step_num)
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
         self.Y_mu_approx  = torch_normalize(((approx_coeff * self.Y_mu_approx) + (mu_coeff * self.Y_mu)))
