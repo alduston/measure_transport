@@ -474,7 +474,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     noise_shrink_c = .93
     target_eps = noise_shrink_c
     validation_losses = []
-    Y_mu_noisy = []
+    Y_mu_approx = []
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test,
