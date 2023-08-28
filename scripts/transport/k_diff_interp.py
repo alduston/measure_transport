@@ -491,7 +491,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         iters = model.iters
-        #Y_mu_approx = Y_mean + Y_var
+        Y_mu_approx = Y_mean + Y_var
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
@@ -886,8 +886,8 @@ def test():
 
 def run():
     #test()
-    vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    #spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
+    #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
+    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
 
 if __name__ == '__main__':
     run()
