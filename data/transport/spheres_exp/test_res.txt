@@ -1,1 +1,1 @@
-Test mmd :4.047E-04
+Test mmd :4.210E-04
