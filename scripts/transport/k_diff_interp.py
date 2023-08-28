@@ -738,7 +738,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
         if normal:
             ref_slice_sample = normalize(ref_slice_sample)
         slice_sample = sigma * compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) + mu
-        save_loc = f'{save_dir}/x={slice_vals[1]}_map.png'
+        save_loc = f'{save_dir}/x={slice_val}_map.png'
         sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
     return True
 
@@ -887,7 +887,7 @@ def test():
 def run():
     #test()
     vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
+    #spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
 
 if __name__ == '__main__':
     run()
