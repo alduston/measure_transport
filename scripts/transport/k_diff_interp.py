@@ -710,12 +710,12 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, normal = False):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, normalize_data = False):
     n = 10
     ref_gen = sample_normal
     mu, sigma = 0,1
     target_gen = sample_spheres
-    if normal:
+    if normalize_data:
         mu, sigma = get_base_stats(sample_spheres, 10000)
         target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
 
@@ -740,9 +740,9 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
         ref_sample = ref_gen(N_plot)
         RX = np.full((N_plot, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
-        if normal:
+        if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
-        slice_sample =compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)
         save_loc = f'{save_dir}/x={slice_val}_map.png'
         sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
     return True
@@ -892,7 +892,7 @@ def test():
 def run():
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(2000, exp_name='spheres_exp_normal', n_transports=50, normal = True)
+    spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=50,  normalize_data = True)
 
 if __name__ == '__main__':
     run()
