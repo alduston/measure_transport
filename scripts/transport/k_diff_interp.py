@@ -667,7 +667,6 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
-        print('here')
     except OSError:
         pass
 
@@ -830,7 +829,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     return True
 
 
-def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', n_transports = 100, k = 1):
+def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', n_transports = 100, k = 1):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
@@ -876,7 +875,8 @@ def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', 
 
 
 def run():
-    test(N = 1000, n_transports=40, k = 1, approx_path=True)
+    test_panel(N = 10000, n_transports=100, k = 1, approx_path=True, test_name='approx_test')
+    test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test')
 
     #lv_exp(2000, exp_name='lv_exp_alt2', n_transports=100)
 
