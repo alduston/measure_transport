@@ -875,11 +875,11 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                       bins=100, var_eps=1/12, approx_path = approx_path)
 
         if 'lv' in test_keys:
-            lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp{i_str}', normal = True,
+            lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
                    approx_path = approx_path, n_transports = n_transports)
 
         if 'spheres' in test_keys:
-            spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp{i_str}', normalize_data=False,
+            spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
                         approx_path = approx_path, n_transports=n_transports)
 
 
