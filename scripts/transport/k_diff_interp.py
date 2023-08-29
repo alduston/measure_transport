@@ -886,11 +886,11 @@ def test():
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=2500, exp_name='exp3', n_transports=100,
-              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
-                  skip_idx=1, N_plot= 2500, plot_steps=False, normal=True, bins=100, var_eps=1 / 3)
-    #test()
-    #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
+    #two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=2500, exp_name='exp3', n_transports=100,
+              #slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
+                  #skip_idx=1, N_plot= 2500, plot_steps=False, normal=True, bins=100, var_eps=1 / 3)
+
+    vl_exp(4000, exp_name='lv_exp_alt', n_transports=100)
     #spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
     #Test mmd :0.00158, Base mmd: 0.01007, NTest mmd :0.157
     #Test mmd: 0.00114, Base mmd: 0.00922, NTest mmd: 0.12332
