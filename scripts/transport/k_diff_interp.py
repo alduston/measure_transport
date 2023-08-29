@@ -493,7 +493,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         iters = model.iters
-        Y_mu_approx = Y_mean + Y_var
+        #Y_mu_approx = Y_mean + Y_var
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
