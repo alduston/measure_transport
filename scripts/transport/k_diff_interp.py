@@ -429,8 +429,8 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        sample_hmap(target, f'../../data/transport/spheres_exp_normal/target_{self.step_num}.png')
-        sample_hmap(map_vec, f'../../data/transport/spheres_exp_normal/gen_{self.step_num}.png')
+        sample_hmap(target.T, f'../../data/transport/spheres_exp_normal/target_{self.step_num}.png')
+        sample_hmap(map_vec.T, f'../../data/transport/spheres_exp_normal/gen_{self.step_num}.png')
         return  self.mmd(map_vec, target, test = True)
 
 
