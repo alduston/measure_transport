@@ -23,7 +23,7 @@ def get_base_stats(gen, N = 10000):
     return mu, sigma
 
 
-def format(n, n_digits = 5):
+def format(n, n_digits = 6):
     try:
         if n > 1e-3:
             return round(n,n_digits)
@@ -245,7 +245,6 @@ class CondTransportKernel(nn.Module):
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
         if is_normal(self.Y_mu):
-            #self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
             self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
         else:
@@ -446,7 +445,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 150, target_eps = 1, var_eps = 1/3):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 5e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
@@ -890,7 +889,8 @@ def run():
               #slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
                   #skip_idx=1, N_plot= 2500, plot_steps=False, normal=True, bins=100, var_eps=1 / 3)
 
-    vl_exp(4000, exp_name='lv_exp_alt', n_transports=100)
+    vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
+
     #spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
     #Test mmd :0.00158, Base mmd: 0.01007, NTest mmd :0.157
     #Test mmd: 0.00114, Base mmd: 0.00922, NTest mmd: 0.12332

@@ -12,7 +12,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def format(n, n_digits = 5):
+def format(n, n_digits = 6):
     try:
         if n > 1e-3:
             return round(n,n_digits)
