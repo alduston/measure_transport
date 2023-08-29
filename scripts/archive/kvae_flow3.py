@@ -1,18 +1,16 @@
 import torch
 import torch.nn as nn
-from transport_kernel import  TransportKernel, l_scale, get_kernel, clear_plt
-from fit_kernel import train_kernel, sample_scatter, sample_hmap,seaborne_hmap
+from transport_kernel import l_scale, get_kernel, clear_plt
+from fit_kernel import train_kernel, sample_hmap
 import os
 from copy import deepcopy
-from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_pinweel, mgan1, sample_rings, \
-    rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll
+from get_data import sample_normal, sample_spirals, sample_base_mixtures, sample_spheres
 
 import matplotlib.pyplot as plt
 import numpy as np
 import random
-from lokta_voltera import get_VL_data,sample_VL_prior
+from lokta_voltera import get_VL_data
 from picture_to_dist import sample_elden_ring
-from datetime import datetime as dt
 from seaborn import kdeplot
 
 

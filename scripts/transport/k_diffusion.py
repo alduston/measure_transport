@@ -878,7 +878,6 @@ def run():
     test_panel(N = 10000, n_transports=100, k = 1, approx_path=True, test_name='approx_test')
     test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test')
 
-    #lv_exp(2000, exp_name='lv_exp_alt2', n_transports=100)
 
 
 if __name__ == '__main__':
