@@ -244,9 +244,11 @@ class CondTransportKernel(nn.Module):
         approx_coeff *= norm_factor
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
-        self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx
         if is_normal(self.Y_mu):
+            self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * torch_normalize(self.Y_mu_approx)
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+        else:
+            self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -887,7 +889,7 @@ def test():
 def run():
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(9000, exp_name='spheres_exp_alt', n_transports=100, normal = False)
+    spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=100, normal = True)
 
 if __name__ == '__main__':
     run()
