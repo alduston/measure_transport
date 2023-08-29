@@ -869,8 +869,8 @@ def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', 
     lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp', n_transports=100, normal = True,
            approx_path = approx_path, n_transports = n_transports)
 
-    spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp', n_transports=100, normalize_data=False,
-                approx_path = approx_path, n_transports =  n_transports)
+    spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp', normalize_data=False,
+                approx_path = approx_path, n_transports=n_transports)
 
 
 def run():
