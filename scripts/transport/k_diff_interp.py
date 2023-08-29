@@ -429,6 +429,8 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        sample_hmap(target, f'../../data/transport/spheres_exp_normal/target_{self.step_num}.png')
+        sample_hmap(map_vec, f'../../data/transport/spheres_exp_normal/gen_{self.step_num}.png')
         return  self.mmd(map_vec, target, test = True)
 
 
@@ -889,7 +891,7 @@ def test():
 def run():
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(2500, exp_name='spheres_exp_normal', n_transports=60, normal = True)
+    spheres_exp(2000, exp_name='spheres_exp_normal', n_transports=50, normal = True)
 
 if __name__ == '__main__':
     run()
