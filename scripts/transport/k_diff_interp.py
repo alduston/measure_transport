@@ -245,10 +245,10 @@ class CondTransportKernel(nn.Module):
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
         if is_normal(self.Y_mu):
-            self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * torch_normalize(self.Y_mu_approx)
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
         else:
-            self.Y_mu_noisy = mu_coeff * self.Y_mu + approx_coeff * self.Y_mu_approx
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -429,9 +429,6 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        plot_idx = torch.tensor([0,1]).long()
-        sample_hmap(target[:,plot_idx], f'../../data/transport/spheres_exp_normal/target_{self.step_num}.png')
-        sample_hmap(map_vec[:,plot_idx], f'../../data/transport/spheres_exp_normal/gen_{self.step_num}.png')
         return  self.mmd(map_vec, target, test = True)
 
 
@@ -888,9 +885,9 @@ def test():
 
 
 def run():
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=3000, exp_name='exp', n_transports=100,
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=2500, exp_name='exp', n_transports=100,
               slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
-              skip_idx=1, N_plot=3000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
+                  skip_idx=1, N_plot= 2500, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
     #spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
