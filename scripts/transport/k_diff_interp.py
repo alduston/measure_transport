@@ -830,51 +830,53 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     return True
 
 
-def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', n_transports = 100):
+def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', n_transports = 100, k = 1):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
     except OSError:
         pass
-    two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_movie',
-              n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
-              slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N, plot_steps=plot_steps,
-              normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
+    for i in range(k):
+        i_str = i if k > 1 else ''
+        two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_movie{i_str}',
+                  n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
+                  slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N, plot_steps=plot_steps,
+                  normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=N, exp_name=f'/{test_name}/mgan2_movie',
-              n_transports= n_transports,  slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-              slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100,
-              var_eps=1/2, approx_path = approx_path)
+        two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=N, exp_name=f'/{test_name}/mgan2_movie{i_str}',
+                  n_transports= n_transports,  slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
+                  slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100,
+                  var_eps=1/2, approx_path = approx_path)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=N, exp_name=f'/{test_name}/swiss_movie',
-              n_transports= n_transports, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
-              skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
-              approx_path = approx_path)
+        two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=N, exp_name=f'/{test_name}/swiss_movie{i_str}',
+                  n_transports= n_transports, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
+                  skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
+                  approx_path = approx_path)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, exp_name=f'/{test_name}/checkerboard_movie',
-              n_transports= n_transports, slice_vals=[-1, 0, 1], plt_range=[[-4.4, 4.4], [-4.1, 4.1]],
-              slice_range=[-4.4, 4.4], vmax=.12, skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True,
-              bins=100, var_eps=1/3, approx_path = approx_path)
+        two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N,
+                  exp_name=f'/{test_name}/checkerboard_movie{i_str}', n_transports= n_transports, slice_vals=[-1, 0, 1],
+                  plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12, skip_idx=1, N_plot=N,
+                  plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/_movie',
-              n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5],
-              vmax=.33,skip_idx=1, N_plot=N, plot_steps=True, normal=True, bins=100, var_eps=1/3,
-              approx_path = approx_path)
+        two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/_movie{i_str}',
+                  n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5],
+                  vmax=.33,skip_idx=1, N_plot=N, plot_steps=True, normal=True, bins=100, var_eps=1/3,
+                  approx_path = approx_path)
 
-    two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name=f'/{test_name}/_movie',
-              n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
-              slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
-              bins=100, var_eps=1/12, approx_path = approx_path)
+        two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name=f'/{test_name}/_movie{i_str}',
+                  n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
+                  slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
+                  bins=100, var_eps=1/12, approx_path = approx_path)
 
-    lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp', n_transports=100, normal = True,
-           approx_path = approx_path, n_transports = n_transports)
+        lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp{i_str}', n_transports=100, normal = True,
+               approx_path = approx_path, n_transports = n_transports)
 
-    spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp', normalize_data=False,
-                approx_path = approx_path, n_transports=n_transports)
+        spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp{i_str}', normalize_data=False,
+                    approx_path = approx_path, n_transports=n_transports)
 
 
 def run():
-    test(N = 1000, n_transports=40)
+    test(N = 1000, n_transports=40, k = 1)
 
     #lv_exp(2000, exp_name='lv_exp_alt2', n_transports=100)
 
