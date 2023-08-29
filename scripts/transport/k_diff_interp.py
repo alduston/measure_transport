@@ -458,8 +458,9 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
     return model, loss_dict
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params, target_eps = 0.07,
-                               n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3, grad_cutoff = .0001):
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
+                               target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3,
+                               grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
@@ -493,7 +494,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         iters = model.iters
-        Y_mu_approx = Y_mean + Y_var
+        if approx_path:
+            Y_mu_approx = Y_mean + Y_var
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
@@ -509,7 +511,7 @@ def zero_pad(array):
     return np.concatenate([zero_array, array], axis=1)
 
 
-def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],var_eps = 1/3,
+def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],var_eps = 1/3, approx_path = True,
                          cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-7, n_transports=100):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
@@ -540,7 +542,8 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val,
-                                    params=params,reg_lambda=reg_lambda, n_transports=n_transports,var_eps = var_eps))
+                                                 params=params, reg_lambda=reg_lambda,  n_transports=n_transports,
+                                                 var_eps = var_eps, approx_path =  approx_path))
 
     return trained_models
 
@@ -577,7 +580,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=50, idx_dict={},plot_steps = False,
-                              reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3):
+                              reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True):
     save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -603,7 +606,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           process_funcs=process_funcs, idx_dict=idx_dict,reg_lambda = reg_lambda,
-                                          var_eps = var_eps)
+                                          var_eps = var_eps, approx_path=approx_path)
 
     for model in trained_models:
         model.save_dir = save_dir
@@ -660,7 +663,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=60, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3):
+              vmax=None, n_transports=60, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3, approx_path=True):
     save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -681,7 +684,8 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          skip_idx=skip_idx, exp_name=exp_name, plot_steps = plot_steps,
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plt_range=plt_range,  bins=bins, mu = mu, sigma = sigma,
-                                                         plot_idx=plot_idx, reg_lambda=reg_lambda, var_eps = var_eps)
+                                                         plot_idx=plot_idx, reg_lambda=reg_lambda, var_eps = var_eps,
+                                                         approx_path = approx_path)
 
     cmu, csigma = 0,1
     if normal:
@@ -707,7 +711,8 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     return True
 
 
-def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, normalize_data = False):
+def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
+                normalize_data = False, approx_path = False):
     n = 10
     ref_gen = sample_normal
     mu, sigma = 0,1
@@ -724,8 +729,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
     if not N_plot:
-        N_plot = min(10 * N, 4000)
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot,
+        Np = min(10 * N, 4000)
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=Np, approx_path = approx_path,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
@@ -734,8 +739,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
     slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
     save_dir = f'../../data/transport/{exp_name}'
     for slice_val in slice_vals:
-        ref_sample = ref_gen(N_plot)
-        RX = np.full((N_plot, 2), slice_val)
+        ref_sample = ref_gen(Np)
+        RX = np.full((Np, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
@@ -746,12 +751,18 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
 
 
 
-def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_plot = 0):
+def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N_plot = 0,
+           approx_path = True):
     ref_gen = lambda N: sample_normal(N, 4)
-    target_gen = lambda N: get_VL_data(N, normal=normal, Yd=Yd)
+    target_gen = lambda N: get_VL_data(N, normal=False, Yd=Yd)
 
-    X_mean = np.asarray([1, 0.0564, 1, 0.0564])
-    X_std = np.asarray([0.53, 0.03, 0.53, 0.03])
+    if normal:
+        normal_target_gen = lambda N: get_VL_data(N, normal=normal, Yd=Yd)
+        mu, sigma = get_base_stats(target_gen, 10000)
+    else:
+        normal_target_gen = target_gen
+        mu,sigma = 0,1
+
 
     idx_dict = {'ref': [[0, 1, 2, 3]],
                 'cond': [list(range(4, 4 + Yd))],
@@ -766,28 +777,24 @@ def vl_exp(N=10000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=100,  N
     skip_idx = 0
     if not N_plot:
         N_plot = min(10 * N, 4000)
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot,
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, normal_target_gen, N=N, N_plot=N_plot ,sigma = sigma,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
-                                                         plot_idx=[], plt_range=None, idx_dict=idx_dict,
-                                                         n_transports=n_transports, var_eps = 1/3)
+                                                         plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
+                                                         plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
 
-    target_sample = get_VL_data(N_plot, normal=False, Yd=Yd)
-    mu = np.mean(target_sample, axis=0)
-    sigma = np.std(target_sample, axis=0)
+    target_sample = target_gen(N_plot)
+    mu, sigma = get_base_stats(target_gen, 10000)
 
     slice_val = np.asarray([.8, .041, 1.07, .04])
     X = np.full((N_plot, 4), slice_val)
-    ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
 
-    ref_slice_sample -= mu
-    ref_slice_sample /= sigma
+    ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
+    ref_slice_sample = (ref_slice_sample - mu)/sigma
 
     ref_sample = ref_gen(N_plot)
-
-    slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict)[:, :4]
-    slice_sample *= X_std
-    slice_sample += X_mean
+    slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample,
+                                     idx_dict, mu = mu, sigma = sigma)[:, :4]
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
     ranges1 = {'alpha': [.5, 1.305], 'beta': [0.02, 0.0705], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
@@ -885,15 +892,8 @@ def test():
 
 
 def run():
-    #two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=2500, exp_name='exp3', n_transports=100,
-              #slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
-                  #skip_idx=1, N_plot= 2500, plot_steps=False, normal=True, bins=100, var_eps=1 / 3)
+    vl_exp(2000, exp_name='lv_exp_alt2', n_transports=100)
 
-    vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-
-    #spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
-    #Test mmd :0.00158, Base mmd: 0.01007, NTest mmd :0.157
-    #Test mmd: 0.00114, Base mmd: 0.00922, NTest mmd: 0.12332
 
 if __name__ == '__main__':
     run()
