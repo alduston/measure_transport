@@ -884,10 +884,8 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
 
 
 def run():
-    test_panel(N=500, n_transports=80, k=2, approx_path=True
-               ,test_name='exp', test_keys=['spiral','mgan2'])
-    #test_panel(N = 10000, n_transports=100, k = 1, approx_path=True, test_name='approx_test')
-    #test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test')
+    test_panel(N=10000, n_transports=100, k=1, approx_path=True, test_name='approx_test')
+    test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test')
 
 
 
