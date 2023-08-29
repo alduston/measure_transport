@@ -738,8 +738,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0, no
         RX = np.full((N_plot, 2), slice_val)
         ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
         if normal:
-            ref_slice_sample = normalize(ref_slice_sample)
-        slice_sample = sigma * compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict) + mu
+            ref_slice_sample = (ref_slice_sample - mu) / sigma
+        slice_sample =compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)
         save_loc = f'{save_dir}/x={slice_val}_map.png'
         sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
     return True
