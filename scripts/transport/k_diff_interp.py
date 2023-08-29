@@ -874,7 +874,7 @@ def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', 
 
 
 def run():
-    test(N = 100, n_transports=30)
+    test(N = 1000, n_transports=40)
 
     #lv_exp(2000, exp_name='lv_exp_alt2', n_transports=100)
 
