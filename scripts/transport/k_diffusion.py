@@ -864,7 +864,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
 
         if 'spiral' in test_keys:
             two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
-                      n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5],
+                      n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
                       vmax=.33,skip_idx=1, N_plot=N, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
                       approx_path = approx_path)
 
@@ -884,6 +884,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
 
 
 def run():
+    test_panel(N=9000, n_transports=100, k=2, approx_path=True, test_name='lv_test', test_keys=['lv'])
     test_panel(N=10000, n_transports=100, k=1, approx_path=True, test_name='approx_test')
     test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test')
 
