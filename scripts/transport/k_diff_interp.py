@@ -889,7 +889,7 @@ def test():
 def run():
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=100, normal = True)
+    spheres_exp(2500, exp_name='spheres_exp_normal', n_transports=60, normal = True)
 
 if __name__ == '__main__':
     run()
