@@ -868,7 +868,7 @@ def test(plot_steps = False, approx_path = True, N = 10000, test_name = 'test', 
                   slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
                   bins=100, var_eps=1/12, approx_path = approx_path)
 
-        lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp{i_str}', n_transports=100, normal = True,
+        lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp{i_str}', normal = True,
                approx_path = approx_path, n_transports = n_transports)
 
         spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_exp{i_str}', normalize_data=False,
