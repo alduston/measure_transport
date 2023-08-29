@@ -862,9 +862,9 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                   vmax=.33,skip_idx=1, N_plot=N, plot_steps=True, normal=True, bins=100, var_eps=1/3,
                   approx_path = approx_path)
 
-        two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=10000, exp_name=f'/{test_name}/_movie{i_str}',
+        two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=N, exp_name=f'/{test_name}/_movie{i_str}',
                   n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
-                  slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
+                  slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True,
                   bins=100, var_eps=1/12, approx_path = approx_path)
 
         lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_exp{i_str}', normal = True,
