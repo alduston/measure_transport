@@ -867,14 +867,12 @@ def test():
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 2)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=10000, exp_name='swiss_movie',
-              n_transports=100,
-              slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
+              n_transports=100, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3], vmax=.35,
               skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=10000, exp_name='checkerboard_movie',
               n_transports=100, slice_vals=[-1, 0, 1], plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4],
-              vmax=.12,
-              skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
+              vmax=.12, skip_idx=1, N_plot=10000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
 
     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=10000, exp_name='spiral_movie', n_transports=100,
               slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
@@ -890,9 +888,12 @@ def test():
 
 
 def run():
+    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=3000, exp_name='exp', n_transports=100,
+              slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-1.5, 1.5], vmax=.33,
+              skip_idx=1, N_plot=3000, plot_steps=True, normal=True, bins=100, var_eps=1 / 3)
     #test()
     #vl_exp(9000, exp_name='lv_exp_alt', n_transports=100)
-    spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
+    #spheres_exp(3000, exp_name='spheres_exp_normal', n_transports=60,  normalize_data = True)
 
 if __name__ == '__main__':
     run()
