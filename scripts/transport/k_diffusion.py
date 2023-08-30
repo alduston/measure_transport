@@ -847,7 +847,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                             slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N, plot_steps=plot_steps,
                             normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'mgan2' in test_keys:
@@ -859,7 +859,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                               slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True,
                               bins=100,var_eps=1/2, approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'swiss' in test_keys:
@@ -871,7 +871,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                               vmax=.35,  skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
 
@@ -884,7 +884,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'spiral' in test_keys:
@@ -896,7 +896,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                               vmax=.33,skip_idx=1, N_plot=N, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'elden' in test_keys:
@@ -908,7 +908,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                               slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
                               bins=100, var_eps=1/12, approx_path = approx_path)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'lv' in test_keys:
@@ -918,7 +918,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                     lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
                         approx_path = approx_path, n_transports = n_transports)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
         if 'spheres' in test_keys:
@@ -928,15 +928,15 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                     spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
                                 approx_path = approx_path, n_transports=n_transports)
                     done = True
-                except BaseException:
+                except torch._C._LinAlgError:
                     pass
 
 def run():
     #test_panel(N=5000, n_transports=100 , k=10, approx_path=True, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
-    test_panel(N=5000, n_transports=100, k=2, approx_path=True, test_name='approx_test')
-    test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test')
+    #test_panel(N=5000, n_transports=100, k=2, approx_path=True, test_name='approx_test')
+    #test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test')
 
 
 
