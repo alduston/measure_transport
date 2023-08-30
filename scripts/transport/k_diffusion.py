@@ -410,7 +410,7 @@ class CondTransportKernel(nn.Module):
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
         mmd  = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-        return mmd * self.mmd_lambda
+        return torch.max(mmd * self.mmd_lambda,0)
 
 
     def loss_reg(self):
