@@ -383,20 +383,15 @@ class CondTransportKernel(nn.Module):
             K_mmd = self.mmd_kernel
 
         mmd_ZZ = K_mmd(map_vec, map_vec)
-        mmd_ZZ -= torch.diag(torch.diag(mmd_ZZ))
         mmd_ZY = K_mmd(map_vec, target)
         mmd_YY = K_mmd(target, target)
-        mmd_YY -= torch.diag(torch.diag(mmd_YY))
 
-        Nx = len(map_vec)
-        alpha_z = self.p_vec(Nx)
+        alpha_z = self.p_vec(len(map_vec))
+        alpha_y = self.p_vec(len(target))
 
-        Ny = len(target)
-        alpha_y = self.p_vec(Ny)
-
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z * (Nx/(Nx-1))
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = alpha_y @ mmd_YY @ alpha_y * (Ny/(Ny-1))
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y
 
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
@@ -950,7 +945,8 @@ def run():
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
-    test_panel(N=500, n_transports=100, k=1, approx_path=False, test_name='exp', test_keys=['mgan2'])
+    test_panel(N=5000, n_transports=100, k=10, approx_path=True, test_name='test1', test_keys=['elden', 'mgan1'])
+    test_panel(N=5000, n_transports=100, k=10, approx_path=False, test_name='test2', test_keys=['elden', 'mgan1'])
 
     #test_panel(N=5000, n_transports=100, k=4, approx_path=True, test_name='approx_test')
     #test_panel(N=5000, n_transports=100, k=4, approx_path=False, test_name='test')
