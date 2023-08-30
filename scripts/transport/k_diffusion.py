@@ -237,21 +237,18 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        eta_coeff =  (1-self.noise_eps) ** (2 * self.step_num)
         mu_coeff = self.noise_eps
         approx_coeff = (1-self.noise_eps) ** (self.step_num)
-        norm_factor = 1/(mu_coeff + approx_coeff + eta_coeff)
+        norm_factor = 1/(mu_coeff + approx_coeff)
         mu_coeff *= norm_factor
         approx_coeff *= norm_factor
-        eta_coeff *= norm_factor
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
         if is_normal(self.Y_mu):
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))\
-                              + (deepcopy(self.Y_eta) * eta_coeff)
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
         else:
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx) + (deepcopy(self.Y_eta) * eta_coeff)
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -935,7 +932,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                     pass
 
 def run():
-    test_panel(N=2500, n_transports=100 , k=1, approx_path=True, test_name='exp', test_keys=['spheres'])
+    test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
     #test_panel(N=5000, n_transports=100, k=2, approx_path=True, test_name='approx_test')
