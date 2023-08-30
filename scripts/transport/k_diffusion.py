@@ -237,18 +237,21 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
+        eta_coeff =  (1-self.noise_eps) ** (2 * self.step_num)
         mu_coeff = self.noise_eps
         approx_coeff = (1-self.noise_eps) ** (self.step_num)
-        norm_factor = 1/(mu_coeff + approx_coeff)
+        norm_factor = 1/(mu_coeff + approx_coeff + eta_coeff)
         mu_coeff *= norm_factor
         approx_coeff *= norm_factor
+        eta_coeff *= norm_factor
 
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
         if is_normal(self.Y_mu):
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))\
+                              + (self.Y_eta * eta_coeff)
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
         else:
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
+            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx) + (self.Y_eta * eta_coeff)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -410,7 +413,7 @@ class CondTransportKernel(nn.Module):
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
         Ek_YY = self.E_mmd_YY
         mmd  = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-        return torch.max(mmd * self.mmd_lambda,0)
+        return mmd * self.mmd_lambda
 
 
     def loss_reg(self):
