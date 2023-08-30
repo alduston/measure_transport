@@ -73,6 +73,7 @@ class DeterministicLotkaVolterra:
             xt[j, :] = yobs
         return (xt, tt)
 
+
     def log_prior_pdf(self, theta):
         # check dimensions of inputs
         assert (theta.shape[1] == self.d)
@@ -82,8 +83,10 @@ class DeterministicLotkaVolterra:
         # evaluate product of PDFs for independent variables
         return np.sum(lognorm.logpdf(theta, scale=np.exp(prior_mean), s=prior_std), axis=1)
 
+
     def prior_pdf(self, theta):
         return np.exp(self.log_prior_pdf(theta))
+
 
     def log_likelihood(self, theta, yobs):
         # check dimension of inputs
@@ -100,6 +103,7 @@ class DeterministicLotkaVolterra:
             # compare observations under LogNormal(G(theta),obs_var)
             loglik[j] = np.sum([lognorm.logpdf(yobs, scale=xt, s=self.obs_std)])
         return loglik
+
 
     def likelihood(self, theta, yobs):
         return np.exp(self.log_likelihood(theta, yobs))

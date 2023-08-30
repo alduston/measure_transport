@@ -133,27 +133,6 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
-    def p_y_given_x(self, theta, yobs):
-        return self.prior_pdf(theta) * self.likelihood(theta, yobs)
-
-
-    def MCMC_sample(self, yobs, N, n_init = 100):
-        mu = np.asarray([self.alpha_mu, self.beta_mu, self.gamma_mu, self.delta_mu])
-        sigma = np.diag(np.asarray([self.alpha_std, self.beta_std, self.gamma_std, self.delta_std])**2)
-        sample = []
-        for i in range(N + n_init):
-            mc_sample = np.random.multivariate_normal(mean = mu, cov = sigma, size = 100).reshape([100, 1, self.d])
-            likely_hoods = [self.p_y_given_x(sub_sample, yobs) for sub_sample in mc_sample]
-            likely_hoods = np.asarray(likely_hoods)
-            likely_hoods /= np.linalg.norm(likely_hoods, ord=1)
-            likely_hoods = likely_hoods.flatten()
-            mu_index = np.random.choice(range(len(mc_sample)), p=likely_hoods)
-            mu = mc_sample[mu_index]
-            sample.append(mu)
-        return sample[n_init:]
-
-
-
 def get_VL_data_old(N = 5000, Xd = 4, Yd = 18, T = 20, X = [], normal = True):
     LV = DeterministicLotkaVolterra(T)
     if not len(X):
@@ -184,12 +163,7 @@ if __name__ == '__main__':
     X = LV.sample_prior(1)
     X = np.full(X.shape, np.asarray([.8, .041, 1.07, .04]))
     Y,_ = LV.sample_data(X)
-    theta_sample = LV.MCMC_sample(yobs=Y, N = 1000)
-    keys = ['alpha','delta','gamma','beta']
-    for i in range(4):
-        plt.hist(theta_sample[:,i])
-        plt.savefig(f'{keys[i]}_vals.png')
-        clear_plt()
+
 
    # X_mean = np.asarray([1, 0.0564, 1, 0.0564])
    # X_var = np.asarray([0.2836, 0.0009, 0.2836, 0.0009]) ** .5
