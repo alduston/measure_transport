@@ -291,7 +291,8 @@ class CondTransportKernel(nn.Module):
 
         self.alpha_z = self.p_vec(self.Nx)
         self.alpha_y = self.p_vec(self.Ny)
-        self.E_mmd_YY = self.alpha_y.T @ self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
+
+        self.E_mmd_YY = self.alpha_y @  self.mmd_kernel(self.Y_target, self.Y_target) @ self.alpha_y
 
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
@@ -382,15 +383,20 @@ class CondTransportKernel(nn.Module):
             K_mmd = self.mmd_kernel
 
         mmd_ZZ = K_mmd(map_vec, map_vec)
+        mmd_ZZ -= torch.diag(torch.diag(mmd_ZZ))
         mmd_ZY = K_mmd(map_vec, target)
         mmd_YY = K_mmd(target, target)
+        mmd_YY -= torch.diag(torch.diag(mmd_YY))
 
-        alpha_z = self.p_vec(len(map_vec))
-        alpha_y = self.p_vec(len(target))
+        Nx = len(map_vec)
+        alpha_z = self.p_vec(Nx)
 
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ny = len(target)
+        alpha_y = self.p_vec(Ny)
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z * (Nx/(Nx-1))
         Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = alpha_y @ mmd_YY @ alpha_y
+        Ek_YY = alpha_y @ mmd_YY @ alpha_y * (Ny/(Ny-1))
 
         return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
@@ -916,7 +922,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                 except torch._C._LinAlgError:
                     done += 1
                     pass
-
+        '''
         if 'lv' in test_keys:
             done = 0
             while done < 2:
@@ -938,13 +944,16 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                 except torch._C._LinAlgError:
                     done += 1
                     pass
+        '''
 
 def run():
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
-    test_panel(N=5000, n_transports=100, k=1, approx_path=True, test_name='approx_test')
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test')
+    test_panel(N=500, n_transports=100, k=1, approx_path=False, test_name='exp', test_keys=['mgan2'])
+
+    #test_panel(N=5000, n_transports=100, k=4, approx_path=True, test_name='approx_test')
+    #test_panel(N=5000, n_transports=100, k=4, approx_path=False, test_name='test')
 
 
 
