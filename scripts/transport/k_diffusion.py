@@ -922,6 +922,7 @@ def test_panel(plot_steps = False, approx_path = True, N = 10000, test_name = 't
                     pass
 
         if 'spheres' in test_keys:
+            done = False
             while not done:
                 try:
                     spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
