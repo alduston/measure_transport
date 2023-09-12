@@ -339,7 +339,7 @@ class CondTransportKernel(nn.Module):
 
 
     def invert_denoising(self, map_vec, noise_vec):
-        C = 1/self.C_noisy
+        C = 1#/self.C_noisy
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
 
@@ -467,7 +467,7 @@ class CondTransportKernel(nn.Module):
 
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, torch_normalize(Y_eta))
+        noised_Y_approx = self.invert_denoising(Y_approx, Y_eta)
         noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
 
         mmd = self.mmd(map_vec ,noised_map_vec, test = False)
