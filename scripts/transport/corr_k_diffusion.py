@@ -453,7 +453,7 @@ class CondTransportKernel(nn.Module):
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
 
         noised_map_vec = self.invert_denoising(map_vec, Y_eta)
-        mmd = self.mmd(Y_input,noised_map_vec)
+        mmd = self.mmd(Y_input,noised_map_vec, test = False)
         return mmd * self.mmd_lambda
 
 
