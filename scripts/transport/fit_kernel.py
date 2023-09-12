@@ -48,7 +48,7 @@ def prob_normalization(alpha):
 def print_losses(loss_dict):
     print_str = f'At step {loss_dict["n_iter"]}: '
     for key in loss_dict.keys():
-        if key in ['fit', 'reg', 'inverse']:
+        if key in ['fit', 'reg', 'inv']:
             print_str +=  f'{key}_loss = {format(float((loss_dict[key])))}, '
     print_str += f'test loss = {format(float(loss_dict["test"]))}, '
     print_str += f'grad norm = {format(float(loss_dict["grad_norm"]))}'
