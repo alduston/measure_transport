@@ -293,7 +293,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_val = geq_1d(torch.tensor(base_params['Y_mu_val'], device=self.device, dtype=self.dtype))
         self.Y_val = torch.concat([self.X_mu_val, self.Y_mu_val], dim=1)
 
-
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
