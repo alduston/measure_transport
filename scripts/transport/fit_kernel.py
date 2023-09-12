@@ -50,8 +50,8 @@ def print_losses(loss_dict):
     for key in loss_dict.keys():
         if key in ['fit', 'reg', 'inverse']:
             print_str +=  f'{key}_loss = {format(float((loss_dict[key])))}, '
-    print_str += f', test loss = {format(float(loss_dict["test"]))}'
-    print_str += f', grad norm = {format(float(loss_dict["grad_norm"]))}'
+    print_str += f'test loss = {format(float(loss_dict["test"]))}, '
+    print_str += f'grad norm = {format(float(loss_dict["grad_norm"]))}'
     mem_str = ''
     if torch.cuda.is_available():
         free_mem, total_mem = torch.cuda.mem_get_info()
