@@ -90,7 +90,8 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 
 
 def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
-
+    if True:
+        return tensor
     device = tensor.device
     dtype = tensor.dtype
     tensor = tensor.detach().cpu().numpy()
@@ -338,7 +339,7 @@ class CondTransportKernel(nn.Module):
 
 
     def invert_denoising(self, map_vec, noise_vec):
-        C = 1/self.C_noisy
+        C = 1#/self.C_noisy
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
 
