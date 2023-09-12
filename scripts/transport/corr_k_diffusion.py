@@ -234,7 +234,7 @@ class CondTransportKernel(nn.Module):
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
-        pmu_coeff, papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
+        self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
 
         print(f'Input noise level : {papprox_coeff}')
 
@@ -248,15 +248,15 @@ class CondTransportKernel(nn.Module):
 
         self.approx = self.params['approx']
         if self.approx:
-            self.Y_mean = (pmu_coeff * self.Y_mu) + (papprox_coeff * torch_normalize(self.Y_eta))
+            self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
 
-        mu_coeff, approx_coeff = get_coeffs(self.noise_eps, self.step_num)
+        self.mu_coeff, self.approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
-        print(f'Goal noise level : {approx_coeff}')
+        print(f'Goal noise level : {self.approx_coeff}')
 
         if is_normal(self.Y_mu):
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
+            self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         else:
@@ -324,6 +324,15 @@ class CondTransportKernel(nn.Module):
 
         print(f"Transport {self.step_num}: Input  mmd is {format(float(input_mmd.detach().cpu()))},"
               f" Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
+
+
+    def invert_denoising(self, map_vec, noise_vec):
+        beta = self.pmu_coeff/self.mu_coeff
+        alpha = self.papprox_coeff - (self.approx_coeff * beta)
+        noised_map_vec = (beta * map_vec) + (alpha * noise_vec)
+        return noised_map_vec
+
+
 
     def total_grad(self):
         total_norm = 0
@@ -437,6 +446,17 @@ class CondTransportKernel(nn.Module):
         return mmd * self.mmd_lambda
 
 
+    def inverse_loss(self):
+        Y_input = self.Y_var + self.Y_mean
+        Y_approx =  Y_input + self.Z_mean + self.Z_var
+        Y_eta = self.Y_eta
+        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+
+        noised_map_vec = self.invert_denoising(map_vec, Y_eta)
+        mmd = self.mmd(Y_input,noised_map_vec)
+        return mmd * self.mmd_lambda
+
+
     def loss_reg(self):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
@@ -459,6 +479,7 @@ class CondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
+        loss_invert = self.inverse_loss()
         loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
