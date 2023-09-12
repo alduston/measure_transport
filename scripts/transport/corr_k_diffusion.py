@@ -294,6 +294,8 @@ class CondTransportKernel(nn.Module):
 
         if self.approx:
             self.Y_mean_test = (pmu_coeff * self.Y_mu_test) + (papprox_coeff * torch_normalize(self.Y_eta_test))
+            self.Y_mean_test2 = (mu_coeff * self.Y_mu_test) + (approx_coeff * torch_normalize(self.Y_eta_test))
+
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
@@ -313,7 +315,8 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test + self.Y_var_test], dim=1), self.Y_test))
 
         input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_test)
-        goal_mmd = self.mmd(self.Y_target, self.Y_test)
+        goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test2], dim = 1), self.Y_test)
+        
         print(f"Transport {self.step_num}: Input  mmd is {input_mmd}, Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
