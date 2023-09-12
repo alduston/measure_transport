@@ -317,7 +317,7 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
-        self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test + self.Y_var_test], dim=1), self.Y_test))
+
 
         input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_val)
         goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test2], dim = 1), self.Y_val)
