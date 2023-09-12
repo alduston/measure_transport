@@ -74,6 +74,8 @@ def replace_zeros(array, eps = 1e-5):
 
 
 def normalize(array, keep_axes=[], just_var = False, just_mean = False):
+    if True:
+        return array
     normal_array = deepcopy(array)
     if len(keep_axes):
         norm_axes = np.asarray([axis for axis in range(len(array.shape)) if (axis not in keep_axes)])
@@ -458,7 +460,7 @@ class CondTransportKernel(nn.Module):
 
 
     def inverse_loss(self):
-        C = 1/self.C_noisy
+        C = 1#/self.C_noisy
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
