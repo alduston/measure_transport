@@ -236,6 +236,9 @@ class CondTransportKernel(nn.Module):
         self.step_num = self.params['step_num']
         pmu_coeff, papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
 
+        print(f'Input noise level : {papprox_coeff}')
+
+
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
@@ -249,6 +252,8 @@ class CondTransportKernel(nn.Module):
 
         mu_coeff, approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
+
+        print(f'Goal noise level : {approx_coeff}')
 
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
@@ -305,10 +310,11 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
-        self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_eta_test], axis=1), self.Y_test))
+        self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test + self.Y_var_test], dim=1), self.Y_test))
 
+        input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_test)
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
+        print(f"Transport {self.step_num}: Input  mmd is {input_mmd}, Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
         total_norm = 0
@@ -432,10 +438,10 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.X_mu_val
+        x_mu = self.X_mu_test
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
-        y_var = self.Y_var_test
+        y_var = 0 * self.Y_var_test
         target = self.Y_test
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         return  self.mmd(map_vec, target, test = True)
@@ -456,7 +462,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 300, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 50, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 100, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
@@ -952,8 +958,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test1', test_keys=['elden', 'mgan1',
-                                                                                                'spiral', 'checker'])
+    test_panel(N=10000, n_transports=100, k=2, approx_path=False, test_name='test1', test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'] )
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
