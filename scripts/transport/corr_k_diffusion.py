@@ -234,10 +234,7 @@ class CondTransportKernel(nn.Module):
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
-
-
         pmu_coeff, papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
-
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
@@ -248,8 +245,7 @@ class CondTransportKernel(nn.Module):
 
         self.approx = self.params['approx']
         if self.approx:
-            self.Y_mean = (pmu_coeff * self.Y_mu) + (papprox_coeff * torch_normalize(self.Y_mu_approx))
-            #self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+            self.Y_mean = (pmu_coeff * self.Y_mu) + (papprox_coeff * torch_normalize(self.Y_eta))
 
         mu_coeff, approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
