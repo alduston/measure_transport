@@ -338,9 +338,7 @@ class CondTransportKernel(nn.Module):
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
         noised_map_vec = (beta * map_vec) + (alpha * noise_vec)
-
         return torch_normalize(noised_map_vec)
-
 
 
     def total_grad(self):
@@ -459,10 +457,13 @@ class CondTransportKernel(nn.Module):
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
+
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
 
-        noised_map_vec = self.invert_denoising(map_vec, Y_eta)
-        mmd = self.mmd(Y_input,noised_map_vec, test = False)
+        noised_Y_approx = self.invert_denoising(Y_approx, Y_eta)
+        noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
+
+        mmd = self.mmd(map_vec ,noised_map_vec, test = False)
         return mmd * self.mmd_lambda
 
 
