@@ -74,8 +74,6 @@ def replace_zeros(array, eps = 1e-5):
 
 
 def normalize(array, keep_axes=[], just_var = False, just_mean = False):
-    if True:
-        return array
     normal_array = deepcopy(array)
     if len(keep_axes):
         norm_axes = np.asarray([axis for axis in range(len(array.shape)) if (axis not in keep_axes)])
@@ -92,6 +90,8 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 
 
 def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
+    if True:
+        return tensor
     device = tensor.device
     dtype = tensor.dtype
     tensor = tensor.detach().cpu().numpy()
