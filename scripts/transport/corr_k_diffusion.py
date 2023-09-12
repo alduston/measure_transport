@@ -463,19 +463,20 @@ class CondTransportKernel(nn.Module):
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
 
-        map_vec = torch.concat([self.X_mu, Y_input], dim=1)
+        target = torch.concat([self.X_mu, Y_input], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
-        target = torch.concat([self.X_mu, noised_Y_approx], dim=1)
+        denoised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
+        denoised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
 
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
+        mmd_ZZ = self.mmd_kernel(denoised_map_vec, denoised_map_vec)
+        mmd_ZY = self.mmd_kernel(denoised_map_vec, target)
+        mmd_YY = self.mmd_kernel(target, target)
 
         alpha = self.alpha_z
 
         Ek_ZZ = alpha @ mmd_ZZ @ alpha
         Ek_ZY = alpha @ mmd_ZY @ alpha
-        Ek_YY = self.E_mmd_YY
+        Ek_YY = alpha @ mmd_YY @ alpha
         mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
 
         return mmd * self.mmd_lambda_inv
@@ -504,7 +505,7 @@ class CondTransportKernel(nn.Module):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss_inverse = self.loss_inv()
-        loss = loss_mmd + loss_reg #+ loss_inverse
+        loss = loss_mmd + loss_reg + loss_inverse
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'inverse': loss_inverse.detach().cpu(),
