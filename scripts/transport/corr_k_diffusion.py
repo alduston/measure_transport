@@ -285,6 +285,7 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
         self.Y_mean_test = deepcopy(self.Y_eta_test)
+        self.Y_mean_test2 = deepcopy(self.Y_eta_test)
         self.Y_var_test = 0 * self.Y_eta_test
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
@@ -316,7 +317,7 @@ class CondTransportKernel(nn.Module):
 
         input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_test)
         goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test2], dim = 1), self.Y_test)
-        
+
         print(f"Transport {self.step_num}: Input  mmd is {input_mmd}, Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
 
     def total_grad(self):
