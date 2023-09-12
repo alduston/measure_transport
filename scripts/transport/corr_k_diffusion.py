@@ -207,6 +207,7 @@ class Comp_transport_model:
         return self.c_map(x,y, no_x = no_x)
 
 
+
 def get_coeffs(noise_eps, step_num):
     mu_coeff = noise_eps
     approx_coeff = (1 - noise_eps) ** (step_num)
@@ -214,7 +215,6 @@ def get_coeffs(noise_eps, step_num):
     mu_coeff *= norm_factor
     approx_coeff *= norm_factor
     return mu_coeff, approx_coeff
-
 
 
 class CondTransportKernel(nn.Module):
@@ -235,26 +235,33 @@ class CondTransportKernel(nn.Module):
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
 
-        self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
-        self.Y_mean = deepcopy(self.Y_eta)
-        self.Y_var = 0 * self.Y_mean
-        self.approx = self.params['approx']
-        if self.approx:
-            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
+        pmu_coeff, papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
+
+
+        self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-        mu_coeff, approx_coeff = get_coeffs(self.noise_eps, self.step_num)
+        self.Y_mean = deepcopy(self.Y_eta)
+        self.Y_var = 0 * self.Y_mean
 
+        self.approx = self.params['approx']
+        if self.approx:
+            self.Y_mean = (pmu_coeff * self.Y_mu) + (papprox_coeff * torch_normalize(self.Y_mu_approx))
+            #self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+
+        mu_coeff, approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+
         else:
             self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
+
+        self.Y_var = 0 * self.Y_mean
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -279,14 +286,13 @@ class CondTransportKernel(nn.Module):
         self.Y_mean_test = deepcopy(self.Y_eta_test)
         self.Y_var_test = 0 * self.Y_eta_test
 
-        if self.approx:
-            self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
-            self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
-
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
+
+        if self.approx:
+            self.Y_mean_test = (pmu_coeff * self.Y_mu_test) + (papprox_coeff * torch_normalize(self.Y_eta_test))
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
@@ -465,6 +471,9 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
     return model, loss_dict
 
 
+def get_indep_model()
+
+
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
@@ -492,6 +501,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
+
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -947,7 +957,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    pass
+    test_panel(N=5000, n_transports=100, k=10, approx_path=False, test_name='test1', test_keys=['elden', 'mgan1'])
+    
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
