@@ -236,7 +236,7 @@ class CondTransportKernel(nn.Module):
         self.step_num = self.params['step_num']
         self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
 
-        print(f'Input noise level : {papprox_coeff}')
+        print(f'Input noise level : {self.papprox_coeff}')
 
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
@@ -260,7 +260,7 @@ class CondTransportKernel(nn.Module):
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
         else:
-            self.Y_mu_noisy = (mu_coeff * self.Y_mu) + (approx_coeff * self.Y_mu_approx)
+            self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
 
         self.Y_var = 0 * self.Y_mean
 
@@ -298,8 +298,8 @@ class CondTransportKernel(nn.Module):
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
         if self.approx:
-            self.Y_mean_test = (pmu_coeff * self.Y_mu_test) + (papprox_coeff * torch_normalize(self.Y_eta_test))
-            self.Y_mean_test2 = (mu_coeff * self.Y_mu_test) + (approx_coeff * torch_normalize(self.Y_eta_test))
+            self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_eta_test))
+            self.Y_mean_test2 = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_eta_test))
 
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
@@ -990,7 +990,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=7000, n_transports=100, k=2, approx_path=False, test_name='test1', test_keys=['lv'])
+    test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test2', test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'] )
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
