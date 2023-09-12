@@ -342,7 +342,7 @@ class CondTransportKernel(nn.Module):
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
 
-        noised_map_vec = (beta * map_vec) + (alpha * flip(noise_vec))
+        noised_map_vec = (C * beta * map_vec) + (alpha * flip(noise_vec))
 
         return noised_map_vec
 
@@ -496,7 +496,7 @@ class CondTransportKernel(nn.Module):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss_inverse = self.loss_inv()
-        loss = loss_mmd + loss_reg + loss_inverse
+        loss = loss_mmd + loss_reg #+ loss_inverse
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'inverse': loss_inverse.detach().cpu(),
