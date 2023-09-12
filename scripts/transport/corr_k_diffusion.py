@@ -471,7 +471,6 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
     return model, loss_dict
 
 
-def get_indep_model()
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
@@ -958,7 +957,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=5000, n_transports=100, k=10, approx_path=False, test_name='test1', test_keys=['elden', 'mgan1'])
-    
+
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
 
