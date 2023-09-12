@@ -249,6 +249,9 @@ class CondTransportKernel(nn.Module):
         self.approx = self.params['approx']
         if self.approx:
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
+            if is_normal(self.Y_mu):
+                self.Y_mean = torch_normalize(self.Y_mean)
+
 
         self.mu_coeff, self.approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
@@ -258,6 +261,7 @@ class CondTransportKernel(nn.Module):
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+
 
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
@@ -300,6 +304,10 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_eta_test))
             self.Y_mean_test2 = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_eta_test))
+            if is_normal(self.Y_mu):
+                self.Y_mean_test = torch_normalize(self.Y_mean_test)
+                self.Y_mean_test2 = torch_normalize(self.Y_mean_test2)
+
 
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
@@ -330,7 +338,8 @@ class CondTransportKernel(nn.Module):
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
         noised_map_vec = (beta * map_vec) + (alpha * noise_vec)
-        return noised_map_vec
+
+        return torch_normalize(noised_map_vec)
 
 
 
