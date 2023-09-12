@@ -250,7 +250,7 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
             if is_normal(self.Y_mu):
-                self.C_mean = torch.std(self.Y_mean, dim = 1)
+                self.C_mean = torch.std(self.Y_mean, dim = 0)
                 self.Y_mean = torch_normalize(self.Y_mean)
 
 
@@ -261,7 +261,7 @@ class CondTransportKernel(nn.Module):
 
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
-            self.C_noisy = torch.std(self.Y_mu_noisy, dim=1)
+            self.C_noisy = torch.std(self.Y_mu_noisy, dim=0)
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
 
@@ -340,6 +340,7 @@ class CondTransportKernel(nn.Module):
         C = 1/self.C_noisy
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
+
         noised_map_vec = (alpha * C * map_vec) + (alpha * noise_vec)
         return torch_normalize(noised_map_vec)
 
@@ -457,6 +458,7 @@ class CondTransportKernel(nn.Module):
 
 
     def inverse_loss(self):
+        C = 1/self.C_noisy
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
@@ -1004,7 +1006,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test2', test_keys=['elden'])
+    test_panel(N=500, n_transports=100, k=2, approx_path=False, test_name='test2', test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'] )
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
