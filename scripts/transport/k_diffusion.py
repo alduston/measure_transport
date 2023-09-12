@@ -450,7 +450,7 @@ class CondTransportKernel(nn.Module):
 
         target = torch.concat([self.X_mu, Y_input], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
+        noised_Y_approx = self.invert_denoising(Y_approx, Y_eta)
         noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
 
         mmd_ZZ = self.mmd_kernel(noised_map_vec, noised_map_vec)
@@ -987,7 +987,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['lv'])
+    test_panel(N=3000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
