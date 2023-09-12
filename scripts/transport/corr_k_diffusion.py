@@ -479,8 +479,8 @@ class CondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
-        loss_invert = self.inverse_loss()
-        loss = loss_mmd + loss_reg
+        loss_inverse = self.inverse_loss()
+        loss = loss_mmd + loss_reg + loss_inverse
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'total': loss.detach().cpu()}

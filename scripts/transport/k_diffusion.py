@@ -303,8 +303,6 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
-        self.mmd_lambda_test = (1 / self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test + self.Y_var_test],
-                                                          axis=1), self.Y_test))
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
