@@ -302,6 +302,10 @@ class CondTransportKernel(nn.Module):
 
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
+
+        self.mmd_lambda_inv = 1
+        self.mmd_lambda_inv = .2 * (1 / self.loss_inv().detach())
+
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
@@ -328,6 +332,15 @@ class CondTransportKernel(nn.Module):
             else:
                 T.append(t_1[i])
         return torch.tensor(T, device= self.device).reshape(t_1.shape)
+
+
+    def invert_denoising(self, map_vec, noise_vec):
+        beta = self.pmu_coeff/self.mu_coeff
+        alpha = self.papprox_coeff - (self.approx_coeff * beta)
+
+        noised_map_vec = (beta * map_vec) + (alpha * noise_vec)
+
+        return noised_map_vec
 
 
     def init_Z(self):
@@ -428,6 +441,30 @@ class CondTransportKernel(nn.Module):
         return  self.reg_lambda * (reg_1 + reg_2)
 
 
+    def loss_inv(self):
+        Y_input = self.Y_var + self.Y_mean
+        Y_approx =  Y_input + self.Z_mean + self.Z_var
+        Y_eta = self.Y_eta
+
+        target = torch.concat([self.X_mu, Y_input], dim=1)
+
+        noised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
+        noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
+
+        mmd_ZZ = self.mmd_kernel(noised_map_vec, noised_map_vec)
+        mmd_ZY = self.mmd_kernel(noised_map_vec, target)
+        mmd_YY = self.mmd_kernel(target, target)
+
+        alpha = self.alpha_z
+
+        Ek_ZZ = alpha @ mmd_ZZ @ alpha
+        Ek_ZY = alpha @ mmd_ZY @ alpha
+        Ek_YY = alpha @ mmd_YY @ alpha
+        mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+
+        return mmd * self.mmd_lambda_inv
+
+
     def loss_test(self):
         x_mu = self.X_mu_val
         y_eta = self.Y_eta_test
@@ -441,9 +478,11 @@ class CondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
-        loss = loss_mmd + loss_reg
+        loss_inv = self.loss_inv()
+        loss = loss_mmd + loss_reg + loss_inv
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
+                     'inv': loss_inv.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
 
@@ -946,7 +985,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=7000, n_transports=100, k=2, approx_path=False, test_name='test1', test_keys=['lv'])
+    test_panel(N=2000, n_transports=100, k=1, approx_path=False, test_name='test2', test_keys=['spiral'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
