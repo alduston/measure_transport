@@ -466,7 +466,7 @@ class CondTransportKernel(nn.Module):
         target = torch.concat([self.X_mu, Y_input], dim=1)
 
         denoised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
-        denoised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
+        denoised_map_vec = torch.concat([self.X_mu, denoised_Y_approx], dim=1)
 
         mmd_ZZ = self.mmd_kernel(denoised_map_vec, denoised_map_vec)
         mmd_ZY = self.mmd_kernel(denoised_map_vec, target)
