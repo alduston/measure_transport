@@ -481,7 +481,7 @@ class CondTransportKernel(nn.Module):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss_inv = self.loss_inv()
-        loss = loss_mmd + loss_reg #+ loss_inv
+        loss = loss_mmd + loss_reg + loss_inv
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'inv': loss_inv.detach().cpu(),
@@ -987,7 +987,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=2000, n_transports=100, k=1, approx_path=False, test_name='test2', test_keys=['spiral'])
+    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
