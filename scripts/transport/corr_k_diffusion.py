@@ -90,8 +90,7 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 
 
 def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
-    if True:
-        return tensor
+
     device = tensor.device
     dtype = tensor.dtype
     tensor = tensor.detach().cpu().numpy()
@@ -252,7 +251,6 @@ class CondTransportKernel(nn.Module):
         if self.approx:
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
             if is_normal(self.Y_mu):
-                self.C_mean = torch.std(self.Y_mean, dim = 0)
                 self.Y_mean = torch_normalize(self.Y_mean)
 
 
@@ -260,10 +258,10 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
         print(f'Goal noise level : {self.approx_coeff}')
-
+        self.C_noisy = 1
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
-            self.C_noisy = torch.std(self.Y_mu_noisy, dim=0)
+            self.C_noisy = torch.std(self.Y_mu_noisy)
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
 
@@ -328,8 +326,9 @@ class CondTransportKernel(nn.Module):
 
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
+        self.mmd_lambda_inv = 1
+        self.mmd_lambda_inv = (1 / self.loss_inv().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
-
 
         input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_val)
         goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test2], dim = 1), self.Y_val)
@@ -339,12 +338,13 @@ class CondTransportKernel(nn.Module):
 
 
     def invert_denoising(self, map_vec, noise_vec):
-        C = 1#/self.C_noisy
+        C = 1/self.C_noisy
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
 
-        noised_map_vec = (beta * C * map_vec) + (alpha * noise_vec)
-        return torch_normalize(noised_map_vec)
+        noised_map_vec = (beta * map_vec) + (alpha * flip(noise_vec))
+
+        return noised_map_vec
 
 
     def total_grad(self):
@@ -459,19 +459,18 @@ class CondTransportKernel(nn.Module):
         return mmd * self.mmd_lambda
 
 
-    def inverse_loss(self):
-        C = 1#/self.C_noisy
+    def loss_inv(self):
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
 
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+        map_vec = torch.concat([self.X_mu, torch_normalize(Y_input)], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, Y_eta)
-        noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
+        noised_Y_approx = self.invert_denoising(Y_approx, torch_normalize(Y_eta))
+        noised_map_vec = torch.concat([self.X_mu, torch_normalize(noised_Y_approx)], dim=1)
 
         mmd = self.mmd(map_vec ,noised_map_vec, test = False)
-        return mmd * self.mmd_lambda
+        return self.mmd_lambda_inv * mmd
 
 
     def loss_reg(self):
@@ -496,7 +495,7 @@ class CondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
-        loss_inverse = self.inverse_loss()
+        loss_inverse = self.loss_inv()
         loss = loss_mmd + loss_reg + loss_inverse
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
@@ -1008,7 +1007,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=500, n_transports=100, k=2, approx_path=False, test_name='test2', test_keys=['elden'])
+    test_panel(N=5000, n_transports=100, k=2, approx_path=False, test_name='test2', test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'] )
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
