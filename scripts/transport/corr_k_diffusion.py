@@ -90,8 +90,6 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 
 
 def torch_normalize(tensor, keep_axes=[], just_var = False, just_mean = False):
-    if True:
-        return tensor
     device = tensor.device
     dtype = tensor.dtype
     tensor = tensor.detach().cpu().numpy()
@@ -339,11 +337,11 @@ class CondTransportKernel(nn.Module):
 
 
     def invert_denoising(self, map_vec, noise_vec):
-        C = 1#/self.C_noisy
+        C = 1
         beta = self.pmu_coeff/self.mu_coeff
         alpha = self.papprox_coeff - (self.approx_coeff * beta)
 
-        noised_map_vec = (C * beta * map_vec) + (alpha * flip(noise_vec))
+        noised_map_vec = (C * beta * map_vec) + (alpha * noise_vec)
 
         return noised_map_vec
 
@@ -465,13 +463,27 @@ class CondTransportKernel(nn.Module):
         Y_approx =  Y_input + self.Z_mean + self.Z_var
         Y_eta = self.Y_eta
 
-        map_vec = torch.concat([self.X_mu, torch_normalize(Y_input)], dim=1)
+        map_vec = torch.concat([self.X_mu, Y_input], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, torch_normalize(Y_eta))
-        noised_map_vec = torch.concat([self.X_mu, torch_normalize(noised_Y_approx)], dim=1)
+        noised_Y_approx = self.invert_denoising(Y_approx, flip(Y_eta))
+        target = torch.concat([self.X_mu, noised_Y_approx], dim=1)
 
-        mmd = self.mmd(map_vec ,noised_map_vec, test = False)
-        return self.mmd_lambda_inv * mmd
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, target)
+
+        alpha = self.alpha_z
+
+        Ek_ZZ = alpha @ mmd_ZZ @ alpha
+        Ek_ZY = alpha @ mmd_ZY @ alpha
+        Ek_YY = self.E_mmd_YY
+        mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+
+        return mmd * self.mmd_lambda_inv
+
+
+
+        #mmd = self.mmd(map_vec ,noised_map_vec, test = False)
+        #return self.mmd_lambda_inv * mmd
 
 
     def loss_reg(self):
