@@ -290,6 +290,10 @@ class CondTransportKernel(nn.Module):
         self.Y_var_test = 0 * self.Y_eta_test
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
+        self.Y_mu_val = geq_1d(torch.tensor(base_params['Y_mu_val'], device=self.device, dtype=self.dtype))
+        self.Y_val = torch.concat([self.X_mu_val, self.Y_mu_val], dim=1)
+
+
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -448,7 +452,7 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
         y_var = 0 * self.Y_var_test
-        target = self.Y_target
+        target = self.Y_val
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         return  self.mmd(map_vec, target, test = True)
 
@@ -463,7 +467,7 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val, Y_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 300, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
@@ -472,7 +476,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx}
+                        'Y_mu_approx': Y_mu_approx, 'Y_mu_val': Y_mu_val}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -481,7 +485,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 
-def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
+def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, Y_mu_val, params,
                                target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 300,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
@@ -494,9 +498,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                                     X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
-                                     approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
-                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = (10*i) + 1)
+                                     X_mu_val, Y_mu_val, Y_mean_test, Y_var_test, Y_mu_approx,
+                                     n_iter = n_iter, params=params, approx=approx, mmd_lambda=mmd_lambda,
+                                     reg_lambda=reg_lambda,var_eps = var_eps, grad_cutoff = grad_cutoff,
+                                     target_eps = target_eps, iters=iters, step_num = (10*i) + 1)
 
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -561,11 +566,12 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
 
         Y_mu = target_sample[:, target_idx_tensors[i]]
         Y_mu_test = test_target_sample[:, target_idx_tensors[i]]
+        Y_mu_val = test_val_sample[:, target_idx_tensors[i]]
 
         Y_eta = ref_sample[:, ref_idx_tensors[i]]
         Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
-        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val,
+        trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, Y_mu_val,
                                                  params=params, reg_lambda=reg_lambda,  n_transports=n_transports,
                                                  var_eps = var_eps, approx_path =  approx_path))
 
