@@ -248,22 +248,20 @@ class CondTransportKernel(nn.Module):
 
         self.approx = self.params['approx']
         if self.approx:
-            self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
-            if is_normal(self.Y_mu):
-                self.Y_mean = torch_normalize(self.Y_mean)
+            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+            #self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_eta))
+            #if is_normal(self.Y_mu):
+                #self.Y_mean = torch_normalize(self.Y_mean)
 
 
         self.mu_coeff, self.approx_coeff = get_coeffs(self.noise_eps, self.step_num)
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
         print(f'Goal noise level : {self.approx_coeff}')
-        self.C_noisy = 1
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
-            self.C_noisy = torch.std(self.Y_mu_noisy)
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
-
-
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
 
@@ -303,11 +301,13 @@ class CondTransportKernel(nn.Module):
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
         if self.approx:
-            self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_eta_test))
-            self.Y_mean_test2 = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_eta_test))
-            if is_normal(self.Y_mu):
-                self.Y_mean_test = torch_normalize(self.Y_mean_test)
-                self.Y_mean_test2 = torch_normalize(self.Y_mean_test2)
+            self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
+            self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
+            #self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_eta_test))
+            #self.Y_mean_test2 = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_eta_test))
+            #if is_normal(self.Y_mu):
+                #self.Y_mean_test = torch_normalize(self.Y_mean_test)
+                #self.Y_mean_test2 = torch_normalize(self.Y_mean_test2)
 
 
 
@@ -329,8 +329,8 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda_inv = .25 * (1 / self.loss_inv().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
-        input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_val)
-        goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test2], dim = 1), self.Y_val)
+        input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test + self.Y_var_test], dim = 1), self.Y_val)
+        goal_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mu_noisy], dim = 1), self.Y_val)
 
         print(f"Transport {self.step_num}: Input  mmd is {format(float(input_mmd.detach().cpu()))},"
               f" Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
