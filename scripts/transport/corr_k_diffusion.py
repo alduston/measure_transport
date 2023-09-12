@@ -326,7 +326,7 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
         self.mmd_lambda_inv = 1
-        self.mmd_lambda_inv = (1 / self.loss_inv().detach())
+        self.mmd_lambda_inv = .25 * (1 / self.loss_inv().detach())
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         input_mmd = self.mmd(torch.concat([self.X_mu_test, self.Y_mean_test], dim = 1), self.Y_val)
@@ -481,11 +481,6 @@ class CondTransportKernel(nn.Module):
         return mmd * self.mmd_lambda_inv
 
 
-
-        #mmd = self.mmd(map_vec ,noised_map_vec, test = False)
-        #return self.mmd_lambda_inv * mmd
-
-
     def loss_reg(self):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
@@ -509,7 +504,7 @@ class CondTransportKernel(nn.Module):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
         loss_inverse = self.loss_inv()
-        loss = loss_mmd + loss_reg #+ loss_inverse
+        loss = loss_mmd + loss_reg + loss_inverse
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
                      'inverse': loss_inverse.detach().cpu(),
