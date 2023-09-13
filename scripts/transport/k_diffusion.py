@@ -448,7 +448,6 @@ class CondTransportKernel(nn.Module):
     def loss_inv(self):
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
-        Y_eta = self.Y_eta
 
         target = torch.concat([self.X_mu, Y_input], dim=1)
 
@@ -465,7 +464,6 @@ class CondTransportKernel(nn.Module):
         Ek_ZY = alpha @ mmd_ZY @ alpha
         Ek_YY = alpha @ mmd_YY @ alpha
         mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-        print(mmd)
 
         return mmd * self.mmd_lambda_inv
 
@@ -990,7 +988,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=1500, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['spiral'])
+    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
