@@ -258,7 +258,7 @@ class CondTransportKernel(nn.Module):
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
             self.Y_mu_pnoisy = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
-            self.Y_mu_pnoisy = torch_normalize(self.Y_pmu_noisy)
+            self.Y_mu_pnoisy = torch_normalize(self.Y_mu_pnoisy)
 
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
