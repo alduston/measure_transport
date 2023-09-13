@@ -465,7 +465,6 @@ class CondTransportKernel(nn.Module):
         Ek_YY = alpha @ mmd_YY @ alpha
 
         mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-        print(mmd)
         return mmd * self.mmd_lambda_inv
 
 
