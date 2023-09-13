@@ -236,6 +236,7 @@ class CondTransportKernel(nn.Module):
         self.step_num = self.params['step_num']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
+        self.Y_eta_flip = flip(self.Y_eta)
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var = 0 * self.Y_mean
         self.approx = self.params['approx']
@@ -450,7 +451,7 @@ class CondTransportKernel(nn.Module):
 
         target = torch.concat([self.X_mu, Y_input], dim=1)
 
-        noised_Y_approx = self.invert_denoising(Y_approx, Y_eta)
+        noised_Y_approx = self.invert_denoising(Y_approx, self.Y_eta_flip)
         noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
 
         mmd_ZZ = self.mmd_kernel(noised_map_vec, noised_map_vec)
