@@ -307,7 +307,7 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
 
         self.mmd_lambda_inv = 1
-        self.mmd_lambda_inv = .2 * (1 / self.loss_inv().detach())
+        self.mmd_lambda_inv =  (1 / self.loss_inv().detach())
 
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
