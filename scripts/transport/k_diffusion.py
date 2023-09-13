@@ -256,8 +256,13 @@ class CondTransportKernel(nn.Module):
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+
+            self.Y_mu_pnoisy = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            self.Y_mu_pnoisy = torch_normalize(self.Y_pmu_noisy)
+
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
+            self.Y_mu_pnoisy = torch_normalize(self.Y_mu_pnoisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -450,7 +455,7 @@ class CondTransportKernel(nn.Module):
         Y_input = self.Y_var + self.Y_mean
         Y_approx =  Y_input + self.Z_mean + self.Z_var
 
-        target = torch.concat([self.X_mu, Y_input], dim=1)
+        target = torch.concat([self.X_mu, self.Y_mu_pnoisy], dim=1)
 
         noised_Y_approx = self.invert_denoising(Y_approx, self.Y_eta)
         noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
