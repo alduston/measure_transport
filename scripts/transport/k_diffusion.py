@@ -340,7 +340,7 @@ class CondTransportKernel(nn.Module):
 
 
     def init_Z(self):
-        Z = torch.zeros(self.Y_eta.shape, device=self.device, dtype=self.dtype)
+        Z = 1e-15 + torch.zeros(self.Y_eta.shape, device=self.device, dtype=self.dtype)
         return Z
 
 
@@ -432,10 +432,10 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
 
-        reg_1 = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
-        #reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ self.norm_vec(Z_mean))
-        #reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ self.norm_vec(Z_var))
+        #reg_1 = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
+        #reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ self.norm_vec(Z_mean))
+        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ self.norm_vec(Z_var))
         return  self.reg_lambda * (reg_1 + reg_2)
 
 
@@ -957,7 +957,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['spiral'])
+    test_panel(N=500, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['spiral'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
