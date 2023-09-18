@@ -240,6 +240,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var = 0 * self.Y_mean
         self.approx = self.params['approx']
+
         if self.approx:
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
@@ -247,22 +248,15 @@ class CondTransportKernel(nn.Module):
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
 
-
         self.mu_coeff, self.approx_coeff = get_coeffs(self.noise_eps, self.step_num)
-        self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num - 1)
-
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
-            self.Y_mu_pnoisy = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
-            self.Y_mu_pnoisy = torch_normalize(self.Y_mu_pnoisy)
-
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
-            self.Y_mu_pnoisy = torch_normalize(self.Y_mu_pnoisy)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -292,6 +286,7 @@ class CondTransportKernel(nn.Module):
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
+
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -311,11 +306,6 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = 1
         self.mmd_lambda = (1 / self.loss_mmd().detach())
 
-        self.mmd_lambda_inv = 0
-        #if self.approx:
-            #self.mmd_lambda_inv = 1
-            #self.mmd_lambda_inv =  .5 * (1 / self.loss_inv().detach())
-
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
@@ -334,6 +324,10 @@ class CondTransportKernel(nn.Module):
         return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
 
 
+    def norm_vec(self, vec):
+        return vec/torch.linalg.norm(vec)
+
+
     def prob_add(self, t_1, t_2, p = .001):
         T = []
         for i in range(len(t_1)):
@@ -343,14 +337,6 @@ class CondTransportKernel(nn.Module):
                 T.append(t_1[i])
         return torch.tensor(T, device= self.device).reshape(t_1.shape)
 
-
-    def invert_denoising(self, map_vec, noise_vec):
-        beta = self.pmu_coeff/self.mu_coeff
-        alpha = self.papprox_coeff - (self.approx_coeff * beta)
-
-        noised_map_vec = (beta * map_vec) + (alpha * noise_vec)
-
-        return noised_map_vec
 
 
     def init_Z(self):
@@ -446,32 +432,9 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
 
-        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        reg_1 =  torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ self.norm_vec(Z_mean))
+        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ self.norm_vec(Z_var))
         return  self.reg_lambda * (reg_1 + reg_2)
-
-
-    def loss_inv(self):
-        Y_input = self.Y_var + self.Y_mean
-        Y_approx =  Y_input + self.Z_mean + self.Z_var
-
-        target = torch.concat([self.X_mu, self.Y_mu_pnoisy], dim=1)
-
-        noised_Y_approx = self.invert_denoising(Y_approx, self.Y_eta)
-        noised_map_vec = torch.concat([self.X_mu, noised_Y_approx], dim=1)
-
-        mmd_ZZ = self.mmd_kernel(noised_map_vec, noised_map_vec)
-        mmd_ZY = self.mmd_kernel(noised_map_vec, target)
-        mmd_YY = self.mmd_kernel(target, target)
-
-        alpha = self.alpha_z
-
-        Ek_ZZ = alpha @ mmd_ZZ @ alpha
-        Ek_ZY = alpha @ mmd_ZY @ alpha
-        Ek_YY = alpha @ mmd_YY @ alpha
-
-        mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
-        return mmd * self.mmd_lambda_inv
 
 
     def loss_test(self):
@@ -487,11 +450,9 @@ class CondTransportKernel(nn.Module):
     def loss(self):
         loss_mmd = self.loss_mmd()
         loss_reg = self.loss_reg()
-        loss_inv = self.loss_inv()
-        loss = loss_mmd + loss_reg + loss_inv
+        loss = loss_mmd + loss_reg
         loss_dict = {'fit': loss_mmd.detach().cpu(),
                      'reg': loss_reg.detach().cpu(),
-                     'inv': loss_inv.detach().cpu(),
                      'total': loss.detach().cpu()}
         return loss, loss_dict
 
