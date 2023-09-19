@@ -126,6 +126,7 @@ class Comp_transport_model:
         self.bins = 75
         self.mu = 0
         self.sigma = 1
+        self.noise_eps = .07
 
         if device:
             self.device = device
@@ -163,8 +164,12 @@ class Comp_transport_model:
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
 
+        mu_coeff, approx_coeff = get_coeffs(self.noise_eps, step_idx + 1)
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
+        x_mu_approx = geq_1d(torch.tensor(param_dict['x_mu_approx'], device=self.device, dtype=self.dtype))
+        x_mu = mu_coeff * x_mu + approx_coeff * x_mu_approx
+
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
 
@@ -178,7 +183,8 @@ class Comp_transport_model:
 
         y_approx = y_mean + y_var
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1),
+                      'x_mu_approx': x_mu_approx}
 
         if self.plot_steps:
             plt.figure(figsize=(10,10))
@@ -193,7 +199,8 @@ class Comp_transport_model:
 
     def c_map(self, x, y, no_x = False):
         param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
-                       'x_mu': x, 'y_approx': 0, 'y': 0}
+                       'x_mu': x, 'y_approx': 0, 'y': 0,
+                      'x_mu_approx': torch.randn(x.shape, device = self.device)}
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
@@ -463,7 +470,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, X_mu_approx,
                           params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,  reg_lambda=1e-7,
-                          grad_cutoff = .0001, n_iter = 150, target_eps = 1, var_eps = 1/3):
+                          grad_cutoff = .0001, n_iter = 300, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
@@ -478,7 +485,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3,
+                               target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 300,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
@@ -961,8 +968,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=2500, n_transports=100, k=1, approx_path=False, test_name='xtest',
-               test_keys=['checker'])
+    test_panel(N=2000, n_transports=120, k=1, approx_path=False, test_name='xtest',
+               test_keys=['checker'],plot_steps = True)
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
