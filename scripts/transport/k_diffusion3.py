@@ -126,7 +126,7 @@ class Comp_transport_model:
         self.bins = 75
         self.mu = 0
         self.sigma = 1
-        self.noise_eps = .07
+        self.noise_eps = .05
 
         if device:
             self.device = device
@@ -470,7 +470,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, X_mu_approx,
                           params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,  reg_lambda=1e-7,
-                          grad_cutoff = .0001, n_iter = 300, target_eps = 1, var_eps = 1/3):
+                          grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
@@ -485,7 +485,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 300,var_eps = 1/3,
+                               target_eps = 0.05,n_transports=100, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
@@ -968,7 +968,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=2000, n_transports=120, k=1, approx_path=False, test_name='exp',
+    test_panel(N=2000, n_transports=200, k=1, approx_path=False, test_name='exp',
                test_keys=['checker'], plot_steps = True)
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
