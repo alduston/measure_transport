@@ -73,15 +73,14 @@ def train_kernel(kernel_model, n_iter = np.inf):
     grad_norm = np.inf
     i = 0
     while grad_norm > kernel_model.params['grad_cutoff'] and i < n_iter:
-        if not i:
-            print('\n')
-            print(f'Starting test loss is {kernel_model.loss_test().detach().cpu()}')
+        if not iter % kernel_model.params['print_freq']:
+            test_loss = kernel_model.loss_test().detach().cpu()
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
-        grad_norm = kernel_model.total_grad()
         if not iter % kernel_model.params['print_freq']:
+            grad_norm = kernel_model.total_grad()
             kernel_model.eval()
-            loss_dict['test'] = kernel_model.loss_test().detach().cpu()
+            loss_dict['test'] = test_loss
             loss_dict['n_iter'] = iter
             loss_dict['grad_norm'] = grad_norm
             Loss_dict = update_list_dict(Loss_dict, loss_dict)
