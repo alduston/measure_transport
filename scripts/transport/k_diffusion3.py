@@ -164,11 +164,11 @@ class Comp_transport_model:
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
 
-        mu_coeff, approx_coeff = get_coeffs(self.noise_eps, step_idx + 1)
+        #mu_coeff, approx_coeff = get_coeffs(self.noise_eps, step_idx + 1)
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
-        x_mu_approx = geq_1d(torch.tensor(param_dict['x_mu_approx'], device=self.device, dtype=self.dtype))
-        x_mu_noisy = mu_coeff * x_mu + approx_coeff * x_mu_approx
+        #x_mu_approx = geq_1d(torch.tensor(param_dict['x_mu_approx'], device=self.device, dtype=self.dtype))
+        #x_mu_noisy = mu_coeff * x_mu + approx_coeff * x_mu_approx
 
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
@@ -177,14 +177,14 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu_noisy, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu_noisy, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
+        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu_noisy, y_approx + z], dim=1),
-                      'x_mu_approx': x_mu_approx}
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+                      #'x_mu_approx': x_mu_approx}
 
         if self.plot_steps:
             plt.figure(figsize=(10,10))
@@ -199,8 +199,8 @@ class Comp_transport_model:
 
     def c_map(self, x, y, no_x = False):
         param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
-                       'x_mu': x, 'y_approx': 0, 'y': 0,
-                      'x_mu_approx': torch.randn(x.shape, device = self.device)}
+                       'x_mu': x, 'y_approx': 0, 'y': 0}
+                      #'x_mu_approx': torch.randn(x.shape, device = self.device)}
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
