@@ -258,11 +258,9 @@ class CondTransportKernel(nn.Module):
 
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
-            
-        self.X_mu = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
 
+        self.X_mu = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
-        self.X_mu = self.X_mu
 
         self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
@@ -289,6 +287,7 @@ class CondTransportKernel(nn.Module):
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
+        self.X_mu_val = (self.mu_coeff * self.X_mu_val) + (self.approx_coeff * self.X_mu_approx)
 
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
@@ -442,7 +441,7 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_test(self):
-        x_mu = self.mu_coeff * self.X_mu_val + self.approx * self.X_mu_approx
+        x_mu = self.X_mu_val
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
         y_var = self.Y_var_test
@@ -488,7 +487,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     Y_mu_approx = Y_eta
-    X_mu_approx = torch.randn(X_mu.shape, dtype = X_mu.dtype)
+    X_mu_approx = torch.randn(X_mu.shape, dtype=torch.float32)
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
