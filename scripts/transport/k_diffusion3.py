@@ -266,8 +266,8 @@ class CondTransportKernel(nn.Module):
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
 
-        self.X_mu = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
-        self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
+        self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
+        self.Y_target = torch.concat([deepcopy(self.X_mu_noisy), self.Y_mu_noisy], dim=1)
 
         self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
@@ -967,7 +967,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=20, n_transports=200, k=1, approx_path=False, test_name='exp',
+    test_panel(N=2000, n_transports=150, k=1, approx_path=False, test_name='x_test',
                test_keys=['checker'], plot_steps = True)
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
