@@ -475,7 +475,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 0.07,n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3,
+                               target_eps = 0.05,n_transports=100, reg_lambda=1e-7, n_iter = 150,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
@@ -956,8 +956,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3',
-               test_keys=['elden','spiral', 'checker'])
+    test_panel(N=4000, n_transports=150, k=1, approx_path=False, test_name='test3',
+               test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
