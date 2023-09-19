@@ -956,7 +956,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=3000, n_transports=200, k=1, approx_path=False, test_name='test4',
+    test_panel(N=3000, n_transports=300, k=1, approx_path=False, test_name='test4',
                test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
