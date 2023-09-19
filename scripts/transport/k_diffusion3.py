@@ -461,15 +461,16 @@ class CondTransportKernel(nn.Module):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
-                          Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 150, target_eps = 1, var_eps = 1/3):
+                          Y_mean_test, Y_var_test, Y_mu_approx, X_mu_approx,
+                          params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,  reg_lambda=1e-7,
+                          grad_cutoff = .0001, n_iter = 150, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx}
+                        'Y_mu_approx': Y_mu_approx, 'X_mu_approx': X_mu_approx}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -486,13 +487,14 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     Y_mu_approx = Y_eta
-    X_mu_approx = torch.randn(X_mu.shape, device = X_mu.device, dtype = X_mu.dtype)
+    X_mu_approx = torch.randn(X_mu.shape, dtype = X_mu.dtype)
 
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                      X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
-                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1)
+                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1,
+                                     X_mu_approx = X_mu_approx)
 
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -959,8 +961,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3',
-               test_keys=['elden','spiral', 'checker'])
+    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test4',
+               test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
