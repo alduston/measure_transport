@@ -235,6 +235,8 @@ class CondTransportKernel(nn.Module):
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
 
+        self.denoise_map = self.params['denoise_map']
+
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_eta_flip = flip(self.Y_eta)
         self.Y_mean = deepcopy(self.Y_eta)
@@ -352,17 +354,23 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXXvar_inv @ (self.Z_var)
 
 
-    def map_mean(self, x_mu, y_mean, y_var):
+    def map_mean(self, x_mu, y_mean, y_var, Lambda_mean = [], X_mean = []):
+        if not len(Lambda_mean):
+            Lambda_mean = self.get_Lambda_mean()
+        if not len(X_mean):
+            X_mean = self.X_mean
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
-        Lambda_mean = self.get_Lambda_mean()
-        z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
+        z_mean = self.fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, y_var):
+    def map_var(self, x_mu, y_eta, y_mean, y_var, Lambda_var = [], X_var = []):
+        if not len(Lambda_mean):
+            Lambda_var = self.get_Lambda_var()
+        if not len(X_mean):
+            X_var = self.X_var
         x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        Lambda_var = self.get_Lambda_var()
-        z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
+        z_var = self.fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -956,8 +964,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3',
-               test_keys=['elden','spiral', 'checker'])
+    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test3', test_keys=['spiral'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
