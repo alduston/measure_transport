@@ -168,7 +168,7 @@ class Comp_transport_model:
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
         x_mu_approx = geq_1d(torch.tensor(param_dict['x_mu_approx'], device=self.device, dtype=self.dtype))
-        x_mu = mu_coeff * x_mu + approx_coeff * x_mu_approx
+        x_mu_noisy = mu_coeff * x_mu + approx_coeff * x_mu_approx
 
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
@@ -177,8 +177,8 @@ class Comp_transport_model:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
+        z_mean = self.map_mean(x_mu_noisy, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_var = self.map_var(x_mu_noisy, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
@@ -968,8 +968,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=2000, n_transports=120, k=1, approx_path=False, test_name='xtest',
-               test_keys=['checker'],plot_steps = True)
+    test_panel(N=2000, n_transports=120, k=1, approx_path=False, test_name='exp',
+               test_keys=['checker'], plot_steps = True)
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
