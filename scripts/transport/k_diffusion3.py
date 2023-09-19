@@ -183,7 +183,7 @@ class Comp_transport_model:
 
         y_approx = y_mean + y_var
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1),
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu_noisy, y_approx + z], dim=1),
                       'x_mu_approx': x_mu_approx}
 
         if self.plot_steps:
@@ -294,7 +294,6 @@ class CondTransportKernel(nn.Module):
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
-        self.X_mu_val = (self.mu_coeff * self.X_mu_val) + (self.approx_coeff * self.X_mu_approx)
 
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
