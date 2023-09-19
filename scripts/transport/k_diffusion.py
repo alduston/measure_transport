@@ -291,6 +291,11 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
+        self.Y_mu_test_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
+        if is_normal(self.Y_mu):
+            self.Y_mu_test_noisy = torch_normalize(self.Y_mu_test_noisy)
+        self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test_noisy], dim=1)
+
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
         self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
@@ -444,6 +449,7 @@ class CondTransportKernel(nn.Module):
         y_mean = self.Y_mean_test
         y_var = self.Y_var_test
         target = self.Y_test
+
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         return  self.mmd(map_vec, target, test = True)
 

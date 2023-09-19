@@ -164,11 +164,8 @@ class Comp_transport_model:
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
 
-        #mu_coeff, approx_coeff = get_coeffs(self.noise_eps, step_idx + 1)
         y_eta = geq_1d(torch.tensor(param_dict['y_eta'], device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(param_dict['x_mu'], device=self.device, dtype=self.dtype))
-        #x_mu_approx = geq_1d(torch.tensor(param_dict['x_mu_approx'], device=self.device, dtype=self.dtype))
-        #x_mu_noisy = mu_coeff * x_mu + approx_coeff * x_mu_approx
 
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
@@ -184,7 +181,6 @@ class Comp_transport_model:
         y_approx = y_mean + y_var
         param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
-                      #'x_mu_approx': x_mu_approx}
 
         if self.plot_steps:
             plt.figure(figsize=(10,10))
@@ -200,7 +196,7 @@ class Comp_transport_model:
     def c_map(self, x, y, no_x = False):
         param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
                        'x_mu': x, 'y_approx': 0, 'y': 0}
-                      #'x_mu_approx': torch.randn(x.shape, device = self.device)}
+
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
@@ -222,7 +218,7 @@ def get_coeffs(noise_eps, step_num):
     approx_coeff *= norm_factor
     return mu_coeff, approx_coeff
 
-
+#Test mmd :0.001794, Base mmd: 0.011502, NTest mmd :0.155995
 
 class CondTransportKernel(nn.Module):
     def __init__(self, base_params, device=None):
