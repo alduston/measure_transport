@@ -291,7 +291,7 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
-        self.Y_mu_test_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
+        self.Y_mu_test_noisy = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
         if is_normal(self.Y_mu):
             self.Y_mu_test_noisy = torch_normalize(self.Y_mu_test_noisy)
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test_noisy], dim=1)
@@ -962,7 +962,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=4000, n_transports=150, k=1, approx_path=False, test_name='test4',
+    test_panel(N=3000, n_transports=150, k=1, approx_path=False, test_name='test4',
                test_keys=['lv'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
