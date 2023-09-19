@@ -291,11 +291,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
-        #self.Y_mu_test_noisy = (self.mu_coeff * self.Y_mu_test) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
-        #if is_normal(self.Y_mu):
-            #self.Y_mu_test_noisy = torch_normalize(self.Y_mu_test_noisy)
-        #self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test_noisy], dim=1)
-
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
         self.test_mmd_kernel = get_kernel(test_mmd_params, self.device)
@@ -341,7 +336,6 @@ class CondTransportKernel(nn.Module):
             else:
                 T.append(t_1[i])
         return torch.tensor(T, device= self.device).reshape(t_1.shape)
-
 
 
     def init_Z(self):
@@ -469,7 +463,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 150, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 25, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 1, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
