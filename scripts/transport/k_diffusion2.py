@@ -260,9 +260,9 @@ class CondTransportKernel(nn.Module):
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
 
         elif self.stage == 2:
-            if self.approx:
-                self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-                self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+            #if self.approx:
+            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
             '''
             self.M_mean = geq_1d(torch.tensor(base_params['indep_params']['X_mean'],
@@ -309,9 +309,9 @@ class CondTransportKernel(nn.Module):
         if self.stage == 1:
             self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
         elif self.stage == 2:
-            if self.approx:
-                self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
-                self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
+            #if self.approx:
+            self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
+            self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
@@ -401,7 +401,7 @@ class CondTransportKernel(nn.Module):
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
-        if not self.approx:
+        if not self.approx and self.stage==1:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
