@@ -498,6 +498,7 @@ class CondTransportKernel(nn.Module):
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
         y_var = self.Y_var_test
+        print(y_var[0])
         target = self.Y_test
 
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
