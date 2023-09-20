@@ -504,6 +504,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
 
+
         test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
@@ -955,8 +956,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=4000, n_transports=75, k=1, approx_path=False, test_name='test4',
-               test_keys=['lv'])
+    test_panel(N=50, n_transports=75, k=1, approx_path=False, test_name='test4',
+               test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])

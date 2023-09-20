@@ -401,9 +401,9 @@ class CondTransportKernel(nn.Module):
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
-        #if not self.approx:
-            #y_mean = deepcopy(y_eta)
-            #y_var = 0 * y_mean
+        if not self.approx:
+            y_mean = deepcopy(y_eta)
+            y_var = 0 * y_mean
 
         #if self.stage == 2:
             #y_mean_new = self.map_mean(x_mu, y_mean, y_var, X_mean=self.M_mean, Lambda_mean=self.alpha_mean)
@@ -559,18 +559,14 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if i == 0:
                 models_param_dict['mmd_func'] = model.mmd
 
+            if stage == 1:
+                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+
             if stage == 2:
                 Y_mean = model.Y_mean + model.Z_mean
                 Y_var = model.Y_var + model.Z_var
                 approx = True
-
-            if stage == 1:
-                if not approx:
-                    Y_mean = model.Y_mean + model.Z_mean
-                    Y_var = model.Y_var + model.Z_var
-                else:
-                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
             test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
             Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
