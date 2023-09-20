@@ -267,7 +267,7 @@ class CondTransportKernel(nn.Module):
             self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
             self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
-            '''
+
             self.M_mean = geq_1d(torch.tensor(base_params['indep_params']['X_mean'],
                                               device=self.device, dtype=self.dtype))
             self.alpha_mean =geq_1d(torch.tensor(base_params['indep_params']['Lambda_mean'],
@@ -277,7 +277,6 @@ class CondTransportKernel(nn.Module):
                                              device=self.device, dtype=self.dtype))
             self.alpha_var = geq_1d(torch.tensor(base_params['indep_params']['Lambda_var'],
                                              device=self.device, dtype=self.dtype))
-            '''
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -411,29 +410,30 @@ class CondTransportKernel(nn.Module):
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        #if self.stage == 2:
-            #y_mean_new = self.map_mean(x_mu, y_mean, y_var, X_mean=self.M_mean, Lambda_mean=self.alpha_mean)
-            #y_var_new = self.map_var(x_mu, y_eta, y_mean, y_var, X_var=self.M_var, Lambda_var=self.alpha_var)
-        #else:
+        if self.stage == 2:
+            y_mean_new = self.map_mean(x_mu, y_mean, y_var, X_mean=self.M_mean, Lambda_mean=self.alpha_mean)
+            y_var_new = self.map_var(x_mu, y_eta, y_mean, y_var, X_var=self.M_var, Lambda_var=self.alpha_var)
+        else:
+            y_mean_new = y_mean
+            y_var_new = y_var
 
-        #y_mean_new = y_mean
-       # y_var_new = y_var
+        #z_mean = self.map_mean(x_mu, y_mean, y_var)
+        #z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var)
-        z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
+        z_mean = self.map_mean(x_mu, y_mean_new, y_var_new)
+        z_var = self.map_var(x_mu, y_eta, y_mean_new, y_var_new)
 
-        #z_mean = self.map_mean(x_mu, y_mean_new, y_var_new)
-        #z_var = self.map_var(x_mu, y_eta, y_mean_new, y_var_new)
+        #z = z_mean + z_var
+        #y_approx = y_mean + y_var
 
         z = z_mean + z_var
-        y_approx = y_mean + y_var
+        y_approx = y_mean_new + y_var_new
 
-        #y_approx = y_mean_new + y_var_new
-        #return_dict = {'y_eta': y_eta, 'y_mean': y_mean_new + z_mean, 'y_var': y_var_new + z_var,
-                       #'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
+        return_dict = {'y_eta': y_eta, 'y_mean': y_mean_new + z_mean, 'y_var': y_var_new + z_var,
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
 
-        return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
-            'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
+        #return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
+            #'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
         return return_dict
 
 
@@ -462,15 +462,15 @@ class CondTransportKernel(nn.Module):
 
     def loss_mmd(self):
         Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        #if self.stage == 2:
-            #X_mean = torch.concat([self.X_mu, Y_approx], dim=1)
-            #Y_mean_denoise = self.fit_kernel(self.M_mean, X_mean).T @ self.alpha_mean
-            #X_var = torch.concat([self.X_mu, self.Y_eta_flip, Y_approx], dim=1)
-            #Y_var_denoise = self.fit_kernel(self.M_var, X_var).T @ self.alpha_var
+        if self.stage == 2:
+            X_mean = torch.concat([self.X_mu, Y_approx], dim=1)
+            Y_mean_denoise = self.fit_kernel(self.M_mean, X_mean).T @ self.alpha_mean
+            X_var = torch.concat([self.X_mu, self.Y_eta_flip, Y_approx], dim=1)
+            Y_var_denoise = self.fit_kernel(self.M_var, X_var).T @ self.alpha_var
 
-            #map_vec = torch.concat([self.X_mu, Y_mean_denoise + Y_var_denoise], dim=1)
-        #else:
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+            map_vec = torch.concat([self.X_mu, Y_mean_denoise + Y_var_denoise], dim=1)
+        else:
+            map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
 
         target = self.Y_target
 
@@ -504,9 +504,7 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
 
-        #map_vec = torch.concat([x_mu, y_mean+ y_var], dim=1)
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-
         test_loss =  self.mmd(map_vec, target, test = True)
         return test_loss
 
@@ -568,19 +566,19 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if i == 0:
                 models_param_dict['mmd_func'] = model.mmd
 
-            Y_mean = model.Y_mean + model.Z_mean
-            Y_var = model.Y_var + model.Z_var
+            #Y_mean = model.Y_mean + model.Z_mean
+            #Y_var = model.Y_var + model.Z_var
             #if stage == 1:
                     #map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
                     #Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
             if stage == 2:
-                #Y_mean = model.Y_mean + model.Z_mean
-                #Y_var = model.Y_var + model.Z_var
+                Y_mean = model.Y_mean + model.Z_mean
+                Y_var = model.Y_var + model.Z_var
                 approx = True
-
-            test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
-            Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
+            
+                test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
+                Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
             iters = model.iters
             if approx_path:
