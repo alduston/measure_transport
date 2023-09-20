@@ -497,6 +497,7 @@ class CondTransportKernel(nn.Module):
         x_mu = self.X_mu_val
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
+        print(y_mean[0])
         y_var = self.Y_var_test
         print(y_var[0])
         target = self.Y_test
