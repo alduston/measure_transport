@@ -263,9 +263,9 @@ class CondTransportKernel(nn.Module):
             self.Y_var = 0 * self.Y_mean
 
         elif self.stage == 2:
-            #if self.approx:
-            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+            if self.approx:
+                self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+                self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
 
             self.M_mean = geq_1d(torch.tensor(base_params['indep_params']['X_mean'],
@@ -315,8 +315,9 @@ class CondTransportKernel(nn.Module):
                 self.Y_mean_test = torch_normalize(self.Y_mean_test)
 
         elif self.stage == 2:
-            self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
-            self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
+            if self.approx:
+                self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
+                self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
@@ -406,7 +407,7 @@ class CondTransportKernel(nn.Module):
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
 
-        if not self.approx and self.stage==1:
+        if not self.approx:
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
@@ -416,6 +417,7 @@ class CondTransportKernel(nn.Module):
         else:
             y_mean_new = y_mean
             y_var_new = y_var
+
 
         #z_mean = self.map_mean(x_mu, y_mean, y_var)
         #z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
@@ -575,10 +577,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if stage == 2:
                 Y_mean = model.Y_mean + model.Z_mean
                 Y_var = model.Y_var + model.Z_var
-                approx = True
-            
+
                 test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
                 Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
+                approx = True
 
             iters = model.iters
             if approx_path:
@@ -1034,7 +1036,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=5000, n_transports=75, k=1, approx_path=False, test_name='exp',
+    test_panel(N=50, n_transports=75, k=1, approx_path=False, test_name='exp',
                test_keys=['spiral'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
