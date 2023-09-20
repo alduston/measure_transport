@@ -260,7 +260,6 @@ class CondTransportKernel(nn.Module):
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
             if is_normal(self.Y_mu):
                 self.Y_mean = torch_normalize(self.Y_mean)
-
             self.Y_var = 0 * self.Y_mean
 
         elif self.stage == 2:
@@ -315,7 +314,6 @@ class CondTransportKernel(nn.Module):
             self.Y_var_test = 0 * self.Y_mean
             if is_normal(self.Y_mu):
                 self.Y_mean_test = torch_normalize(self.Y_mean_test)
-
 
         elif self.stage == 2:
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
