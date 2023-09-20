@@ -313,6 +313,9 @@ class CondTransportKernel(nn.Module):
         if self.stage == 1:
             self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_var_test = 0 * self.Y_mean
+            if is_normal(self.Y_mu):
+                self.Y_mean_test = torch_normalize(self.Y_mean_test)
+
 
         elif self.stage == 2:
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
@@ -499,17 +502,13 @@ class CondTransportKernel(nn.Module):
     def loss_test(self):
         x_mu = self.X_mu_val
         y_eta = self.Y_eta_test
-
-        #y_mean = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
-        #y_var = 0 * y_eta
-
         y_mean = self.Y_mean_test
         y_var = self.Y_var_test
         target = self.Y_test
 
-        #map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        #Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
+        #map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         test_loss =  self.mmd(map_vec, target, test = True)
         return test_loss
 
