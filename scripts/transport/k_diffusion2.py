@@ -497,9 +497,7 @@ class CondTransportKernel(nn.Module):
         x_mu = self.X_mu_val
         y_eta = self.Y_eta_test
         y_mean = self.Y_mean_test
-        print(y_mean[0])
         y_var = self.Y_var_test
-        print(y_var[0])
         target = self.Y_test
 
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
@@ -553,7 +551,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                              X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
                                              approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                              grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
-                                             step_num = i + 1, stage = stage, indep_params=indep_params)
+                                             step_num = 10*i + 1, stage = stage, indep_params=indep_params)
 
                 models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
                 models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
