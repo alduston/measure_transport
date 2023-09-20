@@ -554,7 +554,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     for i in range(n_transports):
         for stage in [1,2]:
             if stage==2:
-                self.approx = True
+                approx = True
                 pass
             else:
                 model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
