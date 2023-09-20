@@ -258,6 +258,9 @@ class CondTransportKernel(nn.Module):
         if self.stage == 1:
             self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num -1)
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            if is_normal(self.Y_mu):
+                self.Y_mean = torch_normalize(self.Y_mean)
+
             self.Y_var = 0 * self.Y_mean
 
         elif self.stage == 2:
