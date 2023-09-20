@@ -287,7 +287,7 @@ class CondTransportKernel(nn.Module):
         self.Y_var_test = 0 * self.Y_eta_test
 
         if self.approx:
-            self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            pass
             #self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
             #self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
