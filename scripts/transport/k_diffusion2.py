@@ -258,6 +258,7 @@ class CondTransportKernel(nn.Module):
         if self.stage == 1:
             self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num -1)
             self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            self.Y_var = 0 * self.Y_mean
 
         elif self.stage == 2:
             #if self.approx:
@@ -308,8 +309,9 @@ class CondTransportKernel(nn.Module):
 
         if self.stage == 1:
             self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            self.Y_var_test = 0 * self.Y_mean
+
         elif self.stage == 2:
-            #if self.approx:
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
             self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
@@ -559,13 +561,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if i == 0:
                 models_param_dict['mmd_func'] = model.mmd
 
-            if stage == 1:
-                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+            Y_mean = model.Y_mean + model.Z_mean
+            Y_var = model.Y_var + model.Z_var
+            #if stage == 1:
+                    #map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+                    #Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
             if stage == 2:
-                Y_mean = model.Y_mean + model.Z_mean
-                Y_var = model.Y_var + model.Z_var
+                #Y_mean = model.Y_mean + model.Z_mean
+                #Y_var = model.Y_var + model.Z_var
                 approx = True
 
             test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
@@ -1026,7 +1030,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=5000, n_transports=75, k=1, approx_path=False, test_name='exp',
-               test_keys=['elden'])
+               test_keys=['spiral'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
     #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
