@@ -553,50 +553,46 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     indep_params = {}
     for i in range(n_transports):
         for stage in [1,2]:
-            if stage==2:
+            model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
+                                         X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
+                                         approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
+                                         grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
+                                         step_num = 10*i + 1, stage = stage, indep_params=indep_params)
+
+            models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
+            models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
+            models_param_dict['fit_kernel'].append(model.fit_kernel)
+            models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
+            models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
+            models_param_dict['var_eps'].append(model.var_eps)
+            mmd_lambda = model.mmd_lambda
+
+            if i == 0:
+                models_param_dict['mmd_func'] = model.mmd
+
+            #Y_mean = model.Y_mean + model.Z_mean
+            #Y_var = model.Y_var + model.Z_var
+            if stage == 1:
+                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+
+            if stage == 2:
+                Y_mean = model.Y_mean + model.Z_mean
+                Y_var = model.Y_var + model.Z_var
                 approx = True
-                pass
-            else:
-                model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                                             X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
-                                             approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
-                                             grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
-                                             step_num = 10*i + 1, stage = stage, indep_params=indep_params)
 
-                models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
-                models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
-                models_param_dict['fit_kernel'].append(model.fit_kernel)
-                models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
-                models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
-                models_param_dict['var_eps'].append(model.var_eps)
-                mmd_lambda = model.mmd_lambda
+            test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
+            Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
-                if i == 0:
-                    models_param_dict['mmd_func'] = model.mmd
+            iters = model.iters
+            if approx_path:
+                Y_mu_approx = Y_mean + Y_var
 
-                #Y_mean = model.Y_mean + model.Z_mean
-                #Y_var = model.Y_var + model.Z_var
-                if stage == 1:
-                        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-                        Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
-
-                if stage == 2:
-                    Y_mean = model.Y_mean + model.Z_mean
-                    Y_var = model.Y_var + model.Z_var
-                    approx = True
-
-                test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
-                Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
-
-                iters = model.iters
-                if approx_path:
-                    Y_mu_approx = Y_mean + Y_var
-
-                if stage == 1:
-                    indep_params = {'X_mean': model.X_mean.detach().cpu().numpy(),
-                                    'Lambda_mean': model.get_Lambda_mean().detach().cpu().numpy(),
-                                    'X_var': model.X_var.detach().cpu().numpy(),
-                                    'Lambda_var': model.get_Lambda_var().detach().cpu().numpy()}
+            if stage == 1:
+                indep_params = {'X_mean': model.X_mean.detach().cpu().numpy(),
+                                'Lambda_mean': model.get_Lambda_mean().detach().cpu().numpy(),
+                                'X_var': model.X_var.detach().cpu().numpy(),
+                                'Lambda_var': model.get_Lambda_var().detach().cpu().numpy()}
 
         for key in param_keys:
             models_param_dict[key] = models_param_dict[key]
