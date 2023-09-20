@@ -514,7 +514,7 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0,
-                          step_num = 1, reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 500, target_eps = 1,
+                          step_num = 1, reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 400, target_eps = 1,
                           var_eps = 1/3, stage = 1, indep_params = {}):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
@@ -530,7 +530,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = .1,n_transports=100, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
+                               target_eps = .1,n_transports=100, reg_lambda=1e-7, n_iter = 400,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
