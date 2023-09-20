@@ -420,9 +420,9 @@ class CondTransportKernel(nn.Module):
         #z_var = self.map_var(x_mu, y_eta, y_mean_new, y_var_new)
 
         z = z_mean + z_var
+        y_approx = y_mean + y_var
 
-        y_approx = y_mean_new + y_var_new
-
+        #y_approx = y_mean_new + y_var_new
         #return_dict = {'y_eta': y_eta, 'y_mean': y_mean_new + z_mean, 'y_var': y_var_new + z_var,
                        #'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
         return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
