@@ -277,6 +277,7 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
 
+
         self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
@@ -554,8 +555,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
                 test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
                 Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
+                approx = True
 
-            approx = True
             iters = model.iters
             if approx_path:
                 Y_mu_approx = Y_mean + Y_var
