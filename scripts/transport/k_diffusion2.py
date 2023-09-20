@@ -568,15 +568,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if i == 0:
                 models_param_dict['mmd_func'] = model.mmd
 
-            #Y_mean = model.Y_mean + model.Z_mean
-            #Y_var = model.Y_var + model.Z_var
-            if stage == 1:
-                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+            Y_mean = model.Y_mean + model.Z_mean
+            Y_var = model.Y_var + model.Z_var
+            #if stage == 1:
+                    #map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+                    #Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
             if stage == 2:
-                Y_mean = model.Y_mean + model.Z_mean
-                Y_var = model.Y_var + model.Z_var
+                #Y_mean = model.Y_mean + model.Z_mean
+                #Y_var = model.Y_var + model.Z_var
                 approx = True
 
             test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
