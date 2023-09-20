@@ -425,6 +425,7 @@ class CondTransportKernel(nn.Module):
         #y_approx = y_mean_new + y_var_new
         #return_dict = {'y_eta': y_eta, 'y_mean': y_mean_new + z_mean, 'y_var': y_var_new + z_var,
                        #'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
+
         return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
             'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
         return return_dict
@@ -558,15 +559,21 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             if i == 0:
                 models_param_dict['mmd_func'] = model.mmd
 
-            #if stage == 2:
-            #Y_mean = model.Y_mean + model.Z_mean
-            #Y_var = model.Y_var + model.Z_var
-            map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-            Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+            if stage == 2:
+                Y_mean = model.Y_mean + model.Z_mean
+                Y_var = model.Y_var + model.Z_var
+                approx = True
+
+            if stage == 1:
+                if not approx:
+                    Y_mean = model.Y_mean + model.Z_mean
+                    Y_var = model.Y_var + model.Z_var
+                else:
+                    map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+                    Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
             test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
             Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
-            approx = True
 
             iters = model.iters
             if approx_path:
