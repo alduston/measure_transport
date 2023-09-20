@@ -506,8 +506,8 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
 
-        map_vec = torch.concat([x_mu, y_mean+ y_var], dim=1)
-        #map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+        #map_vec = torch.concat([x_mu, y_mean+ y_var], dim=1)
+        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
 
         test_loss =  self.mmd(map_vec, target, test = True)
         return test_loss
@@ -554,6 +554,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     for i in range(n_transports):
         for stage in [1,2]:
             if stage==2:
+                self.approx = True
                 pass
             else:
                 model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
