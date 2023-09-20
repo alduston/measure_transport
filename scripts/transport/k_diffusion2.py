@@ -447,11 +447,12 @@ class CondTransportKernel(nn.Module):
     def loss_mmd(self):
         Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
         if self.stage == 2:
-            Y_mean_denoise = self.map_mean(self.X_mu, self.Y_mean, self.Y_var,
-                                           X_mean = self.M_mean, Lambda_mean = self.alpha_mean)
-            Y_mean_var = self.map_var(self.X_mu, self.Y_eta, self.Y_mean, self.Y_var,
-                                           X_var=self.M_var, Lambda_var=self.alpha_var)
-            map_vec = torch.concat([self.X_mu, Y_mean_denoise + Y_mean_var], dim=1)
+            X_mean = torch.concat([self.X_mu, Y_approx], dim=1)
+            Y_mean_denoise = self.fit_kernel(self.M_mean, X_mean).T @ self.alpha_mean
+            X_var = torch.concat([self.X_mu, self.Y_eta_flip, Y_approx], dim=1)
+            Y_var_denoise = self.fit_kernel(self.M_var, X_var).T @ self.alpha_var
+
+            map_vec = torch.concat([self.X_mu, Y_mean_denoise + Y_var_denoise], dim=1)
         else:
             map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
@@ -519,7 +520,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1,n_transports=100, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
-                               grad_cutoff = .0001, approx_path = True):
+                               grad_cutoff = -1, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
