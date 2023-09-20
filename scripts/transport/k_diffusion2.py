@@ -506,9 +506,9 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
 
-        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        #Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        #map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+        map_vec = torch.concat([x_mu, y_mean+ y_var], dim=1)
+        #map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
+
         test_loss =  self.mmd(map_vec, target, test = True)
         return test_loss
 
