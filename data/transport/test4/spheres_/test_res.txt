@@ -1,1 +1,1 @@
-Test mmd :5.5811E-04
+Test mmd :nan
