@@ -234,16 +234,13 @@ class CondTransportKernel(nn.Module):
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
+        self.stage = self.params['stage']
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_eta_flip = flip(self.Y_eta)
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var = 0 * self.Y_mean
         self.approx = self.params['approx']
-
-        #if self.approx:
-            #self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            #self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
@@ -258,10 +255,24 @@ class CondTransportKernel(nn.Module):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
 
         if self.approx:
-            self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num -1)
-            self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
-            #self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            #self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+            if self.stage == 1:
+                self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num -1)
+                self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+
+            elif self.stage == 2:
+                self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+                self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+
+                self.M_mean = geq_1d(torch.tensor(base_params['indep_params']['X_mean'],
+                                                  device=self.device, dtype=self.dtype))
+                self.alpha_mean =geq_1d(torch.tensor(base_params['indep_params']['Lambda_mean'],
+                                                     device=self.device, dtype=self.dtype))
+
+                self.M_var = geq_1d(torch.tensor(base_params['indep_params']['X_var'],
+                                                 device=self.device, dtype=self.dtype))
+                self.alpha_var = geq_1d(torch.tensor(base_params['indep_params']['Lambda_var'],
+                                                 device=self.device, dtype=self.dtype))
+
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
@@ -286,12 +297,6 @@ class CondTransportKernel(nn.Module):
         self.Y_mean_test = deepcopy(self.Y_eta_test)
         self.Y_var_test = 0 * self.Y_eta_test
 
-        if self.approx:
-            pass
-            #self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
-            #self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
-
-        #self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
@@ -299,7 +304,12 @@ class CondTransportKernel(nn.Module):
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
 
         if self.approx:
-            self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            if self.stage == 1:
+                self.Y_mean_test = (self.pmu_coeff * self.Y_mu_test) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+            elif self.stage == 2:
+                self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
+                self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
+
 
         test_mmd_params = deepcopy(self.params['mmd_kernel_params'])
         test_mmd_params['l'] *= l_scale(self.Y_mu_test).cpu()
@@ -361,17 +371,24 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXXvar_inv @ (self.Z_var)
 
 
-    def map_mean(self, x_mu, y_mean, y_var):
+    def map_mean(self, x_mu, y_mean, y_var, X_mean = [], Lambda_mean = []):
+        if not len(X_mean):
+            X_mean = self.X_mean
+        if not len(Lambda_mean):
+            Lambda_mean = self.get_Lambda_mean()
+
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
-        Lambda_mean = self.get_Lambda_mean()
-        z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
+        z_mean = self.fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, y_var):
+    def map_var(self, x_mu, y_eta, y_mean, y_var, X_var = [], Lambda_var = []):
+        if not len(X_var):
+            X_var = self.X_var
+        if not len(Lambda_var):
+            Lambda_var = self.get_Lambda_var()
         x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        Lambda_var = self.get_Lambda_var()
-        z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
+        z_var = self.fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -385,12 +402,20 @@ class CondTransportKernel(nn.Module):
             y_mean = deepcopy(y_eta)
             y_var = 0 * y_mean
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var)
-        z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
+        if self.stage == 2:
+            y_mean_new = self.map_mean(x_mu, y_mean, y_var, X_mean=self.M_mean, Lambda_mean=self.alpha_mean)
+            y_var_new = self.map_var(x_mu, y_eta, y_mean, y_var, X_var=self.M_var, Lambda_var=self.alpha_var)
+        else:
+            y_mean_new = y_mean
+            y_var_new = y_var
+
+
+        z_mean = self.map_mean(x_mu, y_mean_new, y_var_new)
+        z_var = self.map_var(x_mu, y_eta, y_mean_new, y_var_new)
         z = z_mean + z_var
 
-        y_approx = y_mean + y_var
-        return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
+        y_approx = y_mean_new + y_var_new
+        return_dict = {'y_eta': y_eta, 'y_mean': y_mean_new + z_mean, 'y_var': y_var_new + z_var,
                        'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
 
         return return_dict
@@ -421,7 +446,14 @@ class CondTransportKernel(nn.Module):
 
     def loss_mmd(self):
         Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
+        if self.stage == 2:
+            Y_mean_denoise = self.map_mean(self.X_mu, self.Y_mean, self.Y_var,
+                                           X_mean = self.M_mean, Lambda_mean = self.alpha_mean)
+            Y_mean_var = self.map_var(self.X_mu, self.Y_eta, self.Y_mean, self.Y_var,
+                                           X_var=self.M_var, Lambda_var=self.alpha_var)
+            map_vec = torch.concat([self.X_mu, Y_mean_denoise + Y_mean_var], dim=1)
+        else:
+            map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
         mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
@@ -469,15 +501,16 @@ class CondTransportKernel(nn.Module):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
-                          Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 250, target_eps = 1, var_eps = 1/3):
+                          Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False,mmd_lambda=0,
+                          step_num = 1, reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 250, target_eps = 1,
+                          var_eps = 1/3, stage = 1, indep_params = {}):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx}
+                        'Y_mu_approx': Y_mu_approx, 'indep_params': indep_params, 'stage': stage}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -485,7 +518,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = .1,n_transports=250, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
+                               target_eps = .1,n_transports=100, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = True):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
@@ -494,37 +527,46 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     approx = False
     mmd_lambda = 0
     Y_mu_approx = Y_eta
-
+    indep_params = {}
     for i in range(n_transports):
-        model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
-                                     X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
-                                     approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
-                                     grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, step_num = i + 1)
+        for stage in [1,2]:
+            model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
+                                         X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
+                                         approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
+                                         grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
+                                         step_num = i + 1, stage = stage, indep_params=indep_params)
 
-        models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
-        models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
-        models_param_dict['fit_kernel'].append(model.fit_kernel)
-        models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
-        models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
-        models_param_dict['var_eps'].append(model.var_eps)
-        mmd_lambda = model.mmd_lambda
+            models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
+            models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
+            models_param_dict['fit_kernel'].append(model.fit_kernel)
+            models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
+            models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
+            models_param_dict['var_eps'].append(model.var_eps)
+            mmd_lambda = model.mmd_lambda
 
-        if i == 0:
-            models_param_dict['mmd_func'] = model.mmd
+            if i == 0:
+                models_param_dict['mmd_func'] = model.mmd
 
-        Y_mean = model.Y_mean + model.Z_mean
-        Y_var = model.Y_var + model.Z_var
+            Y_mean = model.Y_mean + model.Z_mean
+            Y_var = model.Y_var + model.Z_var
 
-        test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
-        Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
+            test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
+            Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
-        approx = True
-        iters = model.iters
-        if approx_path:
-            Y_mu_approx = Y_mean + Y_var
+            approx = True
+            iters = model.iters
+            if approx_path:
+                Y_mu_approx = Y_mean + Y_var
 
-    for key in param_keys:
-        models_param_dict[key] = models_param_dict[key]
+            if stage == 1:
+                indep_params = {'X_mean': model.X_mean.detach().cpu().numpy(),
+                                'Lambda_mean': model.get_Lambda_mean().detach().cpu().numpy(),
+                                'X_var': model.X_var.detach().cpu().numpy(),
+                                'Lambda_var': model.get_Lambda_var().detach().cpu().numpy()}
+
+        for key in param_keys:
+            models_param_dict[key] = models_param_dict[key]
+
     return Comp_transport_model(models_param_dict)
 
 
@@ -966,7 +1008,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=8000, n_transports=75, k=1, approx_path=False, test_name='test4',
+    test_panel(N=5000, n_transports=75, k=1, approx_path=False, test_name='exp',
                test_keys=['elden'])
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
