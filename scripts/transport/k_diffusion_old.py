@@ -668,7 +668,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     if len(process_funcs):
         backward = process_funcs[1]
-        gen_sample = backward(plot_gen_sample.cpu())
+        plot_gen_sample = backward(plot_gen_sample.cpu())
 
     if not len(plot_idx):
         return trained_models, idx_dict
@@ -676,7 +676,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     plot_gen_sample = plot_gen_sample[:, plot_idx]
     plot_target_sample = plot_target_sample[:, plot_idx]
     try:
-        d = len(gen_sample[0])
+        d = len(plot_gen_sample[0])
     except TypeError:
         d = 1
 
@@ -979,8 +979,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden', 'spirals','t_fractal', 'mgan2', 'mgan1',], plot_steps = False)
-
+               test_keys=['elden', 't_fractal', 'mgan2', 'mgan1'], plot_steps = False)
     test_panel(N=7000, n_transports=1, k=1, approx_path=False, test_name='test6',
                test_keys=['spheres', 'vl'], plot_steps = False)
 
