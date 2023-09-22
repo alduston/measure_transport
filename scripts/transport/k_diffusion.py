@@ -850,7 +850,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
 
 def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv']):
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
@@ -864,7 +864,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_{i_str}',
                             n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
-                            slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N, plot_steps=plot_steps,
+                            slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps,
                             normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
                     done += 3
                 except torch._C._LinAlgError:
@@ -877,7 +877,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=N, exp_name=f'/{test_name}/mgan2_{i_str}',
                               n_transports= n_transports,  slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
-                              slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True,
+                              slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
                               bins=100,var_eps=1/2, approx_path = approx_path)
                     done += 3
                 except torch._C._LinAlgError:
@@ -890,7 +890,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=N, exp_name=f'/{test_name}/swiss_{i_str}',
                               n_transports= n_transports, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3],
-                              vmax=.35,  skip_idx=1, N_plot=N, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
+                              vmax=.35,  skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
                     done += 3
                 except torch._C._LinAlgError:
@@ -904,7 +904,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
-                              plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N,
+                              plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
                     done +=3
                 except torch._C._LinAlgError:
@@ -917,7 +917,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
-                              vmax=.33,skip_idx=1, N_plot=N, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
+                              vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
                     done +=3
                 except torch._C._LinAlgError:
@@ -930,8 +930,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=N, exp_name=f'/{test_name}/elden_{i_str}',
                               n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
-                              slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=100000, plot_steps=plot_steps, normal=True,
-                              bins=170, var_eps=1/12, approx_path = approx_path)
+                              slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
+                              bins=100, var_eps=1/12, approx_path = approx_path)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -944,7 +944,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_t_fractal, N=N,
                               exp_name=f'/{test_name}/t_fractal_{i_str}',  n_transports= n_transports, slice_vals=[],
                               plt_range=[[-1, 1], [-.95, .95]],  slice_range=[-1.5, 1.5], vmax=4.5, skip_idx=1,
-                              N_plot=100000, plot_steps=plot_steps, normal=True, bins=200, var_eps=1/12,
+                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=200, var_eps=1/12,
                               approx_path = approx_path)
                     done +=3
                 except torch._C._LinAlgError:
@@ -956,7 +956,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 10000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot=N_plot)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -967,28 +967,17 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports)
+                                approx_path = approx_path, n_transports=n_transports, N_plot = N_plot)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
                     pass
-
 
 def run():
     test_panel(N=10000, n_transports=75, k=1, approx_path=False, test_name='test5',
                test_keys=['elden', 't_fractal', 'mgan2', 'mgan1'], plot_steps = False)
     test_panel(N=7000, n_transports=75, k=1, approx_path=False, test_name='test5',
                test_keys=['spheres', 'vl'], plot_steps = False)
-
-
-    #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])
-    #test_panel(N=5000, n_transports=60, k=10, approx_path=False, test_name='lv_test_med2', test_keys=['lv'])
-
-    #test_panel(N=5000, n_transports=100, k=10, approx_path=True, test_name='test1', test_keys=['elden', 'mgan1'])
-    #test_panel(N=5000, n_transports=100, k=10, approx_path=False, test_name='test2', test_keys=['elden', 'mgan1'])
-
-    #test_panel(N=5000, n_transports=100, k=4, approx_path=True, test_name='approx_test')
-    #test_panel(N=5000, n_transports=100, k=4, approx_path=False, test_name='test')
 
 
 
