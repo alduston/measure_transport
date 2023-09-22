@@ -1,0 +1,1 @@
+scp -r ald6fd@klone.hyak.uw.edu:/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/data/transport/ /Users/aloisduston/Desktop/Math/Research/Bambdad/Measure_transport/data/transport/

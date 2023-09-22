@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from lk_sim import get_VL_data, sample_VL_prior
-from picture_to_dist import sample_elden_ring,sample_dobby, sample_tito_mesage, sample_apu, sample_ween
+from picture_to_dist import sample_elden_ring,sample_dobby, sample_t_fractal
 from datetime import datetime as dt
 from seaborn import kdeplot
 
@@ -638,48 +638,47 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         model.mu = mu
         model.sigma = sigma
         model.bins = bins
-
-
-    if not N_plot:
-        N_plot = min(10 * N, 4000)
-
-    target_sample = target_gen(N_plot)
-    ref_sample = ref_gen(N_plot)
-
-    gen_sample = compositional_gen(trained_models, ref_sample, target_sample, idx_dict,
-                                   plot_steps = plot_steps, mu = mu, sigma = sigma)
-    target_sample = target_sample * sigma + mu
-    test_mmd = float(trained_models[0].mmd(gen_sample, target_sample).detach().cpu())
-
-
+    test_target_sample = target_gen(N)
+    test_ref_sample = ref_gen(N)
+    test_gen_sample = compositional_gen(trained_models, test_ref_sample, test_target_sample, idx_dict,
+                                        plot_steps=False, mu=mu, sigma=sigma)
+    test_target_sample = test_target_sample * sigma + mu
+    test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
     try:
-        cref_sample = deepcopy(ref_sample)
-        cref_sample[:, idx_dict['cond'][0]] += target_sample[:, idx_dict['cond'][0]]
-        base_mmd = float(trained_models[0].mmd(cref_sample, target_sample).detach().cpu())
+        cref_sample = deepcopy(test_ref_sample)
+        cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
+        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
         ntest_mmd = test_mmd / base_mmd
         print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
     except BaseException:
         print_str = f'Test mmd :{format(test_mmd)}'
-    print(print_str)
-    os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
+    if not N_plot:
+        N_plot = min(10 * N, 4000)
+
+    plot_target_sample = target_gen(N_plot)
+    plot_ref_sample = ref_gen(N_plot)
+
+    plot_gen_sample = compositional_gen(trained_models, plot_ref_sample, plot_target_sample, idx_dict,
+                                        plot_steps=plot_steps, mu=mu, sigma=sigma)
+    plot_target_sample = plot_target_sample * sigma + mu
 
     if len(process_funcs):
         backward = process_funcs[1]
-        gen_sample = backward(gen_sample.cpu())
+        gen_sample = backward(plot_gen_sample.cpu())
 
     if not len(plot_idx):
         return trained_models, idx_dict
 
-    gen_sample = gen_sample[:, plot_idx]
-    target_sample = target_sample[:, plot_idx]
+    plot_gen_sample = plot_gen_sample[:, plot_idx]
+    plot_target_sample = plot_target_sample[:, plot_idx]
     try:
         d = len(gen_sample[0])
     except TypeError:
         d = 1
 
-    sample_hmap(gen_sample, f'{save_dir}/gen_map_final.png', bins=bins, d=d, range=plt_range, vmax=vmax)
-    sample_hmap(target_sample, f'{save_dir}/target_map.png', bins=bins, d=d, range=plt_range, vmax=vmax)
+    sample_hmap(plot_gen_sample, f'{save_dir}/gen_map_final.png', bins=bins, d=d, range=plt_range, vmax=vmax)
+    sample_hmap(plot_target_sample, f'{save_dir}/target_map.png', bins=bins, d=d, range=plt_range, vmax=vmax)
 
     return trained_models, idx_dict
 
@@ -803,8 +802,6 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
                                                          plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
-
-    target_sample = target_gen(N_plot)
     mu, sigma = get_base_stats(target_gen, 10000)
 
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -933,8 +930,22 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=N, exp_name=f'/{test_name}/elden_{i_str}',
                               n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
-                              slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=10000, plot_steps=plot_steps, normal=True,
-                              bins=100, var_eps=1/12, approx_path = approx_path)
+                              slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=100000, plot_steps=plot_steps, normal=True,
+                              bins=170, var_eps=1/12, approx_path = approx_path)
+                    done +=3
+                except torch._C._LinAlgError:
+                    done += 1
+                    pass
+
+        if 't_fractal' in test_keys:
+            done = 0
+            while  done <= 2:
+                try:
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_t_fractal, N=N,
+                              exp_name=f'/{test_name}/t_fractal_{i_str}',  n_transports= n_transports, slice_vals=[],
+                              plt_range=[[-1, 1], [-.95, .95]],  slice_range=[-1.5, 1.5], vmax=4.5, skip_idx=1,
+                              N_plot=100000, plot_steps=plot_steps, normal=True, bins=200, var_eps=1/12,
+                              approx_path = approx_path)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -945,7 +956,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports)
+                        approx_path = approx_path, n_transports = n_transports, N_plot = 10000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -962,11 +973,12 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     done += 1
                     pass
 
+
 def run():
     test_panel(N=10000, n_transports=75, k=1, approx_path=False, test_name='test5',
-               test_keys=['elden'], plot_steps = True)
-    test_panel(N=5000, n_transports=100, k=1, approx_path=False, test_name='test5',
-               test_keys=['spheres'], plot_steps = False)
+               test_keys=['elden', 'spirals', 'mgan2', 'mgan1', ], plot_steps = False)
+    test_panel(N=7000, n_transports=75, k=1, approx_path=False, test_name='test5',
+               test_keys=['spheres', 'vl'], plot_steps = False)
 
 
     #test_panel(N=2500, n_transports=100 , k=1, approx_path=False, test_name='exp', test_keys=['spheres'])

@@ -2,6 +2,7 @@ import numpy as np
 import PIL
 from PIL import Image,ImageOps
 import matplotlib.pyplot as plt
+import random
 
 
 def resample(Y, alpha = [], N = 10000):
@@ -41,7 +42,7 @@ def sample_hmap(sample, save_loc, bins = 20, d = 2, range = None, vmax= None, cm
     return True
 
 
-def array_to_sample(im_array, base_val = 255, p  = 1, M = 25):
+def array_to_sample(im_array, base_val = 255, p  = 1, M = 25, k = 0):
     W,L = im_array.shape
     R = W/L
     sample = []
@@ -50,11 +51,14 @@ def array_to_sample(im_array, base_val = 255, p  = 1, M = 25):
         for il in range(L):
             n = int((abs(im_array[iw, il] - base_val)**p)//M)
             N += n
-            x = -R + R*(2 * iw/W)
-            y = -1 + (2 * il/L)
+            x = -R + R *(2 * iw/W) +  (1e-5 * random.randrange(-1,1))
+            y = -1 + (2 * il/L) +  (1e-5 * random.randrange(-1,1))
             loc = [[y,x]]
             sample += n * loc
-    sample_array = np.asarray(sample).reshape(N,2)
+    sample_list = sample
+    if k > 0:
+        sample_list = random.choices(sample_list, k = k)
+    sample_array = np.asarray(sample_list).reshape(len(sample_list),2)
     return sample_array
 
 
@@ -90,45 +94,32 @@ def sample_bambdad(N, p = 2, M = 300):
     return sample.T
 
 
-def sample_boobs(N, p = 2, M = 300):
-    img_array = process_img('boobs', q= .15)
-    img_base_sample = array_to_sample(img_array, p = p, M = M)
-    sample = resample(img_base_sample.T, N=N)
-    return sample.T
-
-
 def sample_dobby(N, p = 2, M = 300):
     img_array = process_img('dobby', q= .15)
     img_base_sample = array_to_sample(img_array, p = p, M = M)
-    sample = resample(img_base_sample.T, N=N)
-    return sample.T
 
-def sample_tito_mesage(N, p = 2, M = 300):
-    img_array = process_img('tito_mesage', q= .15)
-    img_base_sample = array_to_sample(img_array, p = p, M = M)
-    sample = resample(img_base_sample.T, N=N)
-    return sample.T
-
-def sample_apu(N, p = 2, M = 300):
-    img_array = process_img('apu', q= .15)
-    img_base_sample = array_to_sample(img_array, p = p, M = M)
     sample = resample(img_base_sample.T, N=N)
     return sample.T
 
 
-def sample_ween(N, p = 2, M = 300):
-    img_array = process_img('ween', q= .15)
-    img_base_sample = array_to_sample(img_array, p = p, M = M)
+def sample_fractal(N, p = 2, M = 300):
+    img_array = process_img('fractal', q= .15)
+    img_base_sample = array_to_sample(img_array, p = p, M = M, k = N, base_val=0)
+    sample = resample(img_base_sample.T, N=N)
+    return sample.T
+
+def sample_t_fractal(N, p = 2, M = 300):
+    img_array = process_img('triangle_fractal', q= .15)
+    img_base_sample = array_to_sample(img_array, p = p, M = M, k = N)
     sample = resample(img_base_sample.T, N=N)
     return sample.T
 
 
 def run():
-    N = 10000
-    dobby_sample = sample_ween(N)
+    N = 100000
+    fractal_sample = sample_t_fractal(N)
     plt_range = None #[[-1,1],[-.5,.5]]
-    save_loc = '../../data/images/ween_sample.png'
-    sample_hmap(dobby_sample, save_loc,  d=2, bins=100, range=plt_range)
-
+    save_loc = '../../data/images/elden_sample.png'
+    sample_hmap(fractal_sample, save_loc,  d=2, bins=200, range=plt_range)
 if __name__=='__main__':
     run()
