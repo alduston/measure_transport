@@ -477,6 +477,14 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
     return model, loss_dict
 
 
+def dict_not_valid(loss_dict):
+    for key,val_list in loss_dict.items():
+        for value in val_list:
+            if np.isnan(value) or value < -1:
+                return True
+    return False
+
+
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1, n_transports=75, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
@@ -494,6 +502,10 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                      grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
                                      step_num = step_num)
+        if dict_not_valid(loss_dict):
+            break
+
+
 
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
@@ -652,6 +664,9 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
     except BaseException:
         print_str = f'Test mmd :{format(test_mmd)}'
+
+    print(print_str)
+    os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
     if not N_plot:
         N_plot = min(10 * N, 4000)

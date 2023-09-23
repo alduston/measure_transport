@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 #import cv2
+import torch.nn as nn
 import os
 import shutil
 
@@ -94,6 +95,7 @@ def train_step(kernel_model, optimizer):
     optimizer.zero_grad()
     loss, loss_dict = kernel_model.loss()
     loss.backward()
+    nn.utils.clip_grad_norm_(kernel_model.parameters(), 1000)
     optimizer.step()
 
     kernel_model.iters += 1

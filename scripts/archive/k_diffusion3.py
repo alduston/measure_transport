@@ -660,6 +660,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
     except BaseException:
         print_str = f'Test mmd :{format(test_mmd)}'
+
     print(print_str)
     os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
