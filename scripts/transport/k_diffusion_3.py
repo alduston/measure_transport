@@ -16,9 +16,10 @@ from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 
 
-def wasserstain_distance(Y1, Y2):
-    Y1 = Y1[:2000]
-    Y2 = Y2[:2000]
+def wasserstain_distance(Y1, Y2, full = False):
+    if not full:
+        Y1 = Y1[:2000]
+        Y2 = Y2[:2000]
     n = len(Y1)
     d = len(Y1[0])
     if d > 2:
@@ -679,13 +680,13 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample, test_target_sample)
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = True)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample, test_target_sample)
+        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = True)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd
