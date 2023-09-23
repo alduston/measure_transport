@@ -22,7 +22,7 @@ def wasserstain_distance(Y1, Y2):
     n = len(Y1)
     d = len(Y1[0])
     if d > 2:
-        return 0
+        return 1
     try:
         Y1 = Y1.detach().cpu().numpy()
     except AttributeError:
@@ -1030,7 +1030,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 30000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot = 20000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1

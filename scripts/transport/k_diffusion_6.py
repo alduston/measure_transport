@@ -21,7 +21,7 @@ from scipy.optimize import linear_sum_assignment
 def wasserstain_distance(Y1, Y2):
     d = len(Y1[0])
     if d> 2:
-        return 0
+        return 1
     n = len(Y1)
     n = len(Y1)
     try:
@@ -993,7 +993,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 30000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot = 20000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1011,7 +1011,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10000, n_transports=, k=1, approx_path=False, test_name='test10',plot_steps = True,
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test10',plot_steps = True,
                test_keys=['spiral', 'mgan1', 'mgan2', 'elden', 'spheres', 'lv', 't_fractal'])
 
 
