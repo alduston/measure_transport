@@ -537,7 +537,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         approx = True
         iters = model.iters
 
-        if step_num == 50:
+        if step_num == 45:
             indep = False
 
     for key in param_keys:
