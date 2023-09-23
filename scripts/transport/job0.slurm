@@ -20,6 +20,3 @@
 # Your programs to run.
 source activate /mmfs1/gscratch/dynamicsai/ald6fd/SindyTorch
 python k_diffusion.py
-python k_diffusion_old.py
-python k_diffusion_2.py
-python k_diffusion_2stage.py

@@ -979,7 +979,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 20000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -990,7 +990,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
+                                approx_path = approx_path, n_transports=n_transports, N_plot = 20000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
