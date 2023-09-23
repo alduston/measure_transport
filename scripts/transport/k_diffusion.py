@@ -20,8 +20,15 @@ from scipy.optimize import linear_sum_assignment
 
 def wasserstain_distance(Y1, Y2):
     n = len(Y1)
-    Y1 = Y1.detach().cpu().numpy()
-    Y2 = Y2.detach().cpu().numpy()
+    n = len(Y1)
+    try:
+        Y1 = Y1.detach().cpu().numpy()
+    except AttributeError:
+        pass
+    try:
+        Y2 = Y2.detach().cpu().numpy()
+    except AttributeError:
+        pass
     d = cdist(Y1, Y2)
     assignment = linear_sum_assignment(d)
     mover_distance = (d[assignment].sum() / n)

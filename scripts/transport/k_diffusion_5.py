@@ -20,8 +20,14 @@ from scipy.optimize import linear_sum_assignment
 
 def wasserstain_distance(Y1, Y2):
     n = len(Y1)
-    Y1 = Y1.detach().cpu().numpy()
-    Y2 = Y2.detach().cpu().numpy()
+    try:
+        Y1 = Y1.detach().cpu().numpy()
+    except AttributeError:
+        pass
+    try:
+        Y2 = Y2.detach().cpu().numpy()
+    except AttributeError:
+        pass
     d = cdist(Y1, Y2)
     assignment = linear_sum_assignment(d)
     mover_distance = (d[assignment].sum() / n)
@@ -461,7 +467,6 @@ class CondTransportKernel(nn.Module):
         y_var = self.Y_var_test
         target = self.Y_test
 
-        map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         test_mmd = self.mmd(map_vec, target, test=True)
         test_emd = wasserstain_distance(map_vec, target)
