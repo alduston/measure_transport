@@ -512,32 +512,33 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                      grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
                                      step_num = step_num, indep = indep)
 
-        if not dict_not_valid(loss_dict):
-            models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
-            models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
-            models_param_dict['fit_kernel'].append(model.fit_kernel)
-            models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
-            models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
-            models_param_dict['var_eps'].append(model.var_eps)
-            mmd_lambda = model.mmd_lambda
+        if  dict_not_valid(loss_dict):
+            break
+        models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
+        models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
+        models_param_dict['fit_kernel'].append(model.fit_kernel)
+        models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
+        models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
+        models_param_dict['var_eps'].append(model.var_eps)
+        mmd_lambda = model.mmd_lambda
 
-            if step_num == 1:
-                models_param_dict['mmd_func'] = model.mmd
+        if step_num == 1:
+            models_param_dict['mmd_func'] = model.mmd
 
-            map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
-            Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
+        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+        Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
 
-            test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
-            Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
+        test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
+        Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
-            step_num += 1
+        step_num += 1
 
-            approx = True
-            iters = model.iters
+        approx = True
+        iters = model.iters
 
-            if step_num == 50:
-                indep = False
+        if step_num == 50:
+            indep = False
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
@@ -977,8 +978,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot=N_plot)
+                    lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -988,8 +989,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports, N_plot = N_plot)
+                    spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -997,10 +998,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test8',
-               test_keys=['elden'], plot_steps = True)
-
-    #test_panel(N=7000, n_transports=70, k=1, approx_path=False, test_name='test8',
-               #test_keys=['lv'], plot_steps=False)
+               test_keys=['elden', 'spiral', 'mgan2', 'checker', 'lv', 'spheres', 't_fractal'], plot_steps=True)
 
 
 

@@ -972,8 +972,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    lv_exp(min(N,9000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot=N_plot)
+                    lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
+                        approx_path = approx_path, n_transports = n_transports, N_plot = 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -983,8 +983,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    spheres_exp(min(N,9000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports, N_plot = N_plot)
+                    spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -992,9 +992,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden', 't_fractal', 'mgan2', 'mgan1'], plot_steps = False)
-    test_panel(N=7000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['spheres', 'vl'], plot_steps = False)
+               test_keys=['elden', 'spiral', 'mgan2', 'checker', 'lv', 'spheres', 't_fractal'], plot_steps=True)
 
 if __name__ == '__main__':
     run()
