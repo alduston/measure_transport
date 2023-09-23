@@ -996,11 +996,11 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10, n_transports=5, k=1, approx_path=False, test_name='exp',
-               test_keys=['spiral'], plot_steps = False, N_plot=10)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test8',
+               test_keys=['elden'], plot_steps = True)
 
-    #test_panel(N=7000, n_transports=75, k=1, approx_path=False, test_name='test7',
-               #test_keys=['lv', 'spheres'], plot_steps=False)
+    #test_panel(N=7000, n_transports=70, k=1, approx_path=False, test_name='test8',
+               #test_keys=['lv'], plot_steps=False)
 
 
 
