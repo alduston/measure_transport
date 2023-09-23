@@ -473,7 +473,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_mu_approx': Y_mu_approx}
 
     model = CondTransportKernel(transport_params)
-    model, loss_dict = train_kernel(model, n_iter= n_iter)
+    model, loss_dict = train_kernel(model, n_iter= 21)
     return model, loss_dict
 
 
@@ -994,7 +994,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden', 'spiral', 'mgan2', 'checker', 'lv', 'spheres', 't_fractal'], plot_steps=True)
-
+               test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
+                          'lv', 'spheres', 't_fractal'], plot_steps = True)
 if __name__ == '__main__':
     run()
