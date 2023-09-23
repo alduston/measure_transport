@@ -11,10 +11,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from lk_sim import get_VL_data, sample_VL_prior
-from picture_to_dist import sample_elden_ring,sample_t_fractal
+from picture_to_dist import sample_elden_ring,sample_dobby, sample_t_fractal
 from datetime import datetime as dt
 from seaborn import kdeplot
+from scipy.spatial.distance import cdist
+from scipy.optimize import linear_sum_assignment
 
+
+def wasserstain_distance(Y1, Y2):
+    n = len(Y1)
+    Y1 = Y1.detach().cpu().numpy()
+    Y2 = Y2.detach().cpu().numpy()
+    d = cdist(Y1, Y2)
+    assignment = linear_sum_assignment(d)
+    mover_distance = (d[assignment].sum() / n)
+    return mover_distance
 
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))
@@ -244,15 +255,22 @@ class CondTransportKernel(nn.Module):
         self.Y_mean = deepcopy(self.Y_eta)
         self.Y_var = 0 * self.Y_mean
         self.approx = self.params['approx']
-
-        if self.approx:
-            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+        self.pmu_coeff, self.papprox_coeff = get_coeffs(self.noise_eps, self.step_num-1)
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
+        self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
+
+        if self.approx:
+            if self.params['indep']:
+                self.Y_mean = (self.pmu_coeff * self.Y_mu) + (self.papprox_coeff * torch_normalize(self.Y_mu_approx))
+                self.Y_mean = torch_normalize(self.Y_mean)
+            else:
+                self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+                self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
         self.mu_coeff, self.approx_coeff = get_coeffs(self.noise_eps, self.step_num)
+
         self.Y_mu_approx = geq_1d(torch.tensor(base_params['Y_mu_approx'], device=self.device, dtype=self.dtype))
 
         if is_normal(self.Y_mu):
@@ -312,7 +330,9 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
+        goal_emd = wasserstain_distance(self.Y_target, self.Y_test)
+        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
+              f"Goal emd is {goal_emd}")
 
     def total_grad(self):
         total_norm = 0
@@ -463,30 +483,30 @@ class CondTransportKernel(nn.Module):
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, approx=False, mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 3000, target_eps = 1, var_eps = 1/3):
+                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 300, target_eps = 1, var_eps = 1/3, indep = True):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx}
+                        'Y_mu_approx': Y_mu_approx, 'indep': indep}
 
     model = CondTransportKernel(transport_params)
-    model, loss_dict = train_kernel(model, n_iter= 21)
+    model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
 
 
 def dict_not_valid(loss_dict):
     for key,val_list in loss_dict.items():
         for value in val_list:
-            if np.isnan(value):
+            if np.isnan(value) or value < -1:
                 return True
     return False
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = .999, n_transports=75, reg_lambda=1e-7, n_iter = 3000,var_eps = 1/3,
+                               target_eps = .1, n_transports=70, reg_lambda=1e-7, n_iter = 300,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
@@ -496,16 +516,17 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     Y_mu_approx = Y_eta
     step_num = 1
-    for i in range(n_transports):
+    indep = True
+
+    while step_num  <= n_transports:
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                      X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
                                      approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                      grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
-                                     step_num = step_num)
+                                     step_num = step_num, indep = indep)
 
-        if dict_not_valid(loss_dict):
+        if  dict_not_valid(loss_dict):
             break
-
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
         models_param_dict['fit_kernel'].append(model.fit_kernel)
@@ -514,11 +535,11 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['var_eps'].append(model.var_eps)
         mmd_lambda = model.mmd_lambda
 
-        if i == 0:
+        if step_num == 1:
             models_param_dict['mmd_func'] = model.mmd
 
-        Y_mean = model.Y_mean + model.Z_mean
-        Y_var = model.Y_var + model.Z_var
+        map_dict = model.map(X_mu, Y_eta, Y_mean, Y_var)
+        Y_mean, Y_var = map_dict['y_mean'], map_dict['y_var']
 
 
         test_map_dict = model.map(X_mu_val, Y_eta_test, Y_mean_test, Y_var_test)
@@ -528,8 +549,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         approx = True
         iters = model.iters
-        if approx_path:
-            Y_mu_approx = Y_mean + Y_var
+
+        if step_num == 45:
+            indep = False
 
     for key in param_keys:
         models_param_dict[key] = models_param_dict[key]
@@ -546,7 +568,7 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],var_eps = 1/3, approx_path = True,
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-7, n_transports=100):
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-7, n_transports=70):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -649,23 +671,30 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         model.mu = mu
         model.sigma = sigma
         model.bins = bins
-
-
     test_target_sample = target_gen(N)
     test_ref_sample = ref_gen(N)
     test_gen_sample = compositional_gen(trained_models, test_ref_sample, test_target_sample, idx_dict,
-                                   plot_steps=False, mu=mu, sigma=sigma)
+                                        plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
-        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        ntest_mmd = test_mmd / base_mmd
-        print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
-    except BaseException:
-        print_str = f'Test mmd :{format(test_mmd)}'
 
+        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
+        base_emd = wasserstain_distance(cref_sample, test_target_sample)
+
+        ntest_mmd = test_mmd / base_mmd
+        ntest_emd = test_emd / base_emd
+
+        print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+    except BaseException:
+        print_str1 = f'Test mmd :{format(test_mmd)}, '
+        print_str2 = f'Test emd :{format(test_emd)}'
+
+    print_str = print_str1 + print_str2
     print(print_str)
     os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
@@ -676,7 +705,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     plot_ref_sample = ref_gen(N_plot)
 
     plot_gen_sample = compositional_gen(trained_models, plot_ref_sample, plot_target_sample, idx_dict,
-                                   plot_steps = plot_steps, mu = mu, sigma = sigma)
+                                        plot_steps=plot_steps, mu=mu, sigma=sigma)
     plot_target_sample = plot_target_sample * sigma + mu
 
     if len(process_funcs):
@@ -775,17 +804,31 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
-    slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
+    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .5], [1, .6], [1, .7]])
     save_dir = f'../../data/transport/{exp_name}'
-    for slice_val in slice_vals:
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (12,4))
+    plt.rcParams.update({'font.size': 9})
+    ns = len(slice_vals)
+    for i, slice_val in enumerate(slice_vals):
         ref_sample = ref_gen(Np)
         RX = np.full((Np, 2), slice_val)
         ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)
-        save_loc = f'{save_dir}/x={slice_val}_map.png'
-        sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
+                                         sigma = sigma, mu = mu)
+        x,y = slice_sample[:, np.asarray([0, 1])].T
+
+        plt.subplot(2, ns, i + 1)
+        plt.hist2d(x, y, density=True, bins=100, range=[[-1.5,1.5],[-1.5,1.5]], cmin=0, vmin=0)
+        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+
+        plt.subplot(2, ns, ns + i + 1)
+        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+
+    plt.legend()
+    plt.tight_layout(pad=0.3)
+    plt.savefig(f'{save_dir}/slice_plots.png')
     return True
 
 
@@ -796,8 +839,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
     if normal:
         normal_target_gen = lambda N: get_VL_data(N, normal=True, Yd=Yd)
-        #mu, sigma = get_base_stats(target_gen, 10000)
-        mu, sigma = get_base_stats(target_gen, 10)
+        mu, sigma = get_base_stats(target_gen, 10000)
     else:
         normal_target_gen = target_gen
         mu,sigma = 0,1
@@ -821,8 +863,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
                                                          plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
-
-    #mu, sigma = get_base_stats(target_gen, 10000)
+    mu, sigma = get_base_stats(target_gen, 10000)
 
     slice_val = np.asarray([.8, .041, 1.07, .04])
     X = np.full((N_plot, 4), slice_val)
@@ -837,13 +878,12 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     params_keys = ['\u03B1', '\u03B2', '\u03B3', '\u03B4']
     ranges1 = {'\u03B1': [.5, 1.305], '\u03B2': [0.02, 0.0705], '\u03B3': [.7, 1.5], '\u03B4': [0.025, 0.065]}
     plt.rcParams.update({'font.size': 14})
-    fig, axs = plt.subplots( sharex="col", sharey="row", figsize = (9,8.3))
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize=(9, 8.3))
     for range_idx, ranges in enumerate([ranges1]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
                     plt.subplot(4, 4, 1 + (4 * j + i))
-
                     if not i:
                         plt.ylabel(params_keys[j])
                     if j == 3:
@@ -978,7 +1018,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 30000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -996,11 +1036,10 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['lv'], plot_steps = False)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test8',
+               test_keys=['elden','spheres'], plot_steps = True)
 
-    #test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               #test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
-                          #'lv', 'spheres', 't_fractal'], plot_steps = True)
+
+
 if __name__ == '__main__':
     run()

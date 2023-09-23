@@ -51,7 +51,8 @@ def print_losses(loss_dict):
     for key in loss_dict.keys():
         if key in ['fit', 'reg', 'inv']:
             print_str +=  f'{key}_loss = {format(float((loss_dict[key])))}, '
-    print_str += f'test loss = {format(float(loss_dict["test"]))}, '
+    print_str += f'test mmd = {format(float(loss_dict["test_mmd"]))}, '
+    print_str += f'test emd = {format(float(loss_dict["test_emd"]))}, '
     print_str += f'grad norm = {format(float(loss_dict["grad_norm"]))}'
     mem_str = ''
     if torch.cuda.is_available():
@@ -67,7 +68,9 @@ def train_kernel(kernel_model, n_iter = np.inf):
     kernel_model.eval()
     Loss_dict = {key: [val] for key,val in kernel_model.loss()[1].items()}
     Loss_dict['n_iter'] = [0]
-    Loss_dict['test'] = [kernel_model.loss_test().detach().cpu()]
+    test_mmd, test_emd = kernel_model.loss_test()
+    Loss_dict['test_mmd'] = [test_mmd.detach().cpu()]
+    Loss_dict['test_emd'] = [test_emd]
     Loss_dict['grad_norm'] = [0]
     kernel_model.train()
     iter = kernel_model.iters
@@ -75,13 +78,15 @@ def train_kernel(kernel_model, n_iter = np.inf):
     i = 0
     while grad_norm > kernel_model.params['grad_cutoff'] and i < n_iter:
         if not iter % kernel_model.params['print_freq']:
-            test_loss = kernel_model.loss_test().detach().cpu()
+            test_mmd, test_emd = kernel_model.loss_test()
+            test_mmd = test_mmd.detach().cpu()
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
         if not iter % kernel_model.params['print_freq']:
             grad_norm = kernel_model.total_grad()
             kernel_model.eval()
-            loss_dict['test'] = test_loss
+            loss_dict['test_mmd'] = test_mmd
+            loss_dict['test_emd'] = test_emd
             loss_dict['n_iter'] = iter
             loss_dict['grad_norm'] = grad_norm
             Loss_dict = update_list_dict(Loss_dict, loss_dict)

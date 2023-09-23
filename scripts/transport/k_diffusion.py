@@ -14,7 +14,18 @@ from lk_sim import get_VL_data, sample_VL_prior
 from picture_to_dist import sample_elden_ring,sample_dobby, sample_t_fractal
 from datetime import datetime as dt
 from seaborn import kdeplot
+from scipy.spatial.distance import cdist
+from scipy.optimize import linear_sum_assignment
 
+
+def wasserstain_distance(Y1, Y2):
+    n = len(Y1)
+    Y1 = Y1.detach().cpu().numpy()
+    Y2 = Y2.detach().cpu().numpy()
+    d = cdist(Y1, Y2)
+    assignment = linear_sum_assignment(d)
+    mover_distance = (d[assignment].sum() / n)
+    return mover_distance
 
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))
@@ -312,7 +323,9 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))}")
+        goal_emd = wasserstain_distance(self.Y_target, self.Y_test)
+        print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
+              f"Goal emd is {goal_emd}")
 
     def total_grad(self):
         total_norm = 0
@@ -448,7 +461,9 @@ class CondTransportKernel(nn.Module):
         target = self.Y_test
 
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
-        return  self.mmd(map_vec, target, test = True)
+        test_mmd = self.mmd(map_vec, target, test = True)
+        test_emd = wasserstain_distance(map_vec, target)
+        return  test_mmd, test_emd
 
 
     def loss(self):
@@ -656,15 +671,24 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
-        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        ntest_mmd = test_mmd / base_mmd
-        print_str = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}'
-    except BaseException:
-        print_str = f'Test mmd :{format(test_mmd)}'
 
+        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
+        base_emd = wasserstain_distance(cref_sample, test_target_sample)
+
+        ntest_mmd = test_mmd / base_mmd
+        ntest_emd = test_emd / base_emd
+
+        print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+    except BaseException:
+        print_str1 = f'Test mmd :{format(test_mmd)}, '
+        print_str2 = f'Test emd :{format(test_emd)}'
+
+    print_str = print_str1 + print_str2
     print(print_str)
     os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
@@ -774,17 +798,31 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
-    slice_vals = np.asarray([[1, .0], [1, .2], [1, .4], [1, .5], [1, .6], [1, .7], [1, .75], [1, .79]])
+    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .5], [1, .6], [1, .7]])
     save_dir = f'../../data/transport/{exp_name}'
-    for slice_val in slice_vals:
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (12,4))
+    plt.rcParams.update({'font.size': 9})
+    ns = len(slice_vals)
+    for i, slice_val in enumerate(slice_vals):
         ref_sample = ref_gen(Np)
         RX = np.full((Np, 2), slice_val)
-        ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
+        ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
-        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)
-        save_loc = f'{save_dir}/x={slice_val}_map.png'
-        sample_hmap(slice_sample[:, np.asarray([0, 1])], save_loc, bins=100, d=2, range=plt_range)
+        slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
+                                         sigma = sigma, mu = mu)
+        x,y = slice_sample[:, np.asarray([0, 1])].T
+
+        plt.subplot(2, ns, i + 1)
+        plt.hist2d(x, y, density=True, bins=100, range=[[-1.5,1.5],[-1.5,1.5]], cmin=0, vmin=0)
+        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+
+        plt.subplot(2, ns, ns + i + 1)
+        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+
+    plt.legend()
+    plt.tight_layout(pad=0.3)
+    plt.savefig(f'{save_dir}/slice_plots.png')
     return True
 
 
@@ -839,7 +877,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
-                    plt.subplot(4, 4, 1 + (4 * j + i), aspect='equal')
+                    plt.subplot(4, 4, 1 + (4 * j + i))
                     if not i:
                         plt.ylabel(params_keys[j])
                     if j == 3:
@@ -993,7 +1031,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test5',
-               test_keys=['lv'], plot_steps = True)
+               test_keys=['elden', 'spheres'], plot_steps = True)
 
 
 
