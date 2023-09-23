@@ -1041,7 +1041,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden','spheres'], plot_steps = True)
+               test_keys=['elden','spheres', 'lv'], plot_steps = True)
 
     #test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
                #test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',

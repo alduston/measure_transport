@@ -1035,7 +1035,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=True, test_name='test9',
-               test_keys=['elden','spheres'], plot_steps = True)
+               test_keys=['elden','spheres', 'lv'], plot_steps = True)
 
 
 if __name__ == '__main__':
