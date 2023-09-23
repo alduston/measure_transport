@@ -831,15 +831,15 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample,
                                      idx_dict, mu = mu, sigma = sigma)[:, :4]
 
-    params_keys = ['alpha', 'beta', 'gamma', 'delta']
-    ranges1 = {'alpha': [.5, 1.305], 'beta': [0.02, 0.0705], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
-    plt.figure(figsize=(6, 4))
-
+    params_keys = ['\u03B1', '\u03B2', '\u03B3', '\u03B4']
+    ranges1 = {'\u03B1': [.5, 1.305], '\u03B2': [0.02, 0.0705], '\u03B3': [.7, 1.5], '\u03B4': [0.025, 0.065]}
+    plt.rcParams.update({'font.size': 14})
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize=(9, 8.3))
     for range_idx, ranges in enumerate([ranges1]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
-                    plt.subplot(4, 4, 1 + (4 * j + i))
+                    plt.subplot(4, 4, 1 + (4 * j + i), aspect='equal')
                     if not i:
                         plt.ylabel(params_keys[j])
                     if j == 3:

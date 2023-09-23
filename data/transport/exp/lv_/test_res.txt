@@ -1,1 +1,1 @@
-Test mmd :0.11845
+Test mmd :0.08279
