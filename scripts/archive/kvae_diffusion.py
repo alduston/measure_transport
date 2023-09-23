@@ -813,7 +813,7 @@ def vl_exp(N=4000, Yd=18, normal=True, exp_name='kvl_exp', n_transports=60,  N_p
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
                 if i <= j:
-                    plt.subplot(4, 4, 1 + (4 * j + i))
+                    plt.subplot(4, 4, 1 + (4 * j + i), figsize=(6, 4))
                     if not i:
                         plt.ylabel(params_keys[j])
                     if j == 3:

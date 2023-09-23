@@ -835,7 +835,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
     params_keys = ['alpha', 'beta', 'gamma', 'delta']
     ranges1 = {'alpha': [.5, 1.305], 'beta': [0.02, 0.0705], 'gamma': [.7, 1.5], 'delta': [0.025, 0.065]}
-
+    plt.figure(figsize=(6, 4))
     for range_idx, ranges in enumerate([ranges1]):
         for i, key_i in enumerate(params_keys):
             for j, key_j in enumerate(params_keys):
@@ -975,7 +975,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 30000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot = N_plot)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -993,8 +993,11 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
-                          'lv', 'spheres', 't_fractal'], plot_steps = True)
+    test_panel(N=10, n_transports=1, k=1, approx_path=False, test_name='exp',
+               test_keys=['lv'], plot_steps = True, N_plot = 10)
+
+    #test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
+               #test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
+                          #'lv', 'spheres', 't_fractal'], plot_steps = True)
 if __name__ == '__main__':
     run()
