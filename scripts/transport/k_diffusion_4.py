@@ -19,6 +19,8 @@ from scipy.optimize import linear_sum_assignment
 
 
 def wasserstain_distance(Y1, Y2):
+    Y1 = Y1[:2000]
+    Y2 = Y2[:2000]
     n = len(Y1)
     d = len(Y1[0])
     if d > 2:
