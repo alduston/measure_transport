@@ -767,6 +767,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     skip_idx = 0
     if not N_plot:
         Np = min(10 * N, 4000)
+    else:
+        Np = N_plot
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=Np, approx_path = approx_path,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
@@ -778,7 +780,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     for slice_val in slice_vals:
         ref_sample = ref_gen(Np)
         RX = np.full((Np, 2), slice_val)
-        ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
+        ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict, sigma = sigma, mu = mu)

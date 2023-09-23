@@ -774,6 +774,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     skip_idx = 0
     if not N_plot:
         Np = min(10 * N, 4000)
+    else:
+        Np = N_plot
     trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=Np, approx_path = approx_path,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
@@ -998,7 +1000,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test7',
-               test_keys=['elden', 'spiral', 'mgan2', 'checker', 'lv', 'spheres', 't_fractal'], plot_steps = True)
+               test_keys=['elden', 'spiral', 'lv', 'spheres', 't_fractal'], plot_steps = True)
 
 
 
