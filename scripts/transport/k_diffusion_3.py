@@ -823,7 +823,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
         x,y = slice_sample[:, np.asarray([0, 1])].T
 
         plt.subplot(2, ns, i + 1)
-        plt.hist2d(x, y, density=True, bins=100, range=[[-1.5,1.5],[-1.5,1.5]], cmin=0, vmin=0)
+        plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
         plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
 
         plt.subplot(2, ns, ns + i + 1)
