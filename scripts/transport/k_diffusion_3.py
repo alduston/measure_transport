@@ -692,7 +692,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         ntest_emd = test_emd / base_emd
 
         print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
-        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest emd :{format(ntest_emd)}'
     except BaseException:
         print_str1 = f'Test mmd :{format(test_mmd)}, '
         print_str2 = f'Test emd :{format(test_emd)}'
@@ -828,6 +828,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
 
         plt.subplot(2, ns, ns + i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+        plt.xlim(plt_range[0][0], plt_range[0][1])
+        plt.ylim(plt_range[1][0], plt_range[1][1])
 
     plt.legend()
     plt.tight_layout(pad=0.3)

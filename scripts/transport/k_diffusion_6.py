@@ -301,7 +301,6 @@ class CondTransportKernel(nn.Module):
             self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
-
         self.X_mu_test = geq_1d(torch.tensor(base_params['X_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_mu_test = geq_1d(torch.tensor(base_params['Y_mu_test'], device=self.device, dtype=self.dtype))
         self.Y_test = torch.concat([self.X_mu_test, self.Y_mu_test], dim=1)
@@ -803,6 +802,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
 
         plt.subplot(2, ns, ns + i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+        plt.xlim(plt_range[0][0], plt_range[0][1])
+        plt.ylim(plt_range[1][0], plt_range[1][1])
 
     plt.legend()
     plt.tight_layout(pad=0.3)
@@ -1015,7 +1016,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test10',plot_steps = True,
-               test_keys=['spiral', 'mgan1', 'mgan2', 'elden', 'spheres', 'lv', 't_fractal'])
+               test_keys=['checker', 'spheres'])
 
 
 

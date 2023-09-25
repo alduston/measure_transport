@@ -840,6 +840,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
 
         plt.subplot(2, ns, ns + i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+        plt.xlim(plt_range[0][0], plt_range[0][1])
+        plt.ylim(plt_range[1][0], plt_range[1][1])
 
     plt.legend()
     plt.tight_layout(pad=0.3)
@@ -1052,7 +1054,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test7',
-               test_keys=['elden','spheres'], plot_steps = True)
+               test_keys=['elden','spheres', 'checker'], plot_steps = True)
 
 
 
