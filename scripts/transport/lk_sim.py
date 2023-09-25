@@ -51,7 +51,7 @@ class DeterministicLotkaVolterra:
         assert (theta.size == self.d)
         # numerically intergate ODE
         (alpha, beta, gamma, delta) = theta
-        res = integrate.odeint(derivative, self.X0, tt, args=(alpha, beta, gamma, delta))
+        res = integrate.odeint(derivative, self.x0, tt, args=(alpha, beta, gamma, delta))
         return res
 
     def sample_data(self, theta):
@@ -108,8 +108,6 @@ class DeterministicLotkaVolterra:
 
     def likelihood(self, theta, yobs):
         return np.exp(self.log_likelihood(theta, yobs))
-
-
 
 
 
