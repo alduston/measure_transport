@@ -50,8 +50,9 @@ class DeterministicLotkaVolterra:
         # check dimension of theta
         assert (theta.size == self.d)
         # numerically intergate ODE
-        print(self.x0)
-        return odeint(self.ode_rhs, self.x0, tt, args=(theta,))
+        (alpha, beta, gamma, delta) = theta
+        res = integrate.odeint(derivative, self.X0, tt, args=(alpha, beta, gamma, delta))
+        return res
 
     def sample_data(self, theta):
         # check inputs
@@ -59,7 +60,7 @@ class DeterministicLotkaVolterra:
             theta = theta[np.newaxis, :]
         assert (theta.shape[1] == self.d)
         # define observation locations
-        tt = np.arange(0, self.T, step=.1)
+        tt = np.arange(0, self.T, step=2)
         nt = 2 * (len(tt) - 1)
         # define arrays to store results
         xt = np.zeros((theta.shape[0], nt))
@@ -109,11 +110,15 @@ class DeterministicLotkaVolterra:
         return np.exp(self.log_likelihood(theta, yobs))
 
 
+
+
+
 def replace_zeros(array, eps = 1e-5):
     for i,val in enumerate(array):
         if np.abs(val) < eps:
             array[i] = 1.0
     return array
+
 
 def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     normal_array = deepcopy(array)
@@ -134,6 +139,7 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
 def sample_VL_prior(N):
     LV = DeterministicLotkaVolterra(T = 20)
     X = LV.sample_prior(N)
+    LV.sample_data(X)
     return X.astype(float)
 
 
@@ -144,8 +150,9 @@ def derivative(X, t, alpha, beta, gamma, delta):
     return np.array([dotx, doty])
 
 
+
 def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.1)):
-    t_vec = np.linspace(0,T, num = n)
+    t_vec = np.linspace(0,T, num = n + 1)[:-1]
     alpha, beta, gamma, delta = params
     res = integrate.odeint(derivative, X0, t_vec, args=(alpha, beta, gamma, delta))
     x, y = res[1:].T
@@ -156,6 +163,7 @@ def run_ode(params, T = 20, n = 10, X0 = np.asarray([30,1]), obs_std = np.sqrt(.
 
     yobs = np.array([lognorm.rvs(scale=x, s=obs_std) for x in res_vec])
     return yobs
+
 
 
 def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1]), n = 10):
@@ -169,7 +177,11 @@ def get_VL_data(N, X = [], normal = True, T = 20, Yd = 18, X0 = np.asarray([30,1
     return XY[:, :4 + Yd]
 
 
+
 def run():
+   get_VL_data(1)
+
+
    pass
 
 

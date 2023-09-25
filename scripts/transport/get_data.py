@@ -487,6 +487,7 @@ def sample_x_torus(N, x = 0, eps_scale = .01, eps = .01):
         slice_sample = np.concatenate([slice_sample, new_slice_sample], axis=0)
     return slice_sample[:N]
 
+
 def sample_spheres_prior(N):
     R = sample_uniform(N, d=1, l=.75, h=1.25)
     X = np.asarray([sample_uniform(1, d=1, l=(.8 * -r), h=(.8*r))[0] for r in R])
