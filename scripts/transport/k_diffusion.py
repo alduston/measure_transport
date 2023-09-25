@@ -1070,7 +1070,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot= 20000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 50000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1088,8 +1088,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     pass
 
 def run():
-    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test5',
-               test_keys=['elden', 'spheres'], plot_steps = True)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
+               test_keys=['lv'], plot_steps = True)
 
 
 
