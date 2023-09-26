@@ -812,9 +812,9 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
-    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .5], [1, .6], [1, .7]])
+    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .799]])
     save_dir = f'../../data/transport/{exp_name}'
-    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (12,4))
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (18,4))
     plt.rcParams.update({'font.size': 9})
     ns = len(slice_vals)
     for i, slice_val in enumerate(slice_vals):
@@ -827,11 +827,12 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                          sigma = sigma, mu = mu)
         x,y = slice_sample[:, np.asarray([0, 1])].T
 
-        plt.subplot(2, ns, i + 1)
-        plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
-        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+        #plt.subplot(2, ns, i + 1)
+        #plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
 
-        plt.subplot(2, ns, ns + i + 1)
+        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+        #plt.subplot(2, ns, ns + i + 1)
+        plt.subplot(1, ns, i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
         plt.xlim(plt_range[0][0], plt_range[0][1])
         plt.ylim(plt_range[1][0], plt_range[1][1])
@@ -1048,7 +1049,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['elden','spheres', 'lv'], plot_steps = True)
+               test_keys=['spheres'], plot_steps = True)
 
     #test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
                #test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
