@@ -796,7 +796,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                 'cond': [list(range(2, 2 + (2 * n)))],
                 'target': [[0, 1]]}
 
-    plt_range = [[.5, 1.5], [-1.5, 1.5]]
+    plt_range = [[.7, 1.4], [-1.2, 1.2]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
     if not N_plot:
