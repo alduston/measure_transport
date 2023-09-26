@@ -810,7 +810,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
     slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .799]])
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
     fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (18,4))
     plt.rcParams.update({'font.size': 9})
     ns = len(slice_vals)
@@ -839,7 +839,8 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     plt.savefig(f'{save_dir}/slice_plots.png')
     return True
 
-def plot_lv_matrix_old(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'):
+def plot_lv_matrix_old(slice_sample, limits, slice_vals=None, symbols=None, save_dir = '.'):
+    '''
     params_keys = ['\u03B1', '\u03B2', '\u03B3', '\u03B4']
     ranges1 = {'\u03B1': limits[0], '\u03B2': limits[1], '\u03B3': limits[2], '\u03B4': limits[3]}
     plt.rcParams.update({'font.size': 14})
@@ -873,9 +874,10 @@ def plot_lv_matrix_old(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'
         plt.tight_layout(pad=0.3)
         plt.savefig(f'../../data/transport/{exp_name}/posterior_samples{range_idx}hmap.png')
         clear_plt()
+        '''
 
 def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'):
-    plt.rc('text', usetex=True)
+    #plt.rc('text', usetex=True)
     plt.rc('font', size=12)
     dim = x_samps.shape[1]
     plt.figure(figsize=(9, 9))
@@ -927,7 +929,8 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
+    print(save_dir)
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -1087,7 +1090,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['spheres'], plot_steps = True)
+               test_keys=['lv'], plot_steps = True)
 
 
 if __name__ == '__main__':

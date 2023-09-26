@@ -831,7 +831,6 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
         #plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
 
         plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
-        #plt.subplot(2, ns, ns + i + 1)
         plt.subplot(1, ns, i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
         plt.xlim(plt_range[0][0], plt_range[0][1])
@@ -842,6 +841,44 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     plt.savefig(f'{save_dir}/slice_plots.png')
     return True
 
+
+
+
+def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'):
+    #plt.rc('text', usetex=True)
+    plt.rc('font', size=12)
+    dim = x_samps.shape[1]
+    plt.figure(figsize=(9, 9))
+
+    for i in range(dim):
+        for j in range(i + 1):
+            ax = plt.subplot(dim, dim, (i * dim) + j + 1)
+            if i == j:
+                plt.hist(x_samps[:, i], bins=40, density=True)
+                if xtrue is not None:
+                    plt.axvline(xtrue[i], color='r', linewidth=3)
+                plt.xlim(limits[i])
+            else:
+                plt.plot(x_samps[:, j], x_samps[:, i], '.k', markersize=.04, alpha=0.1)
+                if xtrue is not None:
+                    plt.plot(xtrue[j], xtrue[i], '.r', markersize=8, label='Truth')
+                # Peform the kernel density estimate
+                xlim = limits[j]
+                ylim = limits[i]
+                xx, yy = np.mgrid[xlim[0]:xlim[1]:100j, ylim[0]:ylim[1]:100j]
+                positions = np.vstack([xx.ravel(), yy.ravel()])
+                kernel = st.gaussian_kde(x_samps[:, [j, i]].T)
+                f = np.reshape(kernel(positions), xx.shape)
+                ax.contourf(xx, yy, f, cmap='Blues')
+                plt.ylim(limits[i])
+            plt.xlim(limits[j])
+            if symbols is not None:
+                if j == 0:
+                    plt.ylabel(symbols[i], size=20)
+                if i == len(xtrue) - 1:
+                    plt.xlabel(symbols[j], size=20)
+    plt.savefig(f'{save_dir}/DLV_MCMCposterior.png', bbox_inches='tight')
+    return True
 
 
 def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_plot = 0, approx_path = True):
@@ -860,7 +897,8 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
+    print(save_dir)
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -874,7 +912,6 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
                                                          plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
-
     mu, sigma = get_base_stats(target_gen, 10000)
 
     slice_val = np.asarray([.8, .041, 1.07, .04])
@@ -887,40 +924,12 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample,
                                      idx_dict, mu = mu, sigma = sigma)[:, :4]
 
-    params_keys = ['\u03B1', '\u03B2', '\u03B3', '\u03B4']
-    ranges1 = {'\u03B1': [.5, 1.305], '\u03B2': [0.02, 0.0705], '\u03B3': [.7, 1.5], '\u03B4': [0.025, 0.065]}
-    plt.rcParams.update({'font.size': 14})
-    fig, axs = plt.subplots( sharex="col", sharey="row", figsize = (9,8.3))
-    for range_idx, ranges in enumerate([ranges1]):
-        for i, key_i in enumerate(params_keys):
-            for j, key_j in enumerate(params_keys):
-                if i <= j:
-                    plt.subplot(4, 4, 1 + (4 * j + i))
-                    if not i:
-                        plt.ylabel(params_keys[j])
-                    if j == 3:
-                        plt.xlabel(params_keys[i])
-
-                    if i < j:
-                        x, y = slice_sample[:, torch.tensor([i, j]).long()].T
-                        plt_range = [ranges[key_i], ranges[key_j]]
-                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
-                        plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
-                        if plt_range[0][0] != None:
-                            plt.xlim(plt_range[0][0], plt_range[0][1])
-                            plt.ylim(plt_range[1][0], plt_range[1][1])
-                    else:
-                        x = slice_sample[:, i]
-                        plt_range = ranges[key_i]
-                        if plt_range[0] == None:
-                            plt_range = None
-                        plt.hist(x, bins=50, range=plt_range)
-                        plt.axvline(slice_val[i], color='red', linewidth=3)
-
-        plt.tight_layout(pad=0.3)
-        plt.savefig(f'../../data/transport/{exp_name}/posterior_samples{range_idx}hmap.png')
-        clear_plt()
+    symbols = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
+    limits = [[0.5, 1.3], [0.02, 0.07], [0.7, 1.5], [0.025, 0.065]]
+    xtrue = np.asarray([0.83194674, 0.04134147, 1.0823151 , 0.03991483])
+    plot_lv_matrix(slice_sample, limits, xtrue, symbols, save_dir)
     return True
+
 
 
 def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
@@ -1030,7 +1039,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot = 20000)
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 500)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1049,7 +1058,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
-               test_keys=['spheres'], plot_steps = True)
+               test_keys=['lv'], plot_steps = False)
 
     #test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test6',
                #test_keys=['elden', 'spiral', 'mgan2', 'mgan1', 'checker',
