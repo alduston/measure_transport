@@ -809,9 +809,9 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
                                                          n_transports=n_transports, mu = mu, sigma=sigma)
 
-    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .5], [1, .6], [1, .7]])
+    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .799]])
     save_dir = f'../../data/transport/{exp_name}'
-    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (12,4))
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (18,4))
     plt.rcParams.update({'font.size': 9})
     ns = len(slice_vals)
     for i, slice_val in enumerate(slice_vals):
@@ -824,11 +824,12 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                          sigma = sigma, mu = mu)
         x,y = slice_sample[:, np.asarray([0, 1])].T
 
-        plt.subplot(2, ns, i + 1)
-        plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
-        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+        #plt.subplot(2, ns, i + 1)
+        #plt.hist2d(x, y, density=True, bins=100, range=plt_range, cmin=0, vmin=0)
 
-        plt.subplot(2, ns, ns + i + 1)
+        plt.title(f'r = {slice_val[0]}, x = {slice_val[1]}')
+        #plt.subplot(2, ns, ns + i + 1)
+        plt.subplot(1, ns, i + 1)
         kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
         plt.xlim(plt_range[0][0], plt_range[0][1])
         plt.ylim(plt_range[1][0], plt_range[1][1])
@@ -838,6 +839,40 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
     plt.savefig(f'{save_dir}/slice_plots.png')
     return True
 
+def plot_lv_matrix_old(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'):
+    params_keys = ['\u03B1', '\u03B2', '\u03B3', '\u03B4']
+    ranges1 = {'\u03B1': limits[0], '\u03B2': limits[1], '\u03B3': limits[2], '\u03B4': limits[3]}
+    plt.rcParams.update({'font.size': 14})
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize=(9, 8.3))
+    for range_idx, ranges in enumerate([ranges1]):
+        for i, key_i in enumerate(params_keys):
+            for j, key_j in enumerate(params_keys):
+                if i <= j:
+                    plt.subplot(4, 4, 1 + (4 * j + i))
+                    if not i:
+                        plt.ylabel(params_keys[j])
+                    if j == 3:
+                        plt.xlabel(params_keys[i])
+
+                    if i < j:
+                        x, y = slice_sample[:, torch.tensor([i, j]).long()].T
+                        plt_range = [ranges[key_i], ranges[key_j]]
+                        kdeplot(x=x, y=y, fill=True, bw_adjust=0.4, cmap='Blues')
+                        plt.scatter(x=slice_val[i], y=slice_val[j], s=13, color='red')
+                        if plt_range[0][0] != None:
+                            plt.xlim(plt_range[0][0], plt_range[0][1])
+                            plt.ylim(plt_range[1][0], plt_range[1][1])
+                    else:
+                        x = slice_sample[:, i]
+                        plt_range = ranges[key_i]
+                        if plt_range[0] == None:
+                            plt_range = None
+                        plt.hist(x, bins=40, range=plt_range, density=True)
+                        plt.axvline(slice_val[i], color='red', linewidth=3)
+
+        plt.tight_layout(pad=0.3)
+        plt.savefig(f'../../data/transport/{exp_name}/posterior_samples{range_idx}hmap.png')
+        clear_plt()
 
 def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.'):
     plt.rc('text', usetex=True)
@@ -1052,7 +1087,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='exp',
-               test_keys=['lv'], plot_steps = True)
+               test_keys=['spheres'], plot_steps = True)
 
 
 if __name__ == '__main__':
