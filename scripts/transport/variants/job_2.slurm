@@ -19,7 +19,7 @@
 
 # Your programs to run.
 source activate /mmfs1/gscratch/dynamicsai/ald6fd/SindyTorch
-cd ..
+cd /mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/scripts/transport
 cp variants/k_diffusion_5.py ./k_diffusion_5.py
 python k_diffusion_5.py
 rm k_diffusion_5.py
