@@ -1,1 +1,1 @@
-Test mmd :6.1269E-05, Test emd :1
+Test mmd :5.7804E-05, Test emd :1

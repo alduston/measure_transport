@@ -27,7 +27,7 @@ class DeterministicLotkaVolterra:
         # length of integration window
         self.T = T
         # observation parameters
-        self.obs_std = np.sqrt(0.1)
+        self.obs_std = np.sqrt(0.5)
 
     def sample_prior(self, N):
         # generate Normal samples
