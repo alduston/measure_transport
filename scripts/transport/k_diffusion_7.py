@@ -165,13 +165,13 @@ class Comp_transport_model:
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([3 * x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([1.3 * x_mu, y_mean + y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps):
-        x_var = torch.concat([3 * x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([1.3 * x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
@@ -288,14 +288,17 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
 
-        self.X_var = torch.concat([3 * self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([3 * self.X_mu, self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([ self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
 
         self.params['fit_kernel_params']['l'] *= l_scale(self.X_mean).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
+
+        self.X_var = torch.concat([1.3 * self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([1.3 * self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
         self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
@@ -381,14 +384,14 @@ class CondTransportKernel(nn.Module):
 
 
     def map_mean(self, x_mu, y_mean, y_var):
-        x_mean = torch.concat([3 * x_mu, y_mean + y_var], dim=1)
+        x_mean = torch.concat([1.3 * x_mu, y_mean + y_var], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
-        x_var = torch.concat([3 * x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
+        x_var = torch.concat([1.3 * x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
@@ -1089,8 +1092,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['lv'], plot_steps = True)
+    test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test12',
+               test_keys=['lv', 'spheres'], plot_steps = True)
 
 
 if __name__ == '__main__':
