@@ -818,6 +818,9 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
         ref_sample = ref_gen(Np)
         RX = np.full((Np, 2), slice_val)
         ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
+
+        ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[0])
+
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
@@ -950,6 +953,9 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     X = np.full((N_plot, 4), slice_val)
 
     ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
+
+    ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[0])
+
     ref_slice_sample = (ref_slice_sample - mu)/sigma
 
     ref_sample = ref_gen(N_plot)
@@ -1089,8 +1095,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test11',
-               test_keys=['lv'], plot_steps = True)
+    test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test12',
+               test_keys=['spheres', 'lv'], plot_steps = True)
 
 
 if __name__ == '__main__':
