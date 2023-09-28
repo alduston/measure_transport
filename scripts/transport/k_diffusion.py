@@ -821,8 +821,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
 
         #ref_slice_sample = np.full(ref_slice_sample.shape, np.mean(ref_slice_sample, axis =  0))
         ref_slice_sample = np.asarray([ref_slice_sample[:100]for i in range(N_plot // 100)
-                                       ][:N_plot].reshape(ref_slice_sample.shape)
-
+                                       ][:N_plot]).reshape(ref_slice_sample.shape)
 
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
