@@ -14,6 +14,7 @@ from picture_to_dist import sample_elden_ring,sample_t_fractal
 from seaborn import kdeplot
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
+import scipy.stats as st
 
 
 def wasserstain_distance(Y1, Y2, full = False):

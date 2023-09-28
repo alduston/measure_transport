@@ -819,7 +819,10 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
         RX = np.full((Np, 2), slice_val)
         ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
 
-        ref_slice_sample = np.full(ref_slice_sample.shape, np.mean(ref_slice_sample, axis =  0))
+        #ref_slice_sample = np.full(ref_slice_sample.shape, np.mean(ref_slice_sample, axis =  0))
+        ref_slice_sample = np.asarray([ref_slice_sample[:100]for i in range(N_plot // 100)
+                                       ][:N_plot].reshape(ref_slice_sample.shape)
+
 
         if normalize_data:
             ref_slice_sample = (ref_slice_sample - mu) / sigma
@@ -952,8 +955,8 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     X = np.full((N_plot, 4), slice_val)
 
     ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
-    ref_slice_sample = np.full(ref_slice_sample.shape, np.mean(ref_slice_sample, axis =  0))
-
+    ref_slice_sample = np.asarray([ref_slice_sample[:100] for i in range(N_plot//100)
+                                   ])[:N_plot].reshape(ref_slice_sample.shape)
     ref_slice_sample = (ref_slice_sample - mu)/sigma
 
     ref_sample = ref_gen(N_plot)

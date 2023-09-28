@@ -1,0 +1,1 @@
+Test mmd :2.9692E-04, Test emd :1

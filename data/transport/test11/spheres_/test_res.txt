@@ -1,1 +1,1 @@
-Test mmd :5.2379E-04, Test emd :1
+Test mmd :2.1123E-04, Test emd :1
