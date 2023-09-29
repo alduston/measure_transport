@@ -68,7 +68,6 @@ class DeterministicLotkaVolterra:
             yobs = np.abs(yobs[1:, :]).ravel()
             yobs = np.array([lognorm.rvs(scale=x, s=self.obs_std) for x in yobs])
             xt[j, :] = yobs
-        plt.savefig('traj_plots.png')
         return (xt, tt)
 
     def log_prior_pdf(self, theta):
