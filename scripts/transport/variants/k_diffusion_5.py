@@ -841,6 +841,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
         plt.legend()
         plt.tight_layout(pad=0.3)
         plt.savefig(f'{save_dir}/slice_plots{j}.png')
+        clear_plt()
     return True
 
 
@@ -1067,7 +1068,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test19',
-               test_keys=['lv'], plot_steps = False)
+               test_keys=['spheres'], plot_steps = False)
 
 if __name__ == '__main__':
     run()
