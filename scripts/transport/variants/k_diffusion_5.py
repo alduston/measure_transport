@@ -493,7 +493,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 3000, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-5, 'var_eps': var_eps,
+                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 5e-7, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
@@ -923,9 +923,12 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     ref_sample = ref_gen(N_plot)
     for j in range(10):
         if j != 0:
-            ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
+            n_ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
+        else:
+            n_ref_slice_sample = deepcopy(ref_slice_sample)
 
-        n_ref_slice_sample =  (ref_slice_sample - mu)/sigma
+
+        n_ref_slice_sample =  (n_ref_slice_sample - mu)/sigma
 
         slice_sample = compositional_gen(trained_models, ref_sample, n_ref_slice_sample,
                                          idx_dict, mu = mu, sigma = sigma)[:, :4]
@@ -1064,7 +1067,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=1, k=1, approx_path=False, test_name='test19',
-               test_keys=['lv', 'spheres'], plot_steps = False)
+               test_keys=['lv'], plot_steps = False)
 
 if __name__ == '__main__':
     run()

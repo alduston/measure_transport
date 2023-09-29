@@ -925,9 +925,11 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     ref_sample = ref_gen(N_plot)
     for j in range(10):
         if j != 0:
-            ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
+            n_ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
+        else:
+            n_ref_slice_sample = deepcopy(ref_slice_sample)
 
-        n_ref_slice_sample =  (ref_slice_sample - mu)/sigma
+        n_ref_slice_sample =  (n_ref_slice_sample - mu)/sigma
 
         slice_sample = compositional_gen(trained_models, ref_sample, n_ref_slice_sample,
                                          idx_dict, mu = mu, sigma = sigma)[:, :4]
@@ -1066,7 +1068,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test18',
-               test_keys=['spheres','lv', 'elden'], plot_steps = True)
+               test_keys=['lv'], plot_steps = True)
 
 
 if __name__ == '__main__':
