@@ -164,7 +164,8 @@ class Comp_transport_model:
     def get_x_mu_embedding(self, x,  fit_kYY, Xmu_kernel, X_mu, mds):
         fit_kXmux = Xmu_kernel(X_mu, x)
         x_distances = fit_kXmux.T @ fit_kYY @ fit_kXmux
-        x_embeddings = mds.fit_transform(x_distances)
+
+        x_embeddings = mds.fit_transform(x_distances.detach().cpu().numpy())
         return torch.tensor(x_embeddings, device = self.device, dtype=self.dtype)
 
 
@@ -386,7 +387,7 @@ class CondTransportKernel(nn.Module):
             fit_kXmux = self.Xmu_kernel(self.X_mu, x)
 
         x_distances = fit_kXmux.T @ self.fit_kYY @ fit_kXmux
-        x_embeddings = self.mds.fit_transform(x_distances)
+        x_embeddings = self.mds.fit_transform(x_distances.detach().cpu().numpy())
         return torch.tensor(x_embeddings, device = self.device, dtype=self.dtype)
 
 
@@ -1162,8 +1163,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=9000, n_transports=70, k=1, approx_path=False, test_name='test16',
-               test_keys=['lv', 'spheres'], plot_steps = True)
+    test_panel(N=3000, n_transports=70, k=1, approx_path=False, test_name='test16',
+               test_keys=['lv', 'spheres'], plot_steps = True, N_plot=9000)
 
 
 if __name__ == '__main__':
