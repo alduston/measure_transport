@@ -496,11 +496,11 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def fit_CCA(X_mu, Y_mu, d = 4):
+def fit_CCA(X_mu, Y_mu, d = 5):
     scaler = StandardScaler()
     X = scaler.fit_transform(X_mu)
     Y = scaler.fit_transform(Y_mu)
-    cca = CCA(n_components=2)
+    cca = CCA(n_components=d)
     cca.fit(X, Y)
     X_cca, Y_cca = cca.transform(X, Y)
     return X_cca,cca
@@ -1075,7 +1075,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                 except torch._C._LinAlgError:
                     done += 1
                     pass
-                
+
         if 'lv' in test_keys:
             done = 0
             while done < 2:
