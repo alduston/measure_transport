@@ -293,22 +293,35 @@ class CondTransportKernel(nn.Module):
         self.params['fit_kernel_params']['l'] *= l_scale(self.X_mean).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
 
+        self.nc = self.params['n_clusters']
         self.mean_approx_dict = self.nystrom_components(self.X_mean , self.fit_kernel)#, include_approx = True)
         self.var_approx_dict = self.nystrom_components(self.X_var, self.fit_kernel)#, include_approx = True)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
-        self.cnugget_matrix = self.params['nugget'] * torch.eye(99, device=self.device, dtype=self.dtype)
+        self.cnugget_matrix = self.params['nugget'] * torch.eye(self.nc, device=self.device, dtype=self.dtype)
 
-        EU_1_mean = self.mean_approx_dict['EU_1']
-        S_mean = self.mean_approx_dict['S']
-        S_inv_mean = torch.linalg.inv(S_mean)
-        k_mean = EU_1_mean @ S_inv_mean @ EU_1_mean.T
+        #EU_1_mean = self.mean_approx_dict['EU_1']
+        #S_mean = self.mean_approx_dict['S']
+        #S_inv_mean = torch.linalg.inv(S_mean)
+        # k_mean = EU_1_mean @ S_inv_mean @ EU_1_mean.T
+        E_mean = self.mean_approx_dict['E']
+        W_mean_inv = self.mean_approx_dict['W_inv']
+        k_mean =  E_mean @ W_mean_inv @ E_mean.T
+
+        print(k_mean[:2,:2])
+        print(self.fit_kernel(self.X_mean,self.X_mean)[:2,:2])
+
         self.fit_kXXmean_inv = torch.linalg.inv(k_mean + self.nugget_matrix)
 
-        EU_1_var = self.var_approx_dict['EU_1']
-        S_mean = self.var_approx_dict['S']
-        S_inv_var = torch.linalg.inv(self.var_approx_dict['S'])
-        k_var = EU_1_var @ S_inv_var @ EU_1_var.T
+        #EU_1_var = self.var_approx_dict['EU_1']
+        #S_mean = self.var_approx_dict['S']
+        #S_inv_var = torch.linalg.inv(self.var_approx_dict['S'])
+        #k_var = EU_1_var @ S_inv_var @ EU_1_var.T
+
+        E_var = self.var_approx_dict['E']
+        W_var_inv = self.var_approx_dict['W_inv']
+        k_var = E_var @ W_var_inv @ E_var.T
+
         self.fit_kXXvar_inv = torch.linalg.inv(k_var + self.nugget_matrix)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -349,7 +362,7 @@ class CondTransportKernel(nn.Module):
 
 
     def nystrom_components(self, X, k, include_approx = False):
-        n_clutsters = 99 #self.params['n_clusters']
+        n_clutsters = self.nc
         kmeans = KMeans(n_clusters=n_clutsters, random_state=0, n_init=10).fit(X.detach().cpu().numpy())
         cluster_centers = geq_1d(torch.tensor(kmeans.cluster_centers_, device=self.device, dtype=self.dtype))
 
@@ -1105,8 +1118,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=100, n_transports=70, k=1, approx_path=False, test_name='exp',
-               test_keys=['banana'], plot_steps = True, N_plot = 100)
+    test_panel(N=1000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+               test_keys=['banana'], plot_steps = True, N_plot = 1000)
 
 
 if __name__ == '__main__':
