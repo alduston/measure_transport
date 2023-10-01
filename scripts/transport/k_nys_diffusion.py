@@ -1134,7 +1134,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=30000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, N_plot = 30000)
+               test_keys=['elden'], plot_steps = True, N_plot = 30000, nc = 1000)
 
 
 if __name__ == '__main__':
