@@ -546,7 +546,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'mmd_lambda': mmd_lambda,'n_clusters': min(nc, len(X_mu) - 1),
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 5000))}
+                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 5000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
