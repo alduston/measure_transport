@@ -540,7 +540,7 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3, nc = 500):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-3, 'Y_var': Y_var, 'Y_mean': Y_mean,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-5, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
@@ -563,7 +563,7 @@ def dict_not_valid(loss_dict):
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1, n_transports=75, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
-                               grad_cutoff = .0001, approx_path = False):
+                               grad_cutoff = .0001, approx_path = False, nc = 500):
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
@@ -581,7 +581,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                     X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
                                     mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps, step_num = step_num,
-                                    grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters)
+                                    grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, nc = nc)
 
         if dict_not_valid(loss_dict):
             break
@@ -626,7 +626,8 @@ def zero_pad(array):
 
 
 def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[],var_eps = 1/3, approx_path = True,
-                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-7, n_transports=100):
+                         cond_model_trainer=cond_kernel_transport, idx_dict={}, reg_lambda=1e-7, n_transports=100,
+                         nc = 500):
     ref_sample = ref_gen(N)
     target_sample = target_gen(N)
 
@@ -657,7 +658,7 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val,
                                                  params=params, reg_lambda=reg_lambda,  n_transports=n_transports,
-                                                 var_eps = var_eps, approx_path =  approx_path))
+                                                 var_eps = var_eps, approx_path =  approx_path, nc = nc))
 
     return trained_models
 
@@ -694,7 +695,7 @@ def compositional_gen(trained_models, ref_sample, target_sample, idx_dict, plot_
 def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='exp', plt_range=None, bins=70,
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=75, idx_dict={},plot_steps = False,
-                              reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True):
+                              reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True, nc = 500):
     save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -720,7 +721,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           process_funcs=process_funcs, idx_dict=idx_dict,reg_lambda = reg_lambda,
-                                          var_eps = var_eps, approx_path=approx_path)
+                                          var_eps = var_eps, approx_path=approx_path, nc = nc)
 
     for model in trained_models:
         model.save_dir = save_dir
@@ -787,7 +788,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
-              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
+              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1, nc = 500
               vmax=None, n_transports=75, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3, approx_path=True):
     save_dir = f'../../data/transport/{exp_name}'
     try:
@@ -809,7 +810,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
                                                          n_transports=n_transports, process_funcs=process_funcs,
                                                          plt_range=plt_range,  bins=bins, mu = mu, sigma = sigma,
                                                          plot_idx=plot_idx, reg_lambda=reg_lambda, var_eps = var_eps,
-                                                         approx_path = approx_path)
+                                                         approx_path = approx_path, nc = nc)
 
     cmu, csigma = 0,1
     if normal:
@@ -836,7 +837,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
 
 
 def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
-                normalize_data = False, approx_path = False):
+                normalize_data = False, approx_path = False, nc = 500):
     n = 10
     ref_gen = sample_normal
     mu, sigma = 0,1
@@ -860,7 +861,7 @@ def spheres_exp(N=4000, exp_name='spheres_exp', n_transports=100, N_plot = 0,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
-                                                         n_transports=n_transports, mu = mu, sigma=sigma)
+                                                         n_transports=n_transports, mu = mu, sigma=sigma, nc = nc)
 
     slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .75]])
     save_dir = f'../../data/transport{exp_name}'
@@ -935,7 +936,8 @@ def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.', la
     return True
 
 
-def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_plot = 0, approx_path = True):
+def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,
+           N_plot = 0, approx_path = True, nc = nc):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=False, Yd=Yd)
 
@@ -961,7 +963,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     if not N_plot:
         N_plot = min(10 * N, 4000)
     trained_models, idx_dict = conditional_transport_exp(ref_gen, normal_target_gen, N=N, N_plot=N_plot ,sigma = sigma,
-                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
+                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],nc = nc,
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
                                                          plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
@@ -993,7 +995,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
 
 def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 100000):
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 1e5, nc = 500):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
@@ -1009,7 +1011,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                               exp_name=f'/{test_name}/banana_{i_str}', n_transports=n_transports, slice_vals=[-1, 0, 1],
                               plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1,
                               N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
-                              approx_path = approx_path)
+                              approx_path = approx_path, nc = nc)
                     done += 3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1021,7 +1023,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_{i_str}',
                             n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
                             slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps,
-                            normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
+                            normal=True, bins=100, var_eps=1/3, approx_path = approx_path, nc = nc)
                     done += 3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1034,7 +1036,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=N, exp_name=f'/{test_name}/mgan2_{i_str}',
                               n_transports= n_transports,  slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
                               slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
-                              bins=100,var_eps=1/2, approx_path = approx_path)
+                              bins=100,var_eps=1/2, approx_path = approx_path, nc = nc)
                     done += 3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1047,7 +1049,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=N, exp_name=f'/{test_name}/swiss_{i_str}',
                               n_transports= n_transports, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3],
                               vmax=.35,  skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
-                              approx_path = approx_path)
+                              approx_path = approx_path, nc = nc)
                     done += 3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1059,7 +1061,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
-                              exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
+                              exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,nc = nc,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
                     done +=3
@@ -1074,7 +1076,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
                               vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
-                              approx_path = approx_path)
+                              approx_path = approx_path,nc = nc)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1087,7 +1089,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=N, exp_name=f'/{test_name}/elden_{i_str}',
                               n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
                               slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
-                              bins=100, var_eps=1/12, approx_path = approx_path)
+                              bins=100, var_eps=1/12, approx_path = approx_path, nc = nc)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1101,7 +1103,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                               exp_name=f'/{test_name}/t_fractal_{i_str}',  n_transports= n_transports, slice_vals=[],
                               plt_range=[[-1, 1], [-.95, .95]],  slice_range=[-1.5, 1.5], vmax=4.5, skip_idx=1,
                               N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=200, var_eps=1/12,
-                              approx_path = approx_path)
+                              approx_path = approx_path, nc = nc)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1123,7 +1125,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
+                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000, nc = nc)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
