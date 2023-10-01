@@ -308,8 +308,8 @@ class CondTransportKernel(nn.Module):
         W_mean_inv = self.mean_approx_dict['W_inv']
         k_mean =  E_mean @ W_mean_inv @ E_mean.T
 
-        print(k_mean[:2,:2])
-        print(self.fit_kernel(self.X_mean,self.X_mean)[:2,:2])
+        #print(k_mean[:2,:2])
+        #print(self.fit_kernel(self.X_mean,self.X_mean)[:2,:2])
 
         self.fit_kXXmean_inv = torch.linalg.inv(k_mean + self.nugget_matrix)
 
