@@ -750,7 +750,7 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
 
     mu, sigma = 0, 1
     if normal:
-        mu,sigma = get_base_stats(target_gen, 5000)
+        mu,sigma = get_base_stats(target_gen, 10000)
         normal_target_gen = lambda N: normalize(target_gen(N))
     else:
         normal_target_gen = target_gen
@@ -893,7 +893,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
     if normal:
         normal_target_gen = lambda N: get_VL_data(N, normal=True, Yd=Yd)
-        mu, sigma = get_base_stats(target_gen, 100)
+        mu, sigma = get_base_stats(target_gen, 10000)
     else:
         normal_target_gen = target_gen
         mu,sigma = 0,1
@@ -917,7 +917,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
                                                          plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
-    mu, sigma = get_base_stats(target_gen, 100)
+    mu, sigma = get_base_stats(target_gen, 10000)
 
     slice_val = np.asarray([.8319, .0413, 1.0823, .0399])
     X = np.full((N_plot, 4), slice_val)
@@ -1051,7 +1051,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             while done < 2:
                 try:
                     lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot= 100)
+                        approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
                     done +=3
                 except torch._C._LinAlgError:
                     done += 1
@@ -1070,8 +1070,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=100, n_transports=7, k=1, approx_path=False, test_name='exp',
-               test_keys=['spiral'], plot_steps = True, N_plot=500)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
+               test_keys=['lv'], plot_steps = True)
 
 
 if __name__ == '__main__':
