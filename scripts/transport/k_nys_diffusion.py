@@ -788,7 +788,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 
 def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], normal = True,
-              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1, nc = 500
+              slice_range=None, N_plot=4000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1, nc = 500,
               vmax=None, n_transports=75, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3, approx_path=True):
     save_dir = f'../../data/transport/{exp_name}'
     try:
