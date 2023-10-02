@@ -1033,7 +1033,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done <= 2:
                 try:
-                    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=3000, n_transports= n_transports,
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N_plot, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
@@ -1107,7 +1107,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='noise_test',
-               test_keys=['checker','lv'], plot_steps = True, N_plot = 10000)
+               test_keys=['checker', 'lv', 'spheres', 'elden', 'mgan', 'mgan2'], plot_steps = True)
 
     #test_panel(N=100, n_transports=3, k=1, approx_path=False, test_name='exp',
                #test_keys=['banana'], plot_steps = True, N_plot = 300)
