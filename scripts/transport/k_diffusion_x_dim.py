@@ -294,14 +294,17 @@ class CondTransportKernel(nn.Module):
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu_dim = self.X_mu * self.mu_coeff
 
-        self.X_var = torch.concat([self.X_mu_dim, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([self.X_mu_dim, self.Y_mean + self.Y_var], dim=1)
+        #self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        #self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
 
         self.params['fit_kernel_params']['l'] *= l_scale(self.X_mean).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
+
+        self.X_var = torch.concat([self.X_mu_dim, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu_dim, self.Y_mean + self.Y_var], dim=1)
 
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
@@ -566,7 +569,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
         models_param_dict['var_eps'].append(model.var_eps)
         models_param_dict['diming_coeff'].append(model.mu_coeff)
-        mmd_lambda = model.mmd_lambda 
+        mmd_lambda = model.mmd_lambda
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
@@ -1031,7 +1034,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done <= 2:
                 try:
-                    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=3000, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
@@ -1105,7 +1108,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='noise_test',
-               test_keys=['checker','lv'], plot_steps = True, N_plot = 30000)
+               test_keys=['checker','lv'], plot_steps = True, N_plot = 10000)
+
     #test_panel(N=100, n_transports=3, k=1, approx_path=False, test_name='exp',
                #test_keys=['banana'], plot_steps = True, N_plot = 300)
 
