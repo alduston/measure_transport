@@ -292,7 +292,7 @@ class CondTransportKernel(nn.Module):
 
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
-        self.X_mu_dim = self.X_mu * self.approx_coeff
+        self.X_mu_dim = self.X_mu * self.mu_coeff
 
         self.X_var = torch.concat([self.X_mu_dim, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu_dim, self.Y_mean + self.Y_var], dim=1)
