@@ -345,12 +345,14 @@ class CondTransportKernel(nn.Module):
 
     def nystrom_components(self, X, k, include_approx = False, return_dict = False):
         n_clutsters = self.nc
-        kmeans = KMeans(n_clusters=n_clutsters, random_state=0, n_init=10).fit(X.detach().cpu().numpy())
+        #if len(self.params['centers']):
+        kmeans = KMeans(n_clusters=n_clutsters, random_state=0,n_init=10).fit(X.detach().cpu().numpy())
         cluster_centers = geq_1d(torch.tensor(kmeans.cluster_centers_, device=self.device, dtype=self.dtype))
 
         E = k(X, cluster_centers)
         W = k(cluster_centers, cluster_centers)
-        W_inv = torch.linalg.inv(W)
+        nugget_matrix = torch.eye(self.nc) * self.params['nugget']
+        W_inv = torch.linalg.inv(W + nugget_matrix)
 
         if not return_dict:
             return E, W_inv
@@ -546,11 +548,11 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3, nc = 500):
-    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'Y_var': Y_var, 'Y_mean': Y_mean,
+    transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'Y_var': Y_var, 'Y_mean': Y_mean, 'nugget': 1e-4,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-5, 'var_eps': var_eps,
+                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
-                        'Y_mean_test': Y_mean_test, 'mmd_lambda': mmd_lambda,'n_clusters': min(nc, len(X_mu) - 1),
+                        'Y_mean_test': Y_mean_test, 'mmd_lambda': mmd_lambda, 'n_clusters': min(nc, len(X_mu) - 1),
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
                         'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 5000)}
 
@@ -1139,8 +1141,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=30000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, N_plot = 30000, nc = 1000)
+    test_panel(N=25000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+               test_keys=['elden'], plot_steps = True, nc = 1000)
 
 
 if __name__ == '__main__':
