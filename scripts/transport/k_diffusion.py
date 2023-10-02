@@ -426,7 +426,6 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-
     def mmd(self, map_vec, target, test = True, pre_process = True):
         if pre_process:
             map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
@@ -448,15 +447,15 @@ class CondTransportKernel(nn.Module):
         return mmd/n
 
 
-    def batch_mmd(self, map_vec, target, x_idx, y_idx, test = True):
+    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
 
-        mmd_ZZ = K_mmd(map_vec[x_idx], map_vec[y_idx])
-        mmd_ZY = K_mmd(map_vec[x_idx], target[y_idx])
-        mmd_YY = K_mmd(target[x_idx], target[y_idx])
+        mmd_ZZ = K_mmd(x_map, y_map)
+        mmd_ZY = K_mmd(x_map, y_target)
+        mmd_YY = K_mmd(x_target, y_target)
 
         Ek_ZZ =  torch.sum(mmd_ZZ)
         Ek_ZY =  torch.sum(mmd_ZY)
@@ -945,12 +944,10 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
         else:
             n_ref_slice_sample = deepcopy(ref_slice_sample)
 
-
         n_ref_slice_sample =  (n_ref_slice_sample - mu)/sigma
 
         slice_sample = compositional_gen(trained_models, ref_sample, n_ref_slice_sample,
                                          idx_dict, mu = mu, sigma = sigma)[:, :4]
-
         symbols = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
         limits = [[0.5, 1.3], [0.02, 0.07], [0.7, 1.5], [0.025, 0.065]]
         xtrue = slice_val
@@ -1099,6 +1096,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 def run():
     test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
                test_keys=['lv', 'spheres'], plot_steps = True)
+
 
 
 if __name__ == '__main__':
