@@ -358,7 +358,7 @@ class CondTransportKernel(nn.Module):
 
         E = k(X, centers_tensor)
         W = k(centers_tensor, centers_tensor)
-        nugget_matrix = torch.eye(self.nc) * self.params['nugget']
+        nugget_matrix = torch.eye(self.nc, device  = self.device, dtype = self.dtype) * self.params['nugget']
         W_inv = torch.linalg.inv(W + nugget_matrix)
 
         if not return_dict:
