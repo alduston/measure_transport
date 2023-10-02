@@ -454,19 +454,23 @@ class CondTransportKernel(nn.Module):
         for x_idx in batch_idxs:
             for y_idx in batch_idxs:
                 n += len(x_idx) * len(y_idx)
-                mmd += self.batch_mmd(map_vec, target, x_idx, y_idx, test = test)
+                x_map = map_vec[x_idx]
+                y_map = map_vec[y_idx]
+                x_target = target[x_idx]
+                y_target = target[y_idx]
+                mmd += self.batch_mmd(x_map,y_map, x_target, y_target, test = test)
         return mmd/n
 
 
-    def batch_mmd(self, map_vec, target, x_idx, y_idx, test = True):
+    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
 
-        mmd_ZZ = K_mmd(map_vec[x_idx], map_vec[y_idx])
-        mmd_ZY = K_mmd(map_vec[x_idx], target[y_idx])
-        mmd_YY = K_mmd(target[x_idx], target[y_idx])
+        mmd_ZZ = K_mmd(x_map, y_map)
+        mmd_ZY = K_mmd(x_map, y_target)
+        mmd_YY = K_mmd(x_target, y_target)
 
         Ek_ZZ =  torch.sum(mmd_ZZ)
         Ek_ZY =  torch.sum(mmd_ZY)
