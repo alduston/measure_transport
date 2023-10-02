@@ -446,7 +446,11 @@ class CondTransportKernel(nn.Module):
         for x_idx in batch_idxs:
             for y_idx in batch_idxs:
                 n += len(x_idx) * len(y_idx)
-                mmd += self.batch_mmd(map_vec, target, x_idx, y_idx, test = test)
+                x_map = map_vec[x_idx]
+                y_map = map_vec[y_idx]
+                x_target = target[x_idx]
+                y_target = target[y_idx]
+                mmd += self.batch_mmd(x_map,y_map, x_target, y_target, test = test)
         return mmd/n
 
 
@@ -514,11 +518,11 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-5, 'var_eps': var_eps,
+                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx, 'batch_size': min(len(X_mu), 5000)}
+                        'Y_mu_approx': Y_mu_approx, 'batch_size': min(len(X_mu), 10000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -1080,7 +1084,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
+                    lv_exp(min(N,10000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
                         approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
                     done +=3
                 except torch._C._LinAlgError:
@@ -1091,7 +1095,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                    spheres_exp(min(N,10000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
                                 approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
                     done +=3
                 except torch._C._LinAlgError:
@@ -1100,8 +1104,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=100, n_transports=3, k=1, approx_path=False, test_name='exp',
-               test_keys=['banana'], plot_steps = True, N_plot = 100)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
+               test_keys=['lv', 'spheres'], plot_steps = True)
 
 
 if __name__ == '__main__':
