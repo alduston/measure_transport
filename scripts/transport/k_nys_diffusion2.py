@@ -518,8 +518,20 @@ class CondTransportKernel(nn.Module):
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
-        mmd = self.mmd(map_vec, target, test = False, pre_process = False)
+        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
+        mmd_ZY = self.mmd_kernel(map_vec, target)
+
+        alpha_z = self.alpha_z
+        alpha_y = self.alpha_y
+
+        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
+        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
+        Ek_YY = self.E_mmd_YY
+        mmd = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
         return mmd * self.mmd_lambda
+
+        #mmd = self.mmd(map_vec, target, test = False, pre_process = False)
+        #return mmd * self.mmd_lambda
 
 
     def loss_reg_mean(self):
@@ -1166,7 +1178,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=25000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+    test_panel(N=5000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
                test_keys=['elden'], plot_steps = True, nc = 2000)
 
 
