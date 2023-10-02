@@ -302,8 +302,11 @@ class CondTransportKernel(nn.Module):
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
 
         self.nc = self.params['n_clusters']
-        self.E_mean, self.W_mean_inv  = self.nystrom_components(self.X_mean, self.fit_kernel)
-        self.E_var, self.W_var_inv = self.nystrom_components(self.X_var, self.fit_kernel)
+
+        self.E_mean, self.W_mean_inv, self.mean_centers  = self.nystrom_components(self.X_mean, self.fit_kernel,
+                                                                             init_centers = self.params['mean_centers'])
+        self.E_var, self.W_var_inv, self.var_centers = self.nystrom_components(self.X_var, self.fit_kernel,
+                                                                             init_centers =self.params['var_centers'])
 
         self.V_mean = nn.Parameter(self.init_V(), requires_grad=True)
         self.V_var = nn.Parameter(self.init_V(), requires_grad=True)
@@ -343,19 +346,23 @@ class CondTransportKernel(nn.Module):
               f"Goal emd is {goal_emd}")
 
 
-    def nystrom_components(self, X, k, include_approx = False, return_dict = False):
+    def nystrom_components(self, X, k, include_approx = False, return_dict = False, init_centers = []):
         n_clutsters = self.nc
-        #if len(self.params['centers']):
-        kmeans = KMeans(n_clusters=n_clutsters, random_state=0,n_init=10).fit(X.detach().cpu().numpy())
-        cluster_centers = geq_1d(torch.tensor(kmeans.cluster_centers_, device=self.device, dtype=self.dtype))
+        if len(init_centers):
+            kmeans = KMeans(n_clusters=n_clutsters, n_init=10
+                            ,init = init_centers).fit(X.detach().cpu().numpy())
+        else:
+            kmeans = KMeans(n_clusters=n_clutsters, random_state=0,n_init=10).fit(X.detach().cpu().numpy())
+        centers = kmeans.cluster_centers_
+        centers_tensor = geq_1d(torch.tensor(centers, device=self.device, dtype=self.dtype))
 
-        E = k(X, cluster_centers)
-        W = k(cluster_centers, cluster_centers)
+        E = k(X, centers_tensor)
+        W = k(centers_tensor, centers_tensor)
         nugget_matrix = torch.eye(self.nc) * self.params['nugget']
         W_inv = torch.linalg.inv(W + nugget_matrix)
 
         if not return_dict:
-            return E, W_inv
+            return E, W_inv, centers
 
         u, s, v = torch.svd(E)
         component_dict = {'E': E, 'W': W, 'W_inv': W_inv,
@@ -546,15 +553,17 @@ class CondTransportKernel(nn.Module):
 
 
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
-                          Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3, nc = 500):
+                        Y_mean_test, Y_var_test, Y_mu_approx, params, iters=-1, mmd_lambda=0, step_num = 1,
+                        reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3, nc = 500,
+                        mean_centers = [], var_centers = []):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'Y_var': Y_var, 'Y_mean': Y_mean, 'nugget': 1e-4,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
                         'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'mmd_lambda': mmd_lambda, 'n_clusters': min(nc, len(X_mu) - 1),
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 5000)}
+                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 5000),
+                        'mean_centers': mean_centers, 'var_centers': var_centers}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -585,11 +594,14 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     mmd_lambda = 0
     Y_mu_approx = Y_eta
     step_num = 1
+    mean_centers = []
+    var_centers = [ ]
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                     X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
                                     mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps, step_num = step_num,
-                                    grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, nc = nc)
+                                    grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters, nc = nc,
+                                    mean_centers = mean_centers, var_centers = var_centers)
 
         if dict_not_valid(loss_dict):
             break
@@ -613,8 +625,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         Y_mean_test, Y_var_test = test_map_dict['y_mean'], test_map_dict['y_var']
 
         step_num += 1
-
-        approx = True
+        mean_centers = model.mean_centers
+        var_centers = model.var_centers
         iters = model.iters
         if approx_path:
             Y_mu_approx = Y_mean + Y_var
@@ -1142,7 +1154,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 def run():
     test_panel(N=25000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, nc = 1000)
+               test_keys=['elden'], plot_steps = True, N_plot = 25000, nc = 2000)
 
 
 if __name__ == '__main__':
