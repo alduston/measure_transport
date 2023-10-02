@@ -194,7 +194,6 @@ class Comp_transport_model:
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
 
-
         z_mean = self.map_mean(x_mu, y_mean, y_var, V_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_eta, y_mean, V_var, X_var,  y_var, fit_kernel, var_eps)
         z = z_mean + z_var
@@ -216,9 +215,10 @@ class Comp_transport_model:
 
     def c_map(self, x, y, no_x = False):
         param_dict = {'y_eta': y, 'y_mean': deepcopy(y) , 'y_var': 0 * deepcopy(y),
-                       'x_mu': x, 'y_approx': deepcopy(y), 'y': deepcop(torch.concat([x, y], dim=1))}
+                       'x_mu': x, 'y_approx': deepcopy(y),
+                      'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis = 1)}
         self.approx = False
-        for step_idx in range(len(self.submodel_params['Lambda_mean'])):
+        for step_idx in range(len(self.submodel_params['V_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
             self.approx = True
         if no_x:
@@ -302,8 +302,8 @@ class CondTransportKernel(nn.Module):
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
 
         self.nc = self.params['n_clusters']
-        self.E_mean, self.W_inv_mean  = self.nystrom_components(self.X_mean, self.fit_kernel)
-        self.E_var, self.W_inv_var = self.nystrom_components(self.X_var, self.fit_kernel)
+        self.E_mean, self.W_mean_inv  = self.nystrom_components(self.X_mean, self.fit_kernel)
+        self.E_var, self.W_var_inv = self.nystrom_components(self.X_var, self.fit_kernel)
 
         self.V_mean = nn.Parameter(self.init_V(), requires_grad=True)
         self.V_var = nn.Parameter(self.init_V(), requires_grad=True)
@@ -373,8 +373,10 @@ class CondTransportKernel(nn.Module):
         return total_norm
 
 
-    def p_vec(self, n):
-        return torch.full([n], 1/n, device=self.device, dtype=self.dtype)
+    def p_vec(self, n, density = 0):
+        if not density:
+            density = 1/n
+        return torch.full([n], density, device=self.device, dtype=self.dtype)
 
 
     def norm_vec(self, vec):
@@ -407,7 +409,7 @@ class CondTransportKernel(nn.Module):
         E = self.E_var
         W_inv = self.W_var_inv
         V = self.V_var
-        return E @ W_inv @ E.T @ self.V
+        return E @ W_inv @ E.T @ V
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -422,18 +424,18 @@ class CondTransportKernel(nn.Module):
         return z_var
 
 
-    def map(self, X_mu, Y_eta, Y_mean = [], y_var = []):
+    def map(self, X_mu, Y_eta, Y_mean = [], Y_var = []):
         if not len(Y_mean):
             Y_mean = deepcopy(Y_eta)
             Y_var = 0 * deepcopy(Y_mean)
-        max_N = self.params['batch_size']
+        batch_size = self.params['batch_size']
         N = len(X_mu)
-        indexes = list(range(N))
         map_dict = {}
-        for j in range(1 + N//max_N):
-            batch_idxs = torch.tensor(range(list((j* max_N), min((j+1)*max_N, N)))).long()
-            x_mu,y_eta,y_mean,y_var = X_mu[batch_idxs],Y_eta[batch_idxs],\
-                                      Y_mean[batch_idxs], Y_var[batch_idxs]
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in range(1 + N // batch_size)]
+        for batch_idx in batch_idxs:
+            x_mu ,y_eta ,y_mean ,y_var = X_mu[batch_idx],Y_eta[batch_idx],\
+                                      Y_mean[batch_idx], Y_var[batch_idx]
             batch_dict = self.map_batch(x_mu, y_eta, y_mean, y_var)
             map_dict = concat_dicts(map_dict, batch_dict)
         return map_dict
@@ -455,46 +457,50 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-    def mmd(self, map_vec, target, test = True):
-        map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
-        target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
 
+    def mmd(self, map_vec, target, test = True, pre_process = True):
+        if pre_process:
+            map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
+            target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
+        N  = len(map_vec)
+        batch_size = self.params['batch_size']
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in  range( N//batch_size)]
+        mmd = 0
+        n = 0
+        for x_idx in batch_idxs:
+            for y_idx in batch_idxs:
+                n += len(x_idx) * len(y_idx)
+                mmd += self.batch_mmd(map_vec, target, x_idx, y_idx, test = test)
+        return mmd/n
+
+
+    def batch_mmd(self, map_vec, target, x_idx, y_idx, test = True):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
 
-        mmd_ZZ = K_mmd(map_vec, map_vec)
-        mmd_ZY = K_mmd(map_vec, target)
-        mmd_YY = K_mmd(target, target)
+        mmd_ZZ = K_mmd(map_vec[x_idx], map_vec[y_idx])
+        mmd_ZY = K_mmd(map_vec[x_idx], target[y_idx])
+        mmd_YY = K_mmd(target[x_idx], target[y_idx])
 
-        alpha_z = self.p_vec(len(map_vec))
-        alpha_y = self.p_vec(len(target))
+        Ek_ZZ =  torch.sum(mmd_ZZ)
+        Ek_ZY =  torch.sum(mmd_ZY)
+        Ek_YY =  torch.sum(mmd_YY)
 
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = alpha_y @ mmd_YY @ alpha_y
-
-        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+        return (Ek_ZZ - (2 * Ek_ZY) + Ek_YY)
 
 
     def loss_mmd(self):
         Z_mean = self.get_Z_mean()
         Z_var = self.get_Z_var()
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
+
+        Y_approx = self.Y_var + self.Y_mean + Z_mean + Z_var
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
-
-        alpha_z = self.alpha_z
-        alpha_y = self.alpha_y
-
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = self.E_mmd_YY
-        mmd  = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+        mmd = self.mmd(map_vec, target, test = False, pre_process = False)
         return mmd * self.mmd_lambda
 
 
@@ -564,7 +570,7 @@ def dict_not_valid(loss_dict):
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1, n_transports=75, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False, nc = 500):
-    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
+    param_keys = ['fit_kernel','V_mean', 'X_mean',  'V_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
 
@@ -937,7 +943,7 @@ def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.', la
 
 
 def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,
-           N_plot = 0, approx_path = True, nc = nc):
+           N_plot = 0, approx_path = True, nc = 500):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=False, Yd=Yd)
 
