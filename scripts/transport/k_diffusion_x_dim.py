@@ -566,7 +566,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
         models_param_dict['var_eps'].append(model.var_eps)
         models_param_dict['diming_coeff'].append(model.mu_coeff)
-        mmd_lambda = model.mmd_lambda
+        mmd_lambda = model.mmd_lambda 
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
