@@ -480,10 +480,6 @@ class CondTransportKernel(nn.Module):
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
-        Y_approx = self.Y_var + self.Y_mean + self.Z_mean + self.Z_var
-        map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
-        target = self.Y_target
-
         mmd = self.mmd(map_vec, target, test=False, pre_process=False)
         return mmd * self.mmd_lambda
 
