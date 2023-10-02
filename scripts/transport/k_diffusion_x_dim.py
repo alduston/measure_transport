@@ -407,31 +407,34 @@ class CondTransportKernel(nn.Module):
         return z_var
 
 
-    def map(self, X_mu, Y_eta, Y_mean = [], Y_var = []):
+    def map(self, X_mu, Y_eta, Y_mean = [], Y_var = [], X_eta = []):
         if not len(Y_mean):
             Y_mean = deepcopy(Y_eta)
             Y_var = 0 * deepcopy(Y_mean)
+        if not len(X_eta):
+            X_eta = torch.randn(X_mu.shape, device = self.device)
         batch_size = self.params['batch_size']
         N = len(X_mu)
         map_dict = {}
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                       for j in range(1 + N // batch_size)]
         for batch_idx in batch_idxs:
-            x_mu ,y_eta ,y_mean ,y_var = X_mu[batch_idx],Y_eta[batch_idx],\
-                                      Y_mean[batch_idx], Y_var[batch_idx]
-            batch_dict = self.map_batch(x_mu, y_eta, y_mean, y_var)
+            x_mu ,y_eta ,y_mean ,y_var, x_eta = X_mu[batch_idx],Y_eta[batch_idx],\
+                                      Y_mean[batch_idx], Y_var[batch_idx], X_eta[batch_idx]
+            batch_dict = self.map_batch(x_mu, y_eta, x_eta, y_mean, y_var)
             map_dict = concat_dicts(map_dict, batch_dict)
         return map_dict
 
 
-    def map_batch(self, x_mu, y_eta, y_mean=0, y_var=0):
+    def map_batch(self, x_mu, y_eta, x_eta, y_mean=0, y_var=0):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
+        x_eta = geq_1d(torch.tensor(x_eta, device=self.device, dtype=self.dtype))
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var)
-        z_var = self.map_var(x_mu, y_eta, y_mean, y_var)
+        z_mean = self.map_mean(self.noiser(x_mu, x_eta), y_mean, y_var)
+        z_var = self.map_var(self.noiser(x_mu, x_eta), y_eta, y_mean, y_var)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
