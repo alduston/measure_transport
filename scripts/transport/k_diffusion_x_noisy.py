@@ -287,7 +287,7 @@ class CondTransportKernel(nn.Module):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
-            self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * torch_normalize(self.X_mu_approx))
+            self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.X_mu_noisy = torch_normalize(self.X_mu_noisy)
 
             self.noiser = lambda x, noise: torch_normalize(
@@ -295,7 +295,7 @@ class CondTransportKernel(nn.Module):
 
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
-            self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
+            self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.Y_mu_approx)
 
             self.noiser = lambda x, noise: self.mu_coeff * x + self.approx_coeff * noise
 
@@ -546,7 +546,7 @@ def dict_not_valid(loss_dict):
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1, n_transports=75, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
-    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
+    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps', 'noiser']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
     Y_mean = deepcopy(Y_eta)
@@ -1111,8 +1111,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=100, n_transports=3, k=1, approx_path=False, test_name='exp',
-               test_keys=['banana'], plot_steps = True, N_plot = 100)
+    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='noise_test',
+               test_keys=['lv'], plot_steps = True, N_plot = 30000)
 
 
 if __name__ == '__main__':
