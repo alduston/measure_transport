@@ -285,20 +285,14 @@ class CondTransportKernel(nn.Module):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
 
-            #self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * torch_normalize(self.X_mu_approx))
-            #self.X_mu_noisy = torch_normalize(self.X_mu_noisy)
-
-
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
-            #self.X_mu_noisy = (self.mu_coeff * self.X_mu) + (self.approx_coeff * self.X_mu_approx)
-
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
 
-        self.X_var = torch.concat([self.X_mu_noisy, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([self.X_mu_noisy, self.Y_mean + self.Y_var], dim=1)
+        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
