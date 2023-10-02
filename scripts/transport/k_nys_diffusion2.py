@@ -303,10 +303,13 @@ class CondTransportKernel(nn.Module):
 
         self.nc = self.params['n_clusters']
 
-        self.E_mean, self.W_mean_inv, self.mean_centers  = self.nystrom_components(self.X_mean, self.fit_kernel,
-                                                                             init_centers = self.params['mean_centers'])
-        self.E_var, self.W_var_inv, self.var_centers = self.nystrom_components(self.X_var, self.fit_kernel,
-                                                                             init_centers =self.params['var_centers'])
+        #self.E_mean, self.W_mean_inv, self.mean_centers  = self.nystrom_components(self.X_mean, self.fit_kernel,
+                                                                             #init_centers = self.params['mean_centers'])
+        #self.E_var, self.W_var_inv, self.var_centers = self.nystrom_components(self.X_var, self.fit_kernel,
+                                                                             #init_centers =self.params['var_centers'])
+
+        self.k_mean = self.fit_kernel(self.X_mean, self.X_mean)
+        self.k_var = self.fit_kernel(self.X_var, self.X_var)
 
         self.V_mean = nn.Parameter(self.init_V(), requires_grad=True)
         self.V_var = nn.Parameter(self.init_V(), requires_grad=True)
@@ -408,17 +411,23 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Z_mean(self):
-        E = self.E_mean
-        W_inv = self.W_mean_inv
+        k_XX = self.k_mean
         V = self.V_mean
-        return E @ W_inv @ E.T @ V
+        #E = self.E_mean
+        #W_inv = self.W_mean_inv
+        #return E @ W_inv @ E.T @ V
+        return k_XX @ V
 
 
     def get_Z_var(self):
-        E = self.E_var
-        W_inv = self.W_var_inv
+        k_XX = self.k_var
+        #E = self.E_var
+        #W_inv = self.W_var_inv
         V = self.V_var
-        return E @ W_inv @ E.T @ V
+        # E = self.E_var
+        # W_inv = self.W_var_inv
+       # return E @ W_inv @ E.T @ V
+        return k_XX @ V
 
 
     def map_mean(self, x_mu, y_mean, y_var):
@@ -515,17 +524,21 @@ class CondTransportKernel(nn.Module):
 
     def loss_reg_mean(self):
         V = self.V_mean
-        E = self.E_mean
-        W_inv = self.W_mean_inv
-        reg_loss = torch.trace(V.T @ E @ W_inv @ E.T @ V)
+        k_XX = self.k_mean
+        #E = self.E_mean
+        #W_inv = self.W_mean_inv
+        #reg_loss = torch.trace(V.T @ E @ W_inv @ E.T @ V)
+        reg_loss = torch.trace(V.T @ k_XX @ V)
         return  self.reg_lambda * reg_loss
 
 
     def loss_reg_var(self):
         V = self.V_var
-        E = self.E_var
-        W_inv = self.W_var_inv
-        reg_loss = torch.trace(V.T @ E @ W_inv @ E.T @ V)
+        k_XX = self.k_var
+        #E = self.E_var
+        #W_inv = self.W_var_inv
+        #reg_loss = torch.trace(V.T @ E @ W_inv @ E.T @ V)
+        reg_loss = torch.trace(V.T @ k_XX @ V)
         return self.reg_lambda * reg_loss
 
 
