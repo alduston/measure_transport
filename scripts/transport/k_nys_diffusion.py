@@ -483,7 +483,7 @@ class CondTransportKernel(nn.Module):
         nugget_matrix = torch.eye(self.nc, device  = self.device, dtype = self.dtype) * self.params['nugget']
         W_inv = torch.linalg.inv(W + nugget_matrix)
 
-        W_inv_sqrt = _matrix_pow(W_inv, .5).T
+        W_inv_sqrt = torch.tensor(_matrix_pow(W_inv, .5).T, device = self.device, dtype = self.dtype)
         Q  = E @ W_inv_sqrt
 
         sigma = self.nugget
