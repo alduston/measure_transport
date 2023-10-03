@@ -53,6 +53,7 @@ def _matrix_pow(matrix, p):
     vals, vecs = torch.linalg.eig(matrix)
     #vals = torch.view_as_complex(vals.contiguous())
     vals_pow = (vals.float()**p).to(torch.float32)
+    vecs = vecs.to(torch.float32)
     #vals_pow = torch.view_as_real(vals_pow)
     matrix_pow = torch.matmul(vecs, torch.matmul(torch.diag(vals_pow), torch.inverse(vecs)))
     return matrix_pow
