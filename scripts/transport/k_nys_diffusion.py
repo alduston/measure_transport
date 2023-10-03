@@ -50,10 +50,11 @@ def get_base_stats(gen, N = 10000):
 
 
 def _matrix_pow(matrix, p):
-    vals, vecs = torch.eig(matrix, eigenvectors=True)
-    vals = torch.view_as_complex(vals.contiguous())
-    vals_pow = vals.pow(p)
-    vals_pow = torch.view_as_real(vals_pow)[:, 0]
+    vals, vecs = torch.linalg.eig(matrix)
+    #vals = torch.view_as_complex(vals.contiguous())
+    vals_pow = vals.pow(p).float()
+    #vals_pow = torch.view_as_real(vals_pow)
+    vecs = vecs.float()
     matrix_pow = torch.matmul(vecs, torch.matmul(torch.diag(vals_pow), torch.inverse(vecs)))
     return matrix_pow
 
