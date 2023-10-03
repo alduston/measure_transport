@@ -108,6 +108,7 @@ def train_step(kernel_model, optimizer):
     return loss, loss_dict
 
 
+
 def three_d_scatter(x,y,z, saveloc):
     fig = plt.figure()
     ax = plt.axes(projection="3d")

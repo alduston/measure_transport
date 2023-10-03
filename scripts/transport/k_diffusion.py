@@ -148,16 +148,17 @@ def flip_2tensor(tensor):
 
 
 class Comp_transport_model:
-    def __init__(self, submodels_params, device = None):
+    def __init__(self, submodels_params, device=None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
-        self.save_dir ='../../data/transport/exp/'
-        self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
+        self.save_dir = '../../data/transport/exp/'
+        self.plt_range = [[-2.5, 2.5], [-2.5, 2.5]]
         self.vmax = None
         self.bins = 75
         self.mu = 0
         self.sigma = 1
+        self.batch_size = int(self.submodel_params['batch_size'])
 
         if device:
             self.device = device
@@ -167,23 +168,29 @@ class Comp_transport_model:
             else:
                 self.device = 'cpu'
 
-
     def mmd(self, map_vec, target):
         return self.submodel_params['mmd_func'](map_vec, target)
-
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
-
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps):
         x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
+    def map_batch(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, X_var, fit_kernel,
+                  Lambda_var, var_eps, y_eta):
+        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps)
+        z = z_mean + z_var
+
+        y_approx = y_mean + y_var
+        batch_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
+                      'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+        return batch_dict
 
     def param_map(self, step_idx, param_dict):
         Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
@@ -191,7 +198,7 @@ class Comp_transport_model:
         Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
                                   device=self.device, dtype=self.dtype)
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
-        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
+        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx], device=self.device, dtype=self.dtype)
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
 
@@ -200,29 +207,33 @@ class Comp_transport_model:
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
-        z = z_mean + z_var
-
-        y_approx = y_mean + y_var
-        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+        new_param_dict = {}
+        batch_size = self.batch_size
+        N = len(x_mu)
+        map_dict = {}
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in range(1 + N // batch_size)]
+        for batch_idx in batch_idxs:
+            batch_x_mu, batch_y_eta, batch_y_mean, batch_y_var = x_mu[batch_idx], y_eta[batch_idx], \
+                                                                 y_mean[batch_idx], y_var[batch_idx]
+            batch_dict = self.map_batch(batch_x_mu, batch_y_mean, batch_y_var, Lambda_mean, X_mean,
+                                        X_var, fit_kernel, Lambda_var, var_eps, batch_y_eta)
+            new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            plt.figure(figsize=(10,10))
+            plt.figure(figsize=(10, 10))
             save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = param_dict['y'].detach().cpu().numpy()*self.sigma + self.mu
-            x_plot,y_plot = y_map.T
+            y_map = new_param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
+            x_plot, y_plot = y_map.T
             plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
             plt.savefig(save_loc)
             clear_plt()
-        return param_dict
+        return new_param_dict
 
-
-    def c_map(self, x, y, no_x = False):
-        param_dict = {'y_eta': y, 'y_mean': deepcopy(y) , 'y_var': 0 * deepcopy(y),
-                       'x_mu': x, 'y_approx': deepcopy(y),
-                      'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis = 1)}
+    def c_map(self, x, y, no_x=False):
+        param_dict = {'y_eta': y, 'y_mean': deepcopy(y), 'y_var': 0 * deepcopy(y),
+                      'x_mu': x, 'y_approx': deepcopy(y),
+                      'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
@@ -231,9 +242,8 @@ class Comp_transport_model:
             return param_dict['y_approx']
         return param_dict['y']
 
-
-    def map(self, x = [], y = [], no_x = False):
-        return self.c_map(x,y, no_x = no_x)
+    def map(self, x=[], y=[], no_x=False):
+        return self.c_map(x, y, no_x=no_x)
 
 
 def get_coeffs(noise_eps, step_num):
@@ -563,6 +573,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
+            models_param_dict['batch_size'] = model.params['batch_size']
+
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -1094,8 +1106,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['lv', 'spheres'], plot_steps = True)
+    test_panel(N=100, n_transports=7, k=1, approx_path=False, test_name='exp',
+               test_keys=['banana'], plot_steps = True, N_plot=100)
 
 
 
