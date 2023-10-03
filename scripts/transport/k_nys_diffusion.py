@@ -419,9 +419,9 @@ class CondTransportKernel(nn.Module):
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
 
-        #nugget_matrix = self.nugget * torch.eye(self.Nx, device = self.device)
-        #self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + nugget_matrix)
-        #self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + nugget_matrix)
+        nugget_matrix = self.nugget * torch.eye(self.Nx, device = self.device)
+        self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + nugget_matrix)
+        self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + nugget_matrix)
 
         #kmean_inv_approx = inv_approx(self.nugget, self.Q_mean, self.H_mean)
         #nugget_matrix = self.nugget * torch.eye(self.Nx)
@@ -526,10 +526,10 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        Lambda_mean =  self.get_Lamnda_mean_opt()
-        self.Lambda_var_init = Lambda_mean
-        return Lambda_mean
-        #return self.fit_kXXmean_inv @ (self.Z_mean)
+        #Lambda_mean =  self.get_Lamnda_mean_opt()
+        #self.Lambda_var_init = Lambda_mean
+        #return Lambda_mean
+        return self.fit_kXXmean_inv @ (self.Z_mean)
 
 
     def get_Lamnda_mean_opt(self):
@@ -545,17 +545,15 @@ class CondTransportKernel(nn.Module):
         Q = self.Q_mean
         H = self.H_mean
         Z = self.Z_mean
-        #(I_n * sigma_inv) - (sigma_inv * Q) @ m_inner @ Q.T
         lambda_mean = (sigma_inv * Z) -  (sigma_inv * Q) @ H @ Q.T @ Z
         return lambda_mean
-        #return self.fit_kXXmean_inv @ (self.Z_mean)
 
 
     def get_Lambda_var(self):
-        Lambda_var = self.get_Lamnda_var_opt()
-        self.Lambda_var_init = Lambda_var
-        return Lambda_var
-        #return self.fit_kXXvar_inv @ (self.Z_mean)
+        #Lambda_var = self.get_Lamnda_var_opt()
+        #self.Lambda_var_init = Lambda_var
+        #return Lambda_var
+        return self.fit_kXXvar_inv @ (self.Z_var)
 
 
     def get_Lamnda_var_opt(self):
@@ -572,22 +570,18 @@ class CondTransportKernel(nn.Module):
         Q = self.Q_var
         H = self.H_var
         Z = self.Z_var
-        # (I_n * sigma_inv) - (sigma_inv * Q) @ m_inner @ Q.T
         lambda_mean = (sigma_inv * Z) - (sigma_inv * Q) @ H @ Q.T @ Z
         return lambda_mean
-        #return self.fit_kXXvar_inv @ (self.Z_var)
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean):
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
-        Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var, Lambda_var):
         x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        #Lambda_var = self.get_Lambda_var()
         z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
 
@@ -1319,8 +1313,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=250, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, nc = 2000)
+    test_panel(N=2500, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+               test_keys=['elden'], plot_steps = True, nc = 5000)
 
 
 if __name__ == '__main__':
