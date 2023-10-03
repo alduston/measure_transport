@@ -591,6 +591,7 @@ class CondTransportKernel(nn.Module):
             Y_mean = deepcopy(Y_eta)
             Y_var = 0 * deepcopy(Y_mean)
         batch_size = self.params['batch_size']
+        print(batch_size)
         N = len(X_mu)
         map_dict = {}
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
