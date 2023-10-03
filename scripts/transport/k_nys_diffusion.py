@@ -418,9 +418,9 @@ class CondTransportKernel(nn.Module):
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
 
-        nugget_matrix = self.nugget * torch.eye(self.Nx, device = self.device)
-        self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + nugget_matrix)
-        self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + nugget_matrix)
+        #nugget_matrix = self.nugget * torch.eye(self.Nx, device = self.device)
+        #self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + nugget_matrix)
+        #self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + nugget_matrix)
 
         #kmean_inv_approx = inv_approx(self.nugget, self.Q_mean, self.H_mean)
         #nugget_matrix = self.nugget * torch.eye(self.Nx)
@@ -1318,7 +1318,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=50000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+    test_panel(N=25000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
                test_keys=['elden'], plot_steps = True, nc = 2000)
 
 
