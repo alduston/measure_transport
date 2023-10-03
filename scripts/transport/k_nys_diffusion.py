@@ -52,9 +52,8 @@ def get_base_stats(gen, N = 10000):
 def _matrix_pow(matrix, p):
     vals, vecs = torch.linalg.eig(matrix)
     #vals = torch.view_as_complex(vals.contiguous())
-    vals_pow = (vals**p).to(torch.FloatTensor)
+    vals_pow = (vals.float()**p).to(torch.float32)
     #vals_pow = torch.view_as_real(vals_pow)
-    vecs = vecs.to(torch.FloatTensor)
     matrix_pow = torch.matmul(vecs, torch.matmul(torch.diag(vals_pow), torch.inverse(vecs)))
     return matrix_pow
 
