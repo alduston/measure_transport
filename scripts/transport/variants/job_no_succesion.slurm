@@ -14,7 +14,7 @@
 
 #SBATCH --export=all
 #SBATCH --output=./job_outputs/job0.out
-#SBATCH --error=./job_outputs/job0.err
+#SBATCH --error=./job_outputs/job4.err
 # Modules to use (optional).
 
 # Your programs to run.
