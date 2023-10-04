@@ -888,6 +888,7 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
 
         plt.legend()
         plt.tight_layout(pad=0.3)
+
         plt.savefig(f'{save_dir}/slice_plots{j}.png')
         clear_plt()
     return True
