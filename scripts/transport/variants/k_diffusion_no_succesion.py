@@ -1136,7 +1136,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'no_noise_aug')
+    test_panel(test_name = 'no_noise_succesion')
 
 
 if __name__ == '__main__':

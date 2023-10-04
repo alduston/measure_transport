@@ -13,8 +13,8 @@
 #SBATCH --time=00-36:00:00
 
 #SBATCH --export=all
-#SBATCH --output=./job_outputs/job0.out
-#SBATCH --error=./job_outputs/job4.err
+#SBATCH --output=/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/scripts/transport/job_outputs/job0.out
+#SBATCH --error=/mmfs1/gscratch/dynamicsai/ald6fd/measure_transport/scripts/transport/job_outputs/job4.err
 # Modules to use (optional).
 
 # Your programs to run.
