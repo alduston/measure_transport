@@ -411,9 +411,9 @@ class CondTransportKernel(nn.Module):
 
         self.nc = self.params['n_clusters']
 
-        self.Q_mean, self.H_mean, self.mean_centers = self.get_nystrom_components(self.X_var, self.fit_kernel,
+        self.Q_mean, self.H_mean, self.mean_centers = self.get_nystrom_components(self.X_mean, self.fit_kernel,
                                                                init_centers =self.params['mean_centers'])
-        self.Q_var, self.H_var, self.var_centers  = self.get_nystrom_components(self.X_mean,
+        self.Q_var, self.H_var, self.var_centers  = self.get_nystrom_components(self.X_var,
                                                              self.fit_kernel, init_centers =self.params['var_centers'])
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -556,13 +556,12 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXXvar_inv @ (self.Z_var)
 
 
-    def get_Lamnda_var_opt(self):
+    def get_Lambda_var_opt(self):
         Q = self.Q_var.detach().cpu().numpy()
         Z = self.Z_var.detach().cpu().numpy()
         Lambda_init = self.Lambda_mean_init
         nugget = self.nugget
         return get_lambda(Q, Z, nugget,Lambda_init)
-
 
 
     def get_Lambda_var_approx(self):
@@ -591,7 +590,6 @@ class CondTransportKernel(nn.Module):
             Y_mean = deepcopy(Y_eta)
             Y_var = 0 * deepcopy(Y_mean)
         batch_size = self.params['batch_size']
-        print(batch_size)
         N = len(X_mu)
         map_dict = {}
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
@@ -778,6 +776,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             models_param_dict['mmd_func'] = model.mmd
             models_param_dict['batch_size'] = model.params['batch_size']
 
+
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
 
@@ -929,7 +928,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         ntest_emd = test_emd / base_emd
 
         print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
-        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest emd :{format(ntest_emd)}'
     except BaseException:
         print_str1 = f'Test mmd :{format(test_mmd)}, '
         print_str2 = f'Test emd :{format(test_emd)}'
@@ -976,9 +975,9 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
         os.mkdir(save_dir)
     except OSError:
         pass
-    N = int(N)
 
 
+    print(N_plot)
     mu, sigma = 0, 1
     if normal:
         mu,sigma = get_base_stats(target_gen, 10000)
@@ -1156,7 +1155,6 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,
 
     ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
     ref_sample = ref_gen(N_plot)
-    return True
     for j in range(10):
         if j != 0:
             n_ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
@@ -1177,7 +1175,8 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,
 
 
 def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 1e5, nc = 500):
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'],
+               N_plot = 100000, nc = 500):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
@@ -1313,10 +1312,15 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     done += 1
                     pass
 
+#Test mmd :0.002764, Base mmd: 0.016353, NTest mmd :0.169035,
+# Test emd :0.168516, Base emd: 1.172971, NTest emd :0.143666
+
+#Test mmd :0.004763, Base mmd: 0.019924, NTest mmd :0.239038, Test emd :0.241942,
+# Base emd: 1.149823, NTest emd :0.210417
 
 def run():
     test_panel(N= 10000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, nc = 1000)
+               test_keys=['elden'], plot_steps = True, nc = 2000)
 
 
 if __name__ == '__main__':

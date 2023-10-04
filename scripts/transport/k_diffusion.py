@@ -725,7 +725,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         ntest_emd = test_emd / base_emd
 
         print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
-        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest emd :{format(ntest_emd)}'
     except BaseException:
         print_str1 = f'Test mmd :{format(test_mmd)}, '
         print_str2 = f'Test emd :{format(test_emd)}'
@@ -1106,8 +1106,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=100, n_transports=7, k=1, approx_path=False, test_name='exp',
-               test_keys=['banana'], plot_steps = True, N_plot=100)
+    test_panel(N=1000, n_transports=70, k=1, approx_path=False, test_name='test',
+               test_keys=['banana'], plot_steps=True, N_plot=1000)
 
 
 
