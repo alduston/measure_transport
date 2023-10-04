@@ -1117,7 +1117,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'no_anneal', N = 50, N_plot=50, n_transports=5)
+    test_panel(test_name = 'no_anneal')
 
 
 if __name__ == '__main__':
