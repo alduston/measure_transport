@@ -18,7 +18,7 @@ from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 import scipy.stats as st
 from sklearn.cluster import KMeans
-
+from PIL import Image as im
 
 def wasserstain_distance(Y1, Y2, full = False):
     if not full:
@@ -683,15 +683,13 @@ class CondTransportKernel(nn.Module):
         test_mmd = self.mmd(map_vec, target, test = True)
         test_emd = wasserstain_distance(map_vec, target)
 
-        #kmean_inv_approx = inv_approx(self.nugget, self.Q_mean, self.H_mean)
-        #nugget_matrix = self.nugget * torch.eye(self.Nx)
-        #kmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + nugget_matrix)
-        #lambda_mean_approx = kmean_inv_approx @ self.Z_mean
-        #lambda_mean = kmean_inv @ self.Z_mean
-        #print(f'real inverse : {kmean_inv[:2,:2]}')
-        #print(f'fake inverse : {kmean_inv_approx[:2, :2]}')
-        #print(f'real lambda {lambda_mean[:2].detach().numpy()}')
-        #print(f'approx lambda {lambda_mean_approx[:2].detach().numpy()}')
+        kmean_inv_approx = inv_approx(self.nugget, self.Q_mean, self.H_mean)
+
+        #print(1e-15 +  kmean_inv_approx - torch.min( kmean_inv_approx))
+        tensor_plot( kmean_inv_approx, 'approximated_inverse.png')
+
+        k_mean_inv = self.fit_kXXmean_inv
+        tensor_plot( k_mean_inv , 'real_inverse.png')
 
         return  test_mmd, test_emd
 
@@ -720,12 +718,22 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'mmd_lambda': mmd_lambda, 'n_clusters': min(nc, len(X_mu) - 1),
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 10000),
+                        'Y_mu_approx': Y_mu_approx, 'target_eps': target_eps, 'batch_size': min(len(X_mu), 3000),
                         'mean_centers': mean_centers, 'var_centers': var_centers}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
     return model, loss_dict
+
+
+def tensor_plot(tensor, save_loc = 'array_plot.png'):
+    val_array = tensor.detach().cpu().numpy()
+    array_image = im.fromarray(val_array)
+    if array_image.mode != 'RGB':
+        array_image = array_image.convert('RGB')
+    array_image.save(save_loc)
+    return True
+
 
 
 def dict_not_valid(loss_dict):
@@ -976,8 +984,6 @@ def two_d_exp(ref_gen, target_gen, N=4000, plt_range=None, process_funcs=[], nor
     except OSError:
         pass
 
-
-    print(N_plot)
     mu, sigma = 0, 1
     if normal:
         mu,sigma = get_base_stats(target_gen, 10000)
@@ -1319,8 +1325,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 # Base emd: 1.149823, NTest emd :0.210417
 
 def run():
-    test_panel(N= 10000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
-               test_keys=['elden'], plot_steps = True, nc = 2000)
+    test_panel(N= 1000, n_transports=70, k=1, approx_path=False, test_name='inducing_test',
+               test_keys=['banana'], plot_steps = True, nc = 500)
 
 
 if __name__ == '__main__':

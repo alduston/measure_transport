@@ -210,7 +210,6 @@ class Comp_transport_model:
         new_param_dict = {}
         batch_size = self.batch_size
         N = len(x_mu)
-        map_dict = {}
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                       for j in range(1 + N // batch_size)]
         for batch_idx in batch_idxs:
@@ -525,7 +524,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx, 'batch_size': min(len(X_mu), 5000)}
+                        'Y_mu_approx': Y_mu_approx, 'batch_size': min(len(X_mu), 3000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -713,13 +712,13 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = True)
+    test_emd = wasserstain_distance(test_gen_sample[:10000], test_target_sample[:10000], full = True)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = True)
+        base_emd = wasserstain_distance(cref_sample[:10000], test_target_sample[:10000], full = True)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd
@@ -1086,7 +1085,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    lv_exp(min(N,10000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
+                    lv_exp(min(N,13000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
                         approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
                     done +=3
                 except torch._C._LinAlgError:
@@ -1097,7 +1096,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
             done = 0
             while done < 2:
                 try:
-                    spheres_exp(min(N,10000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                    spheres_exp(min(N,13000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
                                 approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
                     done +=3
                 except torch._C._LinAlgError:
@@ -1106,8 +1105,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
-    test_panel(N=1000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['banana'], plot_steps=True, N_plot=1000)
+    test_panel(N=20000, n_transports=70, k=1, approx_path=False, test_name='test',
+               test_keys=['elden', 't_fractal'], plot_steps=True)
 
 
 
