@@ -669,9 +669,11 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=70, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
+    #print(save_dir)
     try:
         os.mkdir(save_dir)
+
     except OSError:
         pass
 
@@ -763,7 +765,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3, approx_path=True):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -966,7 +968,9 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 'test',  n_transports = 70, k = 1,
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fratal', 'banana'],
                N_plot = 100000):
+    print(f'cwd: {os.getcwd()}')
     test_dir = f'../../data/transport/{test_name}'
+    os.mkdir(test_dir)
     try:
         os.mkdir(test_dir)
     except OSError:
@@ -1113,7 +1117,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'no_anneal')
+    test_panel(test_name = 'no_anneal', N = 50, N_plot=50, n_transports=5)
 
 
 if __name__ == '__main__':

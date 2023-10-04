@@ -786,7 +786,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=1, reg_lambda=1e-7, plot_steps = False, approx_path=True):#, var_eps = 1/3,):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -1136,7 +1136,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'no_noise_aug')
+    test_panel(test_name = 'no_noise_aug', N = 50, N_plot=50, n_transports=1)
 
 
 if __name__ == '__main__':
