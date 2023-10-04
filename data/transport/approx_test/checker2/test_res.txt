@@ -1,1 +1,0 @@
-Test mmd :6.5860E-04, Base mmd: 0.01072, NTest mmd :0.061437

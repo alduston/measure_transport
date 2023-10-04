@@ -966,8 +966,9 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     return True
 
 
-def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 100000):
+def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 'test',  n_transports = 70, k = 1,
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fratal', 'banana'],
+               N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
     try:
         os.mkdir(test_dir)
@@ -982,7 +983,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_banana, N=N,
                               exp_name=f'/{test_name}/banana_{i_str}', n_transports=n_transports, slice_vals=[-1, 0, 1],
                               plt_range=[[-2.5, 2.5], [-1, 3]], slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1,
-                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1 / 3,
+                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
                               approx_path=approx_path)
                     done += 3
                 except torch._C._LinAlgError:
@@ -1105,6 +1106,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = '
 
 
 def run():
+    #test_panel
     test_panel(N=20000, n_transports=70, k=1, approx_path=False, test_name='test',
                test_keys=['elden', 't_fractal'], plot_steps=True)
 
