@@ -1107,8 +1107,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 't
 
 def run():
     #test_panel
-    test_panel(N=20000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['elden', 't_fractal'], plot_steps=True)
+    test_panel(N=100, n_transports=5, k=1, approx_path=False, test_name='exp',
+               test_keys=['lv'], plot_steps=True, N_plot = 100)
 
 
 

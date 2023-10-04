@@ -692,7 +692,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=70, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1, approx_path = True): #var_eps = 1/3,):
-    save_dir = f'../../data/transport{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
     except OSError:
