@@ -450,7 +450,7 @@ class CondTransportKernel(nn.Module):
         N  = len(map_vec)
         batch_size = self.params['batch_size']
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
-                      for j in  range( N//batch_size)]
+                      for j in  range(N//batch_size + 1)]
         mmd = 0
         n = 0
         for x_idx in batch_idxs:
@@ -532,7 +532,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 3000)}
+                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 5000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)

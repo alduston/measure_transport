@@ -468,7 +468,7 @@ class CondTransportKernel(nn.Module):
         N  = len(map_vec)
         batch_size = self.params['batch_size']
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
-                      for j in  range( N//batch_size)]
+                      for j in  range( N//batch_size + 1)]
         mmd = 0
         n = 0
         for x_idx in batch_idxs:
