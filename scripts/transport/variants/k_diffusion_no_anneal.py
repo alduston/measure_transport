@@ -965,12 +965,11 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     return True
 
 
-def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 'test',  n_transports = 70, k = 1,
+def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',  n_transports = 70, k = 1,
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000):
-    print(f'cwd: {os.getcwd()}')
+
     test_dir = f'../../data/transport/{test_name}'
-    os.mkdir(test_dir)
     try:
         os.mkdir(test_dir)
     except OSError:

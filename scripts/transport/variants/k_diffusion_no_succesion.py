@@ -986,7 +986,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=1,  N_pl
     return True
 
 
-def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 'test',  n_transports = 1, k = 1,
+def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',  n_transports = 1, k = 1,
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
