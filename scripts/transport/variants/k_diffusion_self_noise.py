@@ -494,9 +494,10 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
 
-        reg_mean = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_var = torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
-        return self.reg_lambda * (reg_mean + reg_var)
+        reg_1 = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
+        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+
+        return  self.reg_lambda * (reg_1 + reg_2)
 
 
     def loss_test(self):
@@ -1112,7 +1113,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'base')
+    test_panel(test_name = 'self_noise', approx_path=True)
 
 
 if __name__ == '__main__':

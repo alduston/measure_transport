@@ -180,16 +180,16 @@ class Comp_transport_model:
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps):
+    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, var_kernel, var_eps):
         x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        z_var = fit_kernel(X_var, x_var).T @ Lambda_var
+        z_var = var_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
 
-    def map_batch(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, X_var, fit_kernel,
-                  Lambda_var, var_eps, y_eta):
+    def map_batch(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, X_var,
+                  fit_kernel, var_kernel, Lambda_var, var_eps, y_eta):
         z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, var_kernel, var_eps)
         z = z_mean + z_var
 
         y_approx = y_mean + y_var
@@ -204,6 +204,7 @@ class Comp_transport_model:
         Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
                                   device=self.device, dtype=self.dtype)
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
+        var_kernel = self.submodel_params['var_kernel'][step_idx]
         X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx], device=self.device, dtype=self.dtype)
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
@@ -222,7 +223,7 @@ class Comp_transport_model:
             batch_x_mu, batch_y_eta, batch_y_mean, batch_y_var = x_mu[batch_idx], y_eta[batch_idx], \
                                                                  y_mean[batch_idx], y_var[batch_idx]
             batch_dict = self.map_batch(batch_x_mu, batch_y_mean, batch_y_var, Lambda_mean, X_mean,
-                                        X_var, fit_kernel, Lambda_var, var_eps, batch_y_eta)
+                                        X_var, fit_kernel, var_kernel, Lambda_var, var_eps, batch_y_eta)
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
@@ -287,7 +288,6 @@ class CondTransportKernel(nn.Module):
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_eta_flip = flip(self.Y_eta)
 
-
         self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
         self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
@@ -313,12 +313,16 @@ class CondTransportKernel(nn.Module):
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
 
+        var_params = deepcopy(self.params['fit_kernel_params'])
+        var_params['l'] *= l_scale(self.X_var).cpu()
+        self.var_kernel = get_kernel(var_params, self.device)
+
         self.params['fit_kernel_params']['l'] *= l_scale(self.X_mean).cpu()
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
         self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
-        self.fit_kXXvar_inv = torch.linalg.inv(self.fit_kernel(self.X_var, self.X_var) + self.nugget_matrix)
+        self.fit_kXXvar_inv = torch.linalg.inv(self.var_kernel(self.X_var, self.X_var) + self.nugget_matrix)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -406,7 +410,7 @@ class CondTransportKernel(nn.Module):
     def map_var(self, x_mu, y_eta, y_mean, y_var):
         x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
-        z_var = self.fit_kernel(self.X_var, x_var).T @ Lambda_var
+        z_var = self.var_kernel(self.X_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -495,8 +499,8 @@ class CondTransportKernel(nn.Module):
         Z_var = self.Z_var
 
         reg_mean = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_var = torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
-        return self.reg_lambda * (reg_mean + reg_var)
+        reg_var =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        return  self.reg_lambda * (reg_mean + reg_var)
 
 
     def loss_test(self):
@@ -549,7 +553,7 @@ def dict_not_valid(loss_dict):
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
                                target_eps = .1, n_transports=70, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
-    param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
+    param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
 
     Y_mean = deepcopy(Y_eta)
@@ -573,6 +577,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['Lambda_mean'].append(model.get_Lambda_mean().detach().cpu().numpy())
         models_param_dict['Lambda_var'].append(model.get_Lambda_var().detach().cpu().numpy())
         models_param_dict['fit_kernel'].append(model.fit_kernel)
+        models_param_dict['var_kernel'].append(model.var_kernel)
         models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
         models_param_dict['var_eps'].append(model.var_eps)
@@ -1112,7 +1117,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'base')
+    test_panel(test_name = 'idk')
 
 
 if __name__ == '__main__':
