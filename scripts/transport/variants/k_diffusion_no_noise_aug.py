@@ -552,7 +552,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, X_mu_test, Y_eta_test, Y_mu
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num, #'Y_var_test': Y_var_test,
-                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 3000)}
+                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 5000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -988,7 +988,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
 
 def test_panel(plot_steps = False, approx_path = False, N = 5000, test_name = 'test',  n_transports = 70, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fratal', 'banana'],
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
     try:
