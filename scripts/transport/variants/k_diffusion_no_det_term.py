@@ -174,7 +174,6 @@ class Comp_transport_model:
         return self.submodel_params['mmd_func'](map_vec, target)
 
 
-
     def map_var(self, x_mu, y_eta, Lambda_var, X_var, y_var, fit_kernel, var_eps):
         x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_var], dim=1)
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
@@ -388,7 +387,7 @@ class CondTransportKernel(nn.Module):
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                       for j in range(1 + N // batch_size)]
         for batch_idx in batch_idxs:
-            x_mu ,y_eta , y_var = X_mu[batch_idx],Y_eta[batch_idx],Y_var[batch_idx]
+            x_mu , y_eta , y_var = X_mu[batch_idx],Y_eta[batch_idx],Y_var[batch_idx]
             batch_dict = self.map_batch(x_mu, y_eta, y_var)
             map_dict = concat_dicts(map_dict, batch_dict)
         return map_dict
@@ -488,7 +487,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_var, X_mu_test, Y_eta_test, Y_mu_
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 99, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
@@ -538,9 +537,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
             models_param_dict['mmd_func'] = model.mmd
             models_param_dict['batch_size'] = model.params['batch_size']
 
-
         Y_var = model.Y_var + model.Z_var
-
         test_map_dict = model.map(X_mu_val, Y_eta_test, Y_var_test)
         Y_var_test =  test_map_dict['y_var']
         if approx_path:
@@ -596,7 +593,6 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val,
                                                  params=params, reg_lambda=reg_lambda,  n_transports=n_transports,
                                                  var_eps = var_eps, approx_path =  approx_path))
-
     return trained_models
 
 
@@ -662,13 +658,13 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample[:10000], test_target_sample[:10000], full = True)
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = False)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample[:10000], test_target_sample[:10000], full = True)
+        base_emd = wasserstain_distance(cref_sample[:10000], test_target_sample[:10000], full = False)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd

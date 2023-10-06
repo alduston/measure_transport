@@ -529,13 +529,18 @@ class CondTransportKernel(nn.Module):
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_var_test, Y_noise, params, iters=-1, approx=False, mmd_lambda=0, step_num = 1,
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
+    d = X_mu.shape[-1]
+    if d > 2:
+        M = 8000
+    else:
+        M = 10000
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 99, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 5000)}
+                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), M)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -712,13 +717,13 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample[:10000], test_target_sample[:10000], full = True)
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = False)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample[:10000], test_target_sample[:10000], full = True)
+        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = False)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd
@@ -1117,7 +1122,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'idk')
+    test_panel(test_name = 'idk_big', test_keys=['lv', 'spheres'], N = 10000)
 
 
 if __name__ == '__main__':

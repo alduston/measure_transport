@@ -19,6 +19,14 @@ from scipy.optimize import linear_sum_assignment
 import scipy.stats as st
 
 
+def concat_dicts(base_dict, udpate_dict):
+    for key,val in udpate_dict.items():
+        if key in base_dict.keys():
+            base_dict[key] = torch.concat([base_dict[key],val], dim = 0)
+        else:
+            base_dict[key] = val
+    return base_dict
+
 def wasserstain_distance(Y1, Y2, full = False):
     if not full:
         Y1 = Y1[:2000]
@@ -140,16 +148,17 @@ def flip_2tensor(tensor):
 
 
 class Comp_transport_model:
-    def __init__(self, submodels_params, device = None):
+    def __init__(self, submodels_params, device=None):
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
         self.save_dir = '../../data/transport/exp/'
-        self.plt_range = [[-2.5,2.5],[-2.5,2.5]]
+        self.plt_range = [[-2.5, 2.5], [-2.5, 2.5]]
         self.vmax = None
         self.bins = 75
         self.mu = 0
         self.sigma = 1
+        self.batch_size = int(self.submodel_params['batch_size'])
 
         if device:
             self.device = device
@@ -159,23 +168,38 @@ class Comp_transport_model:
             else:
                 self.device = 'cpu'
 
+    def plot_step(self, step_idx, param_dict):
+        plt.figure(figsize=(10, 10))
+        save_loc = f'{self.save_dir}/frame{step_idx}.png'
+        y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
+        x_plot, y_plot = y_map.T
+        plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
+        plt.savefig(save_loc)
+        clear_plt()
 
     def mmd(self, map_vec, target):
         return self.submodel_params['mmd_func'](map_vec, target)
-
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
-
     def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps):
         x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
-        Lambda_var = Lambda_var
         z_var = fit_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
+    def map_batch(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, X_var, fit_kernel,
+                  Lambda_var, var_eps, y_eta):
+        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, fit_kernel, var_eps)
+        z = z_mean + z_var
+
+        y_approx = y_mean + y_var
+        batch_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
+                      'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+        return batch_dict
 
     def param_map(self, step_idx, param_dict):
         Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
@@ -183,7 +207,7 @@ class Comp_transport_model:
         Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
                                   device=self.device, dtype=self.dtype)
         fit_kernel = self.submodel_params['fit_kernel'][step_idx]
-        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx],device=self.device, dtype=self.dtype)
+        X_mean = torch.tensor(self.submodel_params['X_mean'][step_idx], device=self.device, dtype=self.dtype)
         X_var = torch.tensor(self.submodel_params['X_var'][step_idx], device=self.device, dtype=self.dtype)
         var_eps = self.submodel_params['var_eps'][step_idx]
 
@@ -192,43 +216,38 @@ class Comp_transport_model:
         y_mean = geq_1d(torch.tensor(param_dict['y_mean'], device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(param_dict['y_var'], device=self.device, dtype=self.dtype))
 
-        if not self.approx:
-            y_mean = deepcopy(y_eta)
-            y_var = 0 * y_mean
-
-        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
-        z_var = self.map_var(x_mu, y_eta, y_mean, Lambda_var, X_var,  y_var, fit_kernel, var_eps)
-        z = z_mean + z_var
-
-        y_approx = y_mean + y_var
-        param_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var, 'x_mu': x_mu,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, y_approx + z], dim=1)}
+        new_param_dict = {}
+        batch_size = self.batch_size
+        N = len(x_mu)
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in range(1 + N // batch_size)]
+        for batch_idx in batch_idxs:
+            batch_x_mu, batch_y_eta, batch_y_mean, batch_y_var = x_mu[batch_idx], y_eta[batch_idx], \
+                                                                 y_mean[batch_idx], y_var[batch_idx]
+            batch_dict = self.map_batch(batch_x_mu, batch_y_mean, batch_y_var, Lambda_mean, X_mean,
+                                        X_var, fit_kernel, Lambda_var, var_eps, batch_y_eta)
+            new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            plt.figure(figsize=(10,10))
-            save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = param_dict['y'].detach().cpu().numpy()*self.sigma + self.mu
-            x_plot,y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-            plt.savefig(save_loc)
-            clear_plt()
-        return param_dict
+            self.plot_step(self, step_idx + 1, param_dict)
+        return new_param_dict
 
 
-    def c_map(self, x, y, no_x = False):
-        param_dict = {'y_eta': y, 'y_mean': 0 , 'y_var': 0,
-                       'x_mu': x, 'y_approx': 0, 'y': 0}
-        self.approx = False
+    def c_map(self, x, y, no_x=False):
+        param_dict = {'y_eta': y, 'y_mean': deepcopy(y), 'y_var': 0 * deepcopy(y),
+                      'x_mu': x, 'y_approx': deepcopy(y),
+                      'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
+
+        if self.plot_steps:
+            self.plot_step(self, 0, param_dict)
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.param_map(step_idx, param_dict)
-            self.approx = True
         if no_x:
             return param_dict['y_approx']
         return param_dict['y']
 
-
-    def map(self, x = [], y = [], no_x = False):
-        return self.c_map(x,y, no_x = no_x)
+    def map(self, x=[], y=[], no_x=False):
+        return self.c_map(x, y, no_x=no_x)
 
 
 def get_coeffs(noise_eps, step_num):
@@ -265,13 +284,10 @@ class CondTransportKernel(nn.Module):
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_eta_flip = flip(self.Y_eta)
-        self.Y_mean = deepcopy(self.Y_eta)
-        self.Y_var = 0 * self.Y_mean
-        self.approx = self.params['approx']
 
-        if self.approx:
-            self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
-            self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
+
+        self.Y_mean = geq_1d(torch.tensor(base_params['Y_mean'], device=self.device, dtype=self.dtype))
+        self.Y_var = geq_1d(torch.tensor(base_params['Y_var'], device=self.device, dtype=self.dtype))
 
         self.X_mu = geq_1d(torch.tensor(base_params['X_mu'], device=self.device, dtype=self.dtype))
         self.Y_mu = geq_1d(torch.tensor(base_params['Y_mu'], device=self.device, dtype=self.dtype))
@@ -282,16 +298,12 @@ class CondTransportKernel(nn.Module):
         if is_normal(self.Y_mu):
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * torch_normalize(self.Y_mu_approx))
             self.Y_mu_noisy = torch_normalize(self.Y_mu_noisy)
+
         else:
             self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_mu_approx)
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
-
-        #d_mu = len(self.X_mu[0])
-        #self.cca_matrix = torch.full((d_mu,1), 1/d_mu)
-        #self.X_var = torch.concat([self.cca_matrix @ self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
-        #self.X_mean = torch.concat([self.cca_matrix @ self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
@@ -310,12 +322,8 @@ class CondTransportKernel(nn.Module):
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
 
         self.Y_eta_test = geq_1d(torch.tensor(base_params['Y_eta_test'], device=self.device, dtype=self.dtype))
-        self.Y_mean_test = deepcopy(self.Y_eta_test)
-        self.Y_var_test = 0 * self.Y_eta_test
-
-        if self.approx:
-            self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
-            self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
+        self.Y_mean_test = geq_1d(torch.tensor(base_params['Y_mean_test'], device=self.device, dtype=self.dtype))
+        self.Y_var_test = geq_1d(torch.tensor(base_params['Y_var_test'], device=self.device, dtype=self.dtype))
 
         self.X_mu_val = geq_1d(torch.tensor(base_params['X_mu_val'], device=self.device, dtype=self.dtype))
 
@@ -399,7 +407,24 @@ class CondTransportKernel(nn.Module):
         return z_var
 
 
-    def map(self, x_mu, y_eta, y_mean = 0, y_var = 0):
+    def map(self, X_mu, Y_eta, Y_mean = [], Y_var = []):
+        if not len(Y_mean):
+            Y_mean = deepcopy(Y_eta)
+            Y_var = 0 * deepcopy(Y_mean)
+        batch_size = self.params['batch_size']
+        N = len(X_mu)
+        map_dict = {}
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in range(1 + N // batch_size)]
+        for batch_idx in batch_idxs:
+            x_mu ,y_eta ,y_mean ,y_var = X_mu[batch_idx],Y_eta[batch_idx],\
+                                      Y_mean[batch_idx], Y_var[batch_idx]
+            batch_dict = self.map_batch(x_mu, y_eta, y_mean, y_var)
+            map_dict = concat_dicts(map_dict, batch_dict)
+        return map_dict
+
+
+    def map_batch(self, x_mu, y_eta, y_mean=0, y_var=0):
         y_eta = geq_1d(torch.tensor(y_eta, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
@@ -411,32 +436,46 @@ class CondTransportKernel(nn.Module):
 
         y_approx = y_mean + y_var
         return_dict = {'y_eta': y_eta, 'y_mean': y_mean + z_mean, 'y_var': y_var + z_var,
-                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim = 1)}
-
+                       'y_approx': y_approx + z, 'y': torch.concat([x_mu, z + y_approx], dim=1)}
         return return_dict
 
 
-    def mmd(self, map_vec, target, test = True):
-        map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
-        target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
+    def mmd(self, map_vec, target, test = True, pre_process = True):
+        if pre_process:
+            map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
+            target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
+        N  = len(map_vec)
+        batch_size = self.params['batch_size']
+        batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                      for j in  range( N//batch_size + 1)]
+        mmd = 0
+        n = 0
+        for x_idx in batch_idxs:
+            for y_idx in batch_idxs:
+                n += len(x_idx) * len(y_idx)
+                x_map = map_vec[x_idx]
+                y_map = map_vec[y_idx]
+                x_target = target[x_idx]
+                y_target = target[y_idx]
+                mmd += self.batch_mmd(x_map,y_map, x_target, y_target, test = test)
+        return mmd/n
 
+
+    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
 
-        mmd_ZZ = K_mmd(map_vec, map_vec)
-        mmd_ZY = K_mmd(map_vec, target)
-        mmd_YY = K_mmd(target, target)
+        mmd_ZZ = K_mmd(x_map, y_map)
+        mmd_ZY = K_mmd(x_map, y_target)
+        mmd_YY = K_mmd(x_target, y_target)
 
-        alpha_z = self.p_vec(len(map_vec))
-        alpha_y = self.p_vec(len(target))
+        Ek_ZZ =  torch.sum(mmd_ZZ)
+        Ek_ZY =  torch.sum(mmd_ZY)
+        Ek_YY =  torch.sum(mmd_YY)
 
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = alpha_y @ mmd_YY @ alpha_y
-
-        return Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+        return (Ek_ZZ - (2 * Ek_ZY) + Ek_YY)
 
 
     def loss_mmd(self):
@@ -444,16 +483,7 @@ class CondTransportKernel(nn.Module):
         map_vec = torch.concat([self.X_mu, Y_approx], dim=1)
         target = self.Y_target
 
-        mmd_ZZ = self.mmd_kernel(map_vec, map_vec)
-        mmd_ZY = self.mmd_kernel(map_vec, target)
-
-        alpha_z = self.alpha_z
-        alpha_y = self.alpha_y
-
-        Ek_ZZ = alpha_z @ mmd_ZZ @ alpha_z
-        Ek_ZY = alpha_z @ mmd_ZY @ alpha_y
-        Ek_YY = self.E_mmd_YY
-        mmd  = Ek_ZZ - (2 * Ek_ZY) + Ek_YY
+        mmd = self.mmd(map_vec, target, test=False, pre_process=False)
         return mmd * self.mmd_lambda
 
 
@@ -461,10 +491,9 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean
         Z_var = self.Z_var
 
-        reg_1 = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_2 =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
-
-        return  self.reg_lambda * (reg_1 + reg_2)
+        reg_mean = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
+        reg_var = torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        return self.reg_lambda * (reg_mean + reg_var)
 
 
     def loss_test(self):
@@ -495,11 +524,11 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': 1e-5, 'var_eps': var_eps,
+                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_mu_approx': Y_mu_approx}
+                        'Y_mu_approx': Y_mu_approx, 'batch_size': min(len(X_mu), 5000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -520,15 +549,18 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     param_keys = ['fit_kernel','Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
     models_param_dict = {key: [] for key in param_keys}
     iters = 0
-    Y_mean,Y_mean_test,Y_var,Y_var_test = np.zeros(4)
-    approx = False
+    Y_mean = deepcopy(Y_eta)
+    Y_var = 0 * deepcopy(Y_mean)
+    Y_mean_test = deepcopy(Y_eta_test)
+    Y_var_test = 0 * deepcopy(Y_mean_test)
+
     mmd_lambda = 0
     Y_mu_approx = Y_eta
     step_num = 1
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                      X_mu_val, Y_mean_test, Y_var_test, Y_mu_approx, n_iter = n_iter, params=params,
-                                     approx=approx, mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
+                                     mmd_lambda=mmd_lambda, reg_lambda=reg_lambda,var_eps = var_eps,
                                      grad_cutoff = grad_cutoff, target_eps = target_eps, iters=iters,
                                      step_num = step_num)
         if dict_not_valid(loss_dict):
@@ -544,6 +576,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         if i == 0:
             models_param_dict['mmd_func'] = model.mmd
+            models_param_dict['batch_size'] = model.params['batch_size']
+
 
         Y_mean = model.Y_mean + model.Z_mean
         Y_var = model.Y_var + model.Z_var
@@ -554,7 +588,6 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
 
         step_num += 1
 
-        approx = True
         iters = model.iters
         if approx_path:
             Y_mu_approx = Y_mean + Y_var
@@ -683,19 +716,19 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = True)
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = False)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = True)
+        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = False)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd
 
         print_str1 = f'Test mmd :{format(test_mmd)}, Base mmd: {format(base_mmd)}, NTest mmd :{format(ntest_mmd)}, '
-        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest mmd :{format(ntest_emd)}'
+        print_str2 = f'Test emd :{format(test_emd)}, Base emd: {format(base_emd)}, NTest emd :{format(ntest_emd)}'
     except BaseException:
         print_str1 = f'Test mmd :{format(test_mmd)}, '
         print_str2 = f'Test emd :{format(test_emd)}'
@@ -920,154 +953,175 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
     ref_slice_sample = get_VL_data(N_plot, X=X, Yd=Yd, normal=False, T=20)
     ref_sample = ref_gen(N_plot)
-    return True
     for j in range(10):
         if j != 0:
             n_ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[j])
         else:
             n_ref_slice_sample = deepcopy(ref_slice_sample)
 
-
         n_ref_slice_sample =  (n_ref_slice_sample - mu)/sigma
 
         slice_sample = compositional_gen(trained_models, ref_sample, n_ref_slice_sample,
                                          idx_dict, mu = mu, sigma = sigma)[:, :4]
-
         symbols = [r'$\alpha$', r'$\beta$', r'$\gamma$', r'$\delta$']
         limits = [[0.5, 1.3], [0.02, 0.07], [0.7, 1.5], [0.025, 0.065]]
         xtrue = slice_val
         plot_lv_matrix(slice_sample, limits, xtrue, symbols, save_dir, label = j)
     return True
 
-
-def test_panel(plot_steps = False, approx_path = False, N = 10000, test_name = 'test',  n_transports = 100, k = 1,
-               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv'], N_plot = 100000):
+def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',  n_transports = 70, k = 1,
+               test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
+               N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
+    print(test_dir)
     try:
         os.mkdir(test_dir)
     except OSError:
         pass
     for i in range(k):
         i_str = i if k > 1 else ''
+        if 'banana' in test_keys:
+            fail_count = 0
+            while fail_count <= 2:
+                try:
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_banana, N=N,
+                              exp_name=f'/{test_name}/banana_{i_str}', n_transports=n_transports, slice_vals=[-1, 0, 1],
+                              plt_range=[[-3, 3], [-1, 6]], slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1,
+                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
+                              approx_path=approx_path)
+                    fail_count += 3
+                except torch._C._LinAlgError:
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/banana_{i_str}/lin_error_log{fail_count}.txt')
+                    pass
         if 'mgan1' in test_keys:
-            done = 0
-            while  done <= 2:
+            fail_count = 0
+            while  fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_{i_str}',
                             n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
                             slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps,
                             normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
-                    done += 3
+                    fail_count += 3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/mgan1_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'mgan2' in test_keys:
-            done = 0
-            while  done <= 2:
+            fail_count = 0
+            while  fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan2, N=N, exp_name=f'/{test_name}/mgan2_{i_str}',
                               n_transports= n_transports,  slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1.05, 1.05]],
                               slice_range=[-1.5, 1.5], vmax=8,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
                               bins=100,var_eps=1/2, approx_path = approx_path)
-                    done += 3
+                    fail_count += 3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/mgan2_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'swiss' in test_keys:
-            done = 0
-            while  done <= 2:
+            fail_count = 0
+            while  fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_swiss_roll, N=N, exp_name=f'/{test_name}/swiss_{i_str}',
                               n_transports= n_transports, slice_vals=[.7], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3, 3],
                               vmax=.35,  skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
-                    done += 3
+                    fail_count += 3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/swiss_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
 
         if 'checker' in test_keys:
-            done = 0
-            while done <= 2:
+            fail_count = 0
+            while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path)
-                    done +=3
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/checker_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'spiral' in test_keys:
-            done = 0
-            while done <= 2:
+            fail_count = 0
+            while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
                               vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
                               approx_path = approx_path)
-                    done +=3
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/spiral_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'elden' in test_keys:
-            done = 0
-            while  done <= 2:
+            fail_count = 0
+            while  fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=N, exp_name=f'/{test_name}/elden_{i_str}',
                               n_transports= n_transports, slice_vals=[], plt_range=[[-1, 1], [-1.05, 1.05]],
                               slice_range=[-1.5, 1.5], vmax=8, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
                               bins=100, var_eps=1/12, approx_path = approx_path)
-                    done +=3
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/elden_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 't_fractal' in test_keys:
-            done = 0
-            while  done <= 2:
+            fail_count = 0
+            while  fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_t_fractal, N=N,
                               exp_name=f'/{test_name}/t_fractal_{i_str}',  n_transports= n_transports, slice_vals=[],
                               plt_range=[[-1, 1], [-.95, .95]],  slice_range=[-1.5, 1.5], vmax=4.5, skip_idx=1,
                               N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=200, var_eps=1/12,
                               approx_path = approx_path)
-                    done +=3
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    fail_count += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/t_fractal_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'lv' in test_keys:
-            done = 0
-            while done < 2:
+            fail_count = 0
+            while fail_count < 2:
                 try:
-                    lv_exp(min(N,8000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
-                        approx_path = approx_path, n_transports = n_transports, N_plot= 30000)
-                    done +=3
+                    lv_exp(min(N,13000), exp_name=f'/{test_name}/lv_{i_str}', normal = True,
+                        approx_path = approx_path, n_transports = n_transports, N_plot= N_plot)
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/lv_{i_str}/lin_error_log{fail_count}.txt')
+                    fail_count += 1
                     pass
 
         if 'spheres' in test_keys:
-            done = 0
-            while done < 2:
+            fail_count = 0
+            while fail_count < 2:
                 try:
-                    spheres_exp(min(N,8000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
-                                approx_path = approx_path, n_transports=n_transports, N_plot = 30000)
-                    done +=3
+                    spheres_exp(min(N,13000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                                approx_path = approx_path, n_transports=n_transports, N_plot = N_plot)
+                    fail_count +=3
                 except torch._C._LinAlgError:
-                    done += 1
+                    os.system(f'echo "Linalg_error {fail_count}" > /{test_name}/spheres_{i_str}/lin_error_log{fail_count}.txt')
+                    fail_count += 1
                     pass
 
 
 def run():
-    test_panel(N=10000, n_transports=70, k=1, approx_path=False, test_name='test',
-               test_keys=['lv'], plot_steps = True)
+    test_panel(test_name='exp', test_keys=['mgan2'], N=1000, N_plot=5000)
+
 
 
 if __name__ == '__main__':

@@ -226,20 +226,28 @@ class Comp_transport_model:
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            plt.figure(figsize=(10, 10))
-            save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = new_param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
-            x_plot, y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-            plt.savefig(save_loc)
-            clear_plt()
+            self.plot_step(self, step_idx+1, param_dict)
         return new_param_dict
+
+
+    def plot_step(self, step_idx, param_dict):
+        plt.figure(figsize=(10, 10))
+        save_loc = f'{self.save_dir}/frame{step_idx}.png'
+        y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
+        x_plot, y_plot = y_map.T
+        plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
+        plt.savefig(save_loc)
+        clear_plt()
 
 
     def iterated_map(self, x, y, no_x=False):
         param_dict = {'y_eta': y, 'y_mean': deepcopy(y), 'y_var': 0 * deepcopy(y),
                       'x_mu': x, 'y_approx': deepcopy(y),
                       'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
+
+        if self.plot_steps:
+            self.plot_step(self, 0, param_dict)
+
         self.approx = False
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.map_step(step_idx, param_dict)
@@ -304,6 +312,7 @@ class CondTransportKernel(nn.Module):
             #self.Y_mu_noisy = (self.mu_coeff * self.Y_mu) + (self.approx_coeff * self.Y_noise)
 
         #self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
+
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu], dim=1)
 
         self.X_mu = self.X_mu
@@ -529,7 +538,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                           reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_var': Y_var, 'Y_mean': Y_mean,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
+                        'print_freq': 99, 'learning_rate': .001, 'reg_lambda': reg_lambda, 'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
@@ -705,19 +714,20 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         model.mu = mu
         model.sigma = sigma
         model.bins = bins
+
     test_target_sample = target_gen(N)
     test_ref_sample = ref_gen(N)
     test_gen_sample = compositional_gen(trained_models, test_ref_sample, test_target_sample, idx_dict,
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
     test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
-    test_emd = wasserstain_distance(test_gen_sample[:10000], test_target_sample[:10000], full = True)
+    test_emd = wasserstain_distance(test_gen_sample, test_target_sample, full = False)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
         base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
-        base_emd = wasserstain_distance(cref_sample[:10000], test_target_sample[:10000], full = True)
+        base_emd = wasserstain_distance(cref_sample, test_target_sample, full = False)
 
         ntest_mmd = test_mmd / base_mmd
         ntest_emd = test_emd / base_emd
@@ -1116,7 +1126,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'no_anneal')
+    test_panel(test_name = 'no_anneal', test_keys = ['spiral'])
 
 
 if __name__ == '__main__':

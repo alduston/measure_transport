@@ -548,7 +548,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, X_mu_test, Y_eta_test, Y_mu
                           step_num=1,reg_lambda=1e-7, grad_cutoff=.0001, n_iter=200, target_eps=1):
     transport_params = {'X_mu': X_mu, 'Y_mu': Y_mu, 'Y_eta': Y_eta, 'nugget': 1e-4, 'Y_mean': Y_mean, #'Y_var': Y_var,
                         'fit_kernel_params': deepcopy(params['fit']), 'mmd_kernel_params': deepcopy(params['mmd']),
-                        'print_freq': 10, 'learning_rate': .001, 'reg_lambda': reg_lambda, #'var_eps': var_eps,
+                        'print_freq': 99, 'learning_rate': .001, 'reg_lambda': reg_lambda, #'var_eps': var_eps,
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num, #'Y_var_test': Y_var_test,
