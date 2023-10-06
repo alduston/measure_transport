@@ -54,7 +54,7 @@ def wasserstain_distance(Y1, Y2, full = False):
 
 def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
     N = len(Y_1)
-    batch_idx = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+    batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                   for j in range(1 + N // batch_size)]
     w_distances = []
     for batch_idx in batch_idxs:

@@ -27,6 +27,7 @@ def concat_dicts(base_dict, udpate_dict):
             base_dict[key] = val
     return base_dict
 
+
 def wasserstain_distance(Y1, Y2, full = False):
     if not full:
         Y1 = Y1[:2000]
@@ -47,6 +48,18 @@ def wasserstain_distance(Y1, Y2, full = False):
     assignment = linear_sum_assignment(d)
     mover_distance = (d[assignment].sum() / n)
     return mover_distance
+
+def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
+    N = len(Y_1)
+    batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                  for j in range(1 + N // batch_size)]
+    w_distances = []
+    for batch_idx in batch_idxs:
+        Y1_batch = Y_1[batch_idx]
+        Y2_batch = Y_2[batch_idx]
+        w_distances.append(wasserstain_distance(Y1_batch, Y1_batch, full = True))
+    return np.mean(w_distances)
+
 
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))

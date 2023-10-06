@@ -48,6 +48,7 @@ def wasserstain_distance(Y1, Y2, full = False):
     mover_distance = (d[assignment].sum() / n)
     return mover_distance
 
+
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))
     mu = torch.mean(gen_sample, dim = 0).detach().numpy()
