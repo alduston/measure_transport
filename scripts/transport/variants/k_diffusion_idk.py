@@ -171,6 +171,16 @@ class Comp_transport_model:
                 self.device = 'cpu'
 
 
+    def plot_step(self, step_idx, param_dict):
+        plt.figure(figsize=(10, 10))
+        save_loc = f'{self.save_dir}/frame{step_idx}.png'
+        y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
+        x_plot, y_plot = y_map.T
+        plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
+        plt.savefig(save_loc)
+        clear_plt()
+
+
     def mmd(self, map_vec, target):
         return self.submodel_params['mmd_func'](map_vec, target)
 
@@ -228,13 +238,7 @@ class Comp_transport_model:
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            plt.figure(figsize=(10, 10))
-            save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = new_param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
-            x_plot, y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-            plt.savefig(save_loc)
-            clear_plt()
+            self.plot_step( step_idx + 1, new_param_dict)
         return new_param_dict
 
 
@@ -243,6 +247,8 @@ class Comp_transport_model:
                       'x_mu': x, 'y_approx': deepcopy(y),
                       'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
         self.approx = False
+        if self.plot_steps:
+            self.plot_step( 0, {key: torch.tensor(val) for (key, val) in param_dict.items()})
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.map_step(step_idx, param_dict)
             self.approx = True

@@ -248,7 +248,7 @@ class Comp_transport_model:
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            self.plot_step(self, step_idx + 1, param_dict)
+            self.plot_step(step_idx + 1, new_param_dict)
         return new_param_dict
 
 
@@ -257,7 +257,7 @@ class Comp_transport_model:
                       'x_mu': x, 'y_approx': deepcopy(y),
                       'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
         if self.plot_steps:
-            self.plot_step(self, 0, {key: torch.tensor(val) for (key,val) in param_dict.items})
+            self.plot_step(0, {key: torch.tensor(val) for (key,val) in param_dict.items()})
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.map_step(step_idx, param_dict)
         if no_x:

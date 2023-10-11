@@ -174,6 +174,16 @@ class Comp_transport_model:
         return self.submodel_params['mmd_func'](map_vec, target)
 
 
+    def plot_step(self, step_idx, param_dict):
+        plt.figure(figsize=(10, 10))
+        save_loc = f'{self.save_dir}/frame{step_idx}.png'
+        y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
+        x_plot, y_plot = y_map.T
+        plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
+        plt.savefig(save_loc)
+        clear_plt()
+
+
     #def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
         #x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         #z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
@@ -236,13 +246,7 @@ class Comp_transport_model:
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            plt.figure(figsize=(10, 10))
-            save_loc = f'{self.save_dir}/frame{step_idx}.png'
-            y_map = new_param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
-            x_plot, y_plot = y_map.T
-            plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-            plt.savefig(save_loc)
-            clear_plt()
+            self.plot_step( step_idx + 1, new_param_dict)
         return new_param_dict
 
 
@@ -251,6 +255,8 @@ class Comp_transport_model:
                       'x_mu': x, 'y_approx': deepcopy(y),
                       'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
         self.approx = False
+        if self.plot_steps:
+            self.plot_step(0, {key: torch.tensor(val) for (key, val) in param_dict.items()})
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.map_step(step_idx, param_dict)
             self.approx = True
@@ -540,9 +546,7 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-#def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
-                          #Y_mean_test, Y_var_test, Y_noise, params, iters=-1, approx=False, mmd_lambda=0, step_num = 1,
-                          #reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
+
 def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
                           Y_mean_test, Y_noise, params, iters=-1, approx=False, mmd_lambda=0,
                           step_num=1,reg_lambda=1e-7, grad_cutoff=.0001, n_iter=200, target_eps=1):
@@ -552,7 +556,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, X_mu_test, Y_eta_test, Y_mu
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num, #'Y_var_test': Y_var_test,
-                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 5000)}
+                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), 10000)}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -693,6 +697,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               skip_idx=0, plot_idx=[], n_transports=70, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1, approx_path = True): #var_eps = 1/3,):
     save_dir = f'../../data/transport/{exp_name}'
+    save_dir = save_dir.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -787,6 +792,7 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, approx_path=True):#, var_eps = 1/3,):
     save_dir = f'../../data/transport/{exp_name}'
+    save_dir = save_dir.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -828,7 +834,7 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         clear_plt()
 
     if plot_steps:
-        process_frames(save_dir)
+        process_frames(save_dir, k = 6)
     return True
 
 
@@ -861,6 +867,7 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
 
     slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .75]])
     save_dir = f'../../data/transport{exp_name}'
+    save_dir = save_dir.replace('//', '/')
     fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (18,4))
     plt.rcParams.update({'font.size': 12})
     ns = len(slice_vals)
@@ -927,6 +934,7 @@ def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.', la
                     plt.ylabel(symbols[i], size=20)
                 if i == len(xtrue) - 1:
                     plt.xlabel(symbols[j], size=20)
+    save_dir = save_dir.replace('//', '/')
     plt.savefig(f'{save_dir}/DLV_MCMCposterior{label}.png', bbox_inches='tight')
     clear_plt()
     return True
@@ -949,6 +957,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'target': [[0, 1, 2, 3]]}
 
     save_dir = f'../../data/transport{exp_name}'
+    save_dir = save_dir.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:

@@ -143,6 +143,7 @@ def seaborne_hmap(sample, save_loc,  d = 2, range = None, scmap = 'Blues'):
 
 def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
                 cmap = None, scmap = 'Blues', bw_adjust=0.25, cbar = True):
+
     try:
         sample = sample.detach().cpu()
     except AttributeError:
@@ -179,6 +180,7 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
         except ValueError:
             pass
 
+    save_loc = save_loc.replace('//', '/')
     plt.savefig(save_loc)
     clear_plt()
     return True
