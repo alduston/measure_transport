@@ -8,6 +8,7 @@ from copy import deepcopy
 import pandas as pd
 from scipy import integrate
 
+
 class DeterministicLotkaVolterra:
     def __init__(self, T):
         # number of unknown (prior) parameters
@@ -69,6 +70,7 @@ class DeterministicLotkaVolterra:
             yobs = np.array([lognorm.rvs(scale=x, s=self.obs_std) for x in yobs])
             xt[j, :] = yobs
         return (xt, tt)
+
 
     def log_prior_pdf(self, theta):
         # check dimensions of inputs

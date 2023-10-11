@@ -573,6 +573,9 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
                                      X_mu_val, Y_mean_test, Y_var_test, Y_noise, n_iter = n_iter, params=params,
                                      mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, grad_cutoff = grad_cutoff,
                                      var_eps = var_eps, target_eps = target_eps, iters=iters, step_num = step_num)
+        print(loss_dict['reg'][-1])
+        print(loss_dict['test_emd'][-1])
+
         if dict_not_valid(loss_dict):
             break
 
@@ -1118,7 +1121,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'base_big', N = 10000)
+    test_panel(test_name = 'exp', N = 1000, test_keys=['banana'])
 
 
 if __name__ == '__main__':
