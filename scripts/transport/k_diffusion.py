@@ -814,49 +814,24 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         process_frames(save_dir)
     return True
 
-
-def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
-                normalize_data = False, approx_path = False):
-    n = 10
-    ref_gen = sample_normal
-    mu, sigma = 0,1
-    target_gen = sample_spheres
-    if normalize_data:
-        mu, sigma = get_base_stats(sample_spheres, N)
-        target_gen = lambda N: normalize(sample_spheres(N=N, n=n))
-
-    idx_dict = {'ref': [[0, 1]],
-                'cond': [list(range(2, 2 + (2 * n)))],
-                'target': [[0, 1]]}
-
+def sphere_slice_plots(slice_vals, ref_gen, N_plot,  trained_models, idx_dict, save_dir,
+                       n_plots = 10, normal = True, mu = 1, sigma = 0, n = 10):
+    ns = len(slice_vals)
     plt_range = [[.6, 1.5], [-1.2, 1.2]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
-    if not N_plot:
-        Np = min(10 * N, 4000)
-    else:
-        Np = N_plot
-    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=Np, approx_path = approx_path,
-                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
-                                                         cond_model_trainer=comp_cond_kernel_transport, vmax=None,
-                                                         plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
-                                                         n_transports=n_transports, mu = mu, sigma=sigma)
-
-    slice_vals = np.asarray([[1, .0], [1, .4],  [1, .6], [1, .75]])
-    save_dir = f'../../data/transport{exp_name}'
-    fig, axs = plt.subplots(sharex="col", sharey="row", figsize = (18,4))
+    fig, axs = plt.subplots(sharex="col", sharey="row", figsize=(18, 4))
     plt.rcParams.update({'font.size': 12})
-    ns = len(slice_vals)
-    for j in range(10):
+    for j in range(n_plots):
         for i, slice_val in enumerate(slice_vals):
-            ref_sample = ref_gen(Np)
-            RX = np.full((Np, 2), slice_val)
-            ref_slice_sample = sample_spheres(N=Np, n=n, RX=RX)
+            ref_sample = ref_gen(N_plot)
+            RX = np.full((N_plot, 2), slice_val)
+            ref_slice_sample = sample_spheres(N=N_plot, n=n, RX=RX)
 
             if j != 0:
                 ref_slice_sample = np.full(ref_slice_sample.shape, ref_slice_sample[0])
 
-            if normalize_data:
+            if normal:
                 ref_slice_sample = (ref_slice_sample - mu) / sigma
             slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                              sigma = sigma, mu = mu)
@@ -875,6 +850,36 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
         clear_plt()
     return True
 
+def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
+                normal = False, approx_path = False, n = 10):
+    ref_gen = lambda N: sample_normal(N, 2)
+    mu, sigma = 0,1
+    target_gen = lambda N: sample_spheres(N, n = n)
+    if normal:
+        mu, sigma = get_base_stats(sample_spheres, N)
+        target_gen = lambda N: normalize(sample_spheres(N=N, n = n))
+
+    idx_dict = {'ref': [[0, 1]],
+                'cond': [list(range(2, 2 + (2 * n)))],
+                'target': [[0, 1]]}
+
+    save_dir = f'../../data/transport{exp_name}'
+    plt_range = [[.6, 1.5], [-1.2, 1.2]]
+    plot_idx = torch.tensor([0, 1]).long()
+    skip_idx = 0
+    if not N_plot:
+        N_plot = min(10 * N, 4000)
+
+    trained_models, idx_dict = conditional_transport_exp(ref_gen, target_gen, N=N, N_plot=N_plot, approx_path = approx_path,
+                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
+                                                         cond_model_trainer=comp_cond_kernel_transport, vmax=None,
+                                                         plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
+                                                         var_eps= 1/3, n_transports=n_transports, mu = mu, sigma=sigma)
+
+    slice_vals = np.asarray([[1, .0], [1, .4], [1, .6], [1, .75]])
+    sphere_slice_plots(slice_vals, ref_gen, N_plot, trained_models, idx_dict, save_dir = save_dir,
+                       n_plots=10, normal=normal, mu=mu, sigma=sigma)
+    return True
 
 
 def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.', label = ''):
@@ -973,7 +978,6 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000):
     test_dir = f'../../data/transport/{test_name}'
-    print(test_dir)
     try:
         os.mkdir(test_dir)
     except OSError:
@@ -1110,7 +1114,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
             fail_count = 0
             while fail_count < 2:
                 try:
-                    spheres_exp(min(N,13000), exp_name=f'/{test_name}/spheres_{i_str}', normalize_data=False,
+                    spheres_exp(min(N,13000), exp_name=f'/{test_name}/spheres_{i_str}', normal=True,
                                 approx_path = approx_path, n_transports=n_transports, N_plot = N_plot)
                     fail_count +=3
                 except torch._C._LinAlgError:
@@ -1120,7 +1124,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'base')
+    test_panel(test_name = 'spheres', test_keys=['spheres'], N = 3000, n_transports=70, N_plot=20000)
 
 
 if __name__ == '__main__':

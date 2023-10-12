@@ -1129,7 +1129,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'idk_big', test_keys=['lv', 'spheres'], N = 10000)
+    test_panel(test_name = 'idk')
 
 
 if __name__ == '__main__':

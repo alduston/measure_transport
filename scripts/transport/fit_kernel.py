@@ -82,7 +82,7 @@ def train_kernel(kernel_model, n_iter = np.inf):
             test_mmd = test_mmd.detach().cpu()
         kernel_model.train()
         loss, loss_dict = train_step(kernel_model, optimizer)
-        if not iter % kernel_model.params['print_freq']:
+        if not iter % kernel_model.params['print_freq'] or not i:
             grad_norm = kernel_model.total_grad()
             kernel_model.eval()
             loss_dict['test_mmd'] = test_mmd
