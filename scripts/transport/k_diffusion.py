@@ -251,7 +251,7 @@ class Comp_transport_model:
             new_param_dict = concat_dicts(new_param_dict, batch_dict)
 
         if self.plot_steps:
-            self.plot_step(self, step_idx + 1, param_dict)
+            self.plot_step(step_idx + 1, new_param_dict)
         return new_param_dict
 
 
@@ -260,7 +260,7 @@ class Comp_transport_model:
                       'x_mu': x, 'y_approx': deepcopy(y),
                       'y': np.concatenate([geq_1d(x, True), geq_1d(y, True)], axis=1)}
         if self.plot_steps:
-            self.plot_step(self, 0, {key: torch.tensor(val) for (key,val) in param_dict.items})
+            self.plot_step(0, {key: torch.tensor(val) for (key,val) in param_dict.items()})
         for step_idx in range(len(self.submodel_params['Lambda_mean'])):
             param_dict = self.map_step(step_idx, param_dict)
         if no_x:
@@ -365,8 +365,6 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        print(self.Y_target.shape)
-        print(self.Y_test.shape)
         goal_emd = batch_wasserstein(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
               f"Goal emd is {goal_emd}")
@@ -697,11 +695,15 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     if not len(idx_dict):
         idx_dict = {'ref': [], 'cond': [[]], 'target': []}
-        for k in range(nr):
-            idx_dict['ref'].append([k])
-            idx_dict['target'].append([k])
-            if cond:
+        if cond:
+            for k in range(nr):
+                idx_dict['ref'].append([k])
+                idx_dict['target'].append([k])
                 idx_dict['cond'].append(list(range(k + 1)))
+        else:
+            idx_dict['ref'].append(list(range(2)))
+            idx_dict['target'].append(list(range(2)))
+            idx_dict['cond'].append([])
 
 
     idx_dict = {key: get_idx_tensors(val) for key, val in idx_dict.items()}
@@ -780,6 +782,9 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3,
               approx_path=True, exp_func = conditional_transport_exp, cond = True):
+    if not cond:
+        skip_idx = 0
+        slice_vals = []
     save_dir = f'../../data/transport/{exp_name}'
     try:
         os.mkdir(save_dir)
@@ -1133,7 +1138,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False)
+    test_panel(test_name = 'n_cond_exp', cond = False, N = 5000,
+               n_transports=70, plot_steps = True)
 
 
 if __name__ == '__main__':

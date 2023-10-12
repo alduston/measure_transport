@@ -698,11 +698,15 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     if not len(idx_dict):
         idx_dict = {'ref': [], 'cond': [[]], 'target': []}
-        for k in range(nr):
-            idx_dict['ref'].append([k])
-            idx_dict['target'].append([k])
-            if cond:
+        if cond:
+            for k in range(nr):
+                idx_dict['ref'].append([k])
+                idx_dict['target'].append([k])
                 idx_dict['cond'].append(list(range(k + 1)))
+        else:
+            idx_dict['ref'].append(list(range(2)))
+            idx_dict['target'].append(list(range(2)))
+            idx_dict['cond'].append([])
 
 
     idx_dict = {key: get_idx_tensors(val) for key, val in idx_dict.items()}
@@ -1133,10 +1137,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     pass
 
 
-
-
 def run():
-    test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000)
+    test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000, N_plot=10000)
 
 
 if __name__ == '__main__':
