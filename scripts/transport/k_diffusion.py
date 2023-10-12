@@ -1136,10 +1136,26 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     fail_count += 1
                     pass
 
+# Test mmd :0.004806,
+# Base mmd: 0.040034,
+# NTest mmd :0.120041,
+# Test emd :0.192748,
+# Base emd: 1.026727,
+# NTest emd :0.18773
+
+# Test mmd :0.002532,
+# Base mmd: 0.01782,
+# NTest mmd :0.142113,
+# Test emd :0.162216,
+# Base emd: 1.207085,
+# NTest emd :0.134386
 
 def run():
     test_panel(test_name = 'n_cond_exp', cond = False, N = 5000,
                n_transports=70, plot_steps = True)
+    test_panel(test_name='n_cond_exp_big', cond=False, N=10000,
+               n_transports=70, plot_steps=True)
+    #test_panel(test_name = 'exp', cond = True, N = 1000,  n_transports=70, plot_steps = True)
 
 
 if __name__ == '__main__':
