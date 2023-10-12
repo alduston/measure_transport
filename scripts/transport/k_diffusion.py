@@ -56,11 +56,12 @@ def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
     N = len(Y_1)
     batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                   for j in range(1 + N // batch_size)]
+    batch_idxs = [item for item in batch_idxs if len(item)]
     w_distances = []
     for batch_idx in batch_idxs:
         Y1_batch = Y_1[batch_idx]
         Y2_batch = Y_2[batch_idx]
-        w_distances.append(wasserstain_distance(Y1_batch, Y1_batch, full = True))
+        w_distances.append(wasserstain_distance(Y1_batch, Y2_batch, full = True))
     return np.mean(w_distances)
 
 
@@ -364,6 +365,8 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
+        print(self.Y_target.shape)
+        print(self.Y_test.shape)
         goal_emd = batch_wasserstein(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
               f"Goal emd is {goal_emd}")
@@ -1124,7 +1127,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'spheres', test_keys=['spheres'], N = 3000, n_transports=70, N_plot=20000)
+    test_panel(test_name = 'exp', test_keys=['spheres'], N = 4000, n_transports=70, N_plot=20000)
 
 
 if __name__ == '__main__':
