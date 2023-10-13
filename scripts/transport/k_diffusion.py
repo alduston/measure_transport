@@ -17,6 +17,9 @@ from seaborn import kdeplot
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 import scipy.stats as st
+from biraj_kernels import rbf_mixture_unnormalized
+import biraj_kernels
+import jax
 
 
 def concat_dicts(base_dict, udpate_dict):
@@ -50,6 +53,30 @@ def wasserstain_distance(Y1, Y2, full = False):
     assignment = linear_sum_assignment(d)
     mover_distance = (d[assignment].sum() / n)
     return mover_distance
+
+
+def to_jax(array):
+    try:
+        array = array.detach().cpu().numpy()
+    except TypeError:
+        pass
+    return jax.numpy.asarray(array)
+
+
+
+def get_test_kernel():
+    params = {'length_scale': [1 / np.sqrt(2)]}
+    kern = rbf_mixture_unnormalized
+    rbf_test_kernel = biraj_kernels.Kernel(kern, params)
+    def test_kernel(X,Y):
+        X_jax = to_jax(X)
+        Y_jax = to_jax(Y)
+        X_device = X.device
+        k_vals = rbf_test_kernel(X_jax,  Y_jax)
+        k_val_array = np.asarray(k_vals)
+        return torch.tensor(k_val_array, device = X_device)
+    return test_kernel
+
 
 
 def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
@@ -195,8 +222,8 @@ class Comp_transport_model:
         plt.savefig(save_loc)
         clear_plt()
 
-    def mmd(self, map_vec, target):
-        return self.submodel_params['mmd_func'](map_vec, target)
+    def mmd(self, map_vec, target, kernel = []):
+        return self.submodel_params['mmd_func'](map_vec, target, kernel = kernel)
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
@@ -447,7 +474,7 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-    def mmd(self, map_vec, target, test = True, pre_process = True):
+    def mmd(self, map_vec, target, test = True, pre_process = True, kernel = []):
         if pre_process:
             map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
             target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
@@ -464,15 +491,25 @@ class CondTransportKernel(nn.Module):
                 y_map = map_vec[y_idx]
                 x_target = target[x_idx]
                 y_target = target[y_idx]
-                mmd += self.batch_mmd(x_map,y_map, x_target, y_target, test = test)
+                mmd += self.batch_mmd(x_map,y_map, x_target, y_target,
+                                      test = test, kernel = kernel)
         return mmd/n
 
 
-    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True):
+    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True, kernel = []):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
+
+        if len(kernel):
+            K_mmd = kernel[0]
+            print(x_map.dtype)
+            print(y_map.dtype)
+            print(x_target.dtype)
+            print(y_target.dtype)
+
+
 
         mmd_ZZ = K_mmd(x_map, y_map)
         mmd_ZY = K_mmd(x_map, y_target)
@@ -725,14 +762,17 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     test_ref_sample = ref_gen(N)
     test_gen_sample = compositional_gen(trained_models, test_ref_sample, test_target_sample, idx_dict,
                                         plot_steps=False, mu=mu, sigma=sigma)
+
     test_target_sample = test_target_sample * sigma + mu
-    test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
+    K_test = [get_test_kernel()]
+    test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample,  kernel = K_test).detach().cpu())
     test_emd = batch_wasserstein(test_gen_sample, test_target_sample)
+
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
-        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
+        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample, kernel = K_test).detach().cpu())
         base_emd = batch_wasserstein(cref_sample, test_target_sample)
 
         ntest_mmd = test_mmd / base_mmd
@@ -819,6 +859,10 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                          mu= mu, sigma = sigma)
         plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
+
+        kdeplot(x=slice_sample[:, 1], fill=False, bw_adjust=0.4, cmap='Blues')
+        plt.xlim([slice_range[0], slice_range[1]])
+
 
     if len(slice_vals):
         plt.legend()
@@ -1150,11 +1194,13 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 # Base emd: 1.207085,
 # NTest emd :0.134386
 
+
 def run():
-    test_panel(test_name = 'n_cond_exp', cond = False, N = 5000,
-               n_transports=70, plot_steps = True)
-    test_panel(test_name='n_cond_exp_big', cond=False, N=10000,
-               n_transports=70, plot_steps=True)
+    test_panel(test_name = 'exp', test_keys=['checker'], cond = False, N = 2000,
+               n_transports=70, plot_steps = True, N_plot=10000)
+
+    #test_panel(test_name='n_cond_exp_big', cond=False, N=10000,
+               #n_transports=70, plot_steps=True)
     #test_panel(test_name = 'exp', cond = True, N = 1000,  n_transports=70, plot_steps = True)
 
 
