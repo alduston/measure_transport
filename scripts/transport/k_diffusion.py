@@ -31,8 +31,6 @@ def concat_dicts(base_dict, udpate_dict):
     return base_dict
 
 
-
-
 def wasserstain_distance(Y1, Y2, full = False):
     if not full:
         Y1 = Y1[:3000]
@@ -54,6 +52,19 @@ def wasserstain_distance(Y1, Y2, full = False):
     mover_distance = (d[assignment].sum() / n)
     return mover_distance
 
+def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
+    N = len(Y_1)
+    batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                  for j in range(1 + N // batch_size)]
+    batch_idxs = [item for item in batch_idxs if len(item)]
+    w_distances = []
+    for batch_idx in batch_idxs:
+        Y1_batch = Y_1[batch_idx]
+        Y2_batch = Y_2[batch_idx]
+        w_distances.append(wasserstain_distance(Y1_batch, Y2_batch, full = True))
+    return np.mean(w_distances)
+
+
 
 def to_jax(array):
     try:
@@ -61,7 +72,6 @@ def to_jax(array):
     except TypeError:
         pass
     return jax.numpy.asarray(array)
-
 
 
 def get_test_kernel():
@@ -76,20 +86,6 @@ def get_test_kernel():
         k_val_array = np.asarray(k_vals)
         return torch.tensor(k_val_array, device = X_device)
     return test_kernel
-
-
-
-def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
-    N = len(Y_1)
-    batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
-                  for j in range(1 + N // batch_size)]
-    batch_idxs = [item for item in batch_idxs if len(item)]
-    w_distances = []
-    for batch_idx in batch_idxs:
-        Y1_batch = Y_1[batch_idx]
-        Y2_batch = Y_2[batch_idx]
-        w_distances.append(wasserstain_distance(Y1_batch, Y2_batch, full = True))
-    return np.mean(w_distances)
 
 
 def get_base_stats(gen, N = 10000):
@@ -504,12 +500,6 @@ class CondTransportKernel(nn.Module):
 
         if len(kernel):
             K_mmd = kernel[0]
-            print(x_map.dtype)
-            print(y_map.dtype)
-            print(x_target.dtype)
-            print(y_target.dtype)
-
-
 
         mmd_ZZ = K_mmd(x_map, y_map)
         mmd_ZY = K_mmd(x_map, y_target)
@@ -718,7 +708,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=70, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True, cond = True):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -785,7 +775,6 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         print_str2 = f'Test emd :{format(test_emd)}'
 
     print_str = print_str1 + print_str2
-    print(print_str)
     os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
     if not N_plot:
@@ -825,7 +814,7 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
     if not cond:
         skip_idx = 0
         slice_vals = []
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -858,9 +847,8 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                          mu= mu, sigma = sigma)
-        plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
-
-        kdeplot(x=slice_sample[:, 1], fill=False, bw_adjust=0.4, cmap='Blues')
+        #plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
+        kdeplot(x=slice_sample[:, 1], fill=False, bw_adjust=0.4, label = f'x = {slice_val}')
         plt.xlim([slice_range[0], slice_range[1]])
 
 
@@ -920,7 +908,7 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
                 'cond': [list(range(2, 2 + (2 * n)))],
                 'target': [[0, 1]]}
 
-    save_dir = f'../../data/transport{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     plt_range = [[.6, 1.5], [-1.2, 1.2]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
@@ -991,7 +979,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    save_dir = f'../../data/transport{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -1034,7 +1022,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000, n_transports = 70, k = 1, cond = True):
-    test_dir = f'../../data/transport/{test_name}'
+    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
     try:
         os.mkdir(test_dir)
     except OSError:
@@ -1196,11 +1184,17 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'exp', test_keys=['checker'], cond = False, N = 2000,
-               n_transports=70, plot_steps = True, N_plot=10000)
+    #test_panel(test_name = 'exp', test_keys=['checker'], cond = True, N = 200,
+               #n_transports=2, plot_steps = True, N_plot=100)
 
-    #test_panel(test_name='n_cond_exp_big', cond=False, N=10000,
-               #n_transports=70, plot_steps=True)
+    test_panel(test_name='n_cond_exp', test_keys=['checker'],
+               cond=False, N= 5000, n_transports=70, plot_steps=True)
+    test_panel(test_name='cond_exp', test_keys=['checker'],
+               cond=True, N=5000, n_transports=70, plot_steps=True)
+    test_panel(test_name='n_cond_exp_big', test_keys=['checker'],
+               cond=False, N=10000, n_transports=70, plot_steps=True)
+    test_panel(test_name='cond_exp_big', test_keys=['checker'],
+               cond=True, N=10000, n_transports=70, plot_steps=True)
     #test_panel(test_name = 'exp', cond = True, N = 1000,  n_transports=70, plot_steps = True)
 
 

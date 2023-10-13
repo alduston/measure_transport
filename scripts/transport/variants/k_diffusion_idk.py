@@ -18,6 +18,10 @@ from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 import scipy.stats as st
 
+from biraj_kernels import rbf_mixture_unnormalized
+import biraj_kernels
+import jax
+
 
 def concat_dicts(base_dict, udpate_dict):
     for key,val in udpate_dict.items():
@@ -47,6 +51,20 @@ def wasserstain_distance(Y1, Y2, full = False):
     assignment = linear_sum_assignment(d)
     mover_distance = (d[assignment].sum() / n)
     return mover_distance
+
+
+def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
+    N = len(Y_1)
+    batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
+                  for j in range(1 + N // batch_size)]
+    batch_idxs = [item for item in batch_idxs if len(item)]
+    w_distances = []
+    for batch_idx in batch_idxs:
+        Y1_batch = Y_1[batch_idx]
+        Y2_batch = Y_2[batch_idx]
+        w_distances.append(wasserstain_distance(Y1_batch, Y2_batch, full = True))
+    return np.mean(w_distances)
+
 
 
 def get_base_stats(gen, N = 10000):
@@ -106,6 +124,28 @@ def replace_zeros(array, eps = 1e-5):
     return array
 
 
+def to_jax(array):
+    try:
+        array = array.detach().cpu().numpy()
+    except TypeError:
+        pass
+    return jax.numpy.asarray(array)
+
+
+def get_test_kernel():
+    params = {'length_scale': [1 / np.sqrt(2)]}
+    kern = rbf_mixture_unnormalized
+    rbf_test_kernel = biraj_kernels.Kernel(kern, params)
+    def test_kernel(X,Y):
+        X_jax = to_jax(X)
+        Y_jax = to_jax(Y)
+        X_device = X.device
+        k_vals = rbf_test_kernel(X_jax,  Y_jax)
+        k_val_array = np.asarray(k_vals)
+        return torch.tensor(k_val_array, device = X_device)
+    return test_kernel
+
+
 def normalize(array, keep_axes=[], just_var = False, just_mean = False):
     normal_array = deepcopy(array)
     if len(keep_axes):
@@ -154,7 +194,7 @@ class Comp_transport_model:
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
-        self.save_dir = '../../data/transport/exp/'
+        self.save_dir = '../../../data/transport/exp/'
         self.plt_range = [[-2.5, 2.5], [-2.5, 2.5]]
         self.vmax = None
         self.bins = 75
@@ -181,8 +221,8 @@ class Comp_transport_model:
         clear_plt()
 
 
-    def mmd(self, map_vec, target):
-        return self.submodel_params['mmd_func'](map_vec, target)
+    def mmd(self, map_vec, target, kernel = []):
+        return self.submodel_params['mmd_func'](map_vec, target, kernel = kernel)
 
 
     def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
@@ -454,7 +494,7 @@ class CondTransportKernel(nn.Module):
         return return_dict
 
 
-    def mmd(self, map_vec, target, test = True, pre_process = True):
+    def mmd(self, map_vec, target, test = True, pre_process = True, kernel = []):
         if pre_process:
             map_vec = geq_1d(torch.tensor(map_vec, device=self.device, dtype=self.dtype))
             target = geq_1d(torch.tensor(target, device=self.device, dtype=self.dtype))
@@ -471,15 +511,19 @@ class CondTransportKernel(nn.Module):
                 y_map = map_vec[y_idx]
                 x_target = target[x_idx]
                 y_target = target[y_idx]
-                mmd += self.batch_mmd(x_map,y_map, x_target, y_target, test = test)
+                mmd += self.batch_mmd(x_map,y_map, x_target, y_target,
+                                      test = test,  kernel = kernel)
         return mmd/n
 
 
-    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True):
+    def batch_mmd(self, x_map,y_map, x_target, y_target, test = True, kernel = []):
         if test:
             K_mmd = self.test_mmd_kernel
         else:
             K_mmd = self.mmd_kernel
+
+        if len(kernel):
+            K_mmd = kernel[0]
 
         mmd_ZZ = K_mmd(x_map, y_map)
         mmd_ZY = K_mmd(x_map, y_target)
@@ -643,7 +687,6 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
     target_idx_tensors = idx_dict['target']
     cond_idx_tensors = idx_dict['cond']
     trained_models = []
-
     for i in range(len(ref_idx_tensors)):
         X_mu = target_sample[:, cond_idx_tensors[i]]
         X_mu_test = test_target_sample[:, cond_idx_tensors[i]]
@@ -684,7 +727,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
                               process_funcs=[], N_plot=0, cond_model_trainer=comp_cond_kernel_transport,
                               skip_idx=0, plot_idx=[], n_transports=70, idx_dict={},plot_steps = False,
                               reg_lambda = 1e-7, mu = 0, sigma = 1,var_eps = 1/3, approx_path = True, cond = True):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -711,12 +754,10 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     idx_dict = {key: get_idx_tensors(val) for key, val in idx_dict.items()}
     idx_dict = {key: val[skip_idx:] for key, val in idx_dict.items()}
-
     trained_models = train_cond_transport(N=N, ref_gen=ref_gen, target_gen=target_gen, params=exp_params,
                                           cond_model_trainer=cond_model_trainer, n_transports=n_transports,
                                           process_funcs=process_funcs, idx_dict=idx_dict,reg_lambda = reg_lambda,
                                           var_eps = var_eps, approx_path=approx_path)
-
     for model in trained_models:
         model.save_dir = save_dir
         model.plt_range = plt_range
@@ -729,13 +770,15 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     test_gen_sample = compositional_gen(trained_models, test_ref_sample, test_target_sample, idx_dict,
                                         plot_steps=False, mu=mu, sigma=sigma)
     test_target_sample = test_target_sample * sigma + mu
-    test_mmd = float(trained_models[0].mmd(test_gen_sample, test_target_sample).detach().cpu())
+    K_test = [get_test_kernel()]
+    test_mmd = float(trained_models[0].mmd(test_gen_sample,test_target_sample, kernel = K_test).detach().cpu())
     test_emd = batch_wasserstein(test_gen_sample, test_target_sample)
     try:
         cref_sample = deepcopy(test_ref_sample)
         cref_sample[:, idx_dict['cond'][0]] += test_target_sample[:, idx_dict['cond'][0]]
 
-        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample).detach().cpu())
+        base_mmd = float(trained_models[0].mmd(cref_sample, test_target_sample,
+                                               kernel = K_test).detach().cpu())
         base_emd = batch_wasserstein(cref_sample, test_target_sample)
 
         ntest_mmd = test_mmd / base_mmd
@@ -785,12 +828,14 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3,
               approx_path=True, exp_func = conditional_transport_exp, cond = True):
-    save_dir = f'../../data/transport/{exp_name}'
+    save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
         pass
-
+    if not cond:
+        skip_idx = 0
+        slice_vals = []
 
     mu, sigma = 0, 1
     if normal:
@@ -818,7 +863,9 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         ref_slice_sample[:, idx_dict['cond'][0]] = slice_val
         slice_sample = compositional_gen(trained_models, ref_sample, ref_slice_sample, idx_dict,
                                          mu= mu, sigma = sigma)
-        plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
+        # plt.hist(slice_sample[:, 1], bins= bins, range=slice_range, label=f'x = {slice_vals[i]}')
+        kdeplot(x=slice_sample[:, 1], fill=False, bw_adjust=0.4, label=f'x = {slice_val}')
+        plt.xlim([slice_range[0], slice_range[1]])
 
     if len(slice_vals):
         plt.legend()
@@ -876,7 +923,7 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
                 'cond': [list(range(2, 2 + (2 * n)))],
                 'target': [[0, 1]]}
 
-    save_dir = f'../../data/transport{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     plt_range = [[.6, 1.5], [-1.2, 1.2]]
     plot_idx = torch.tensor([0, 1]).long()
     skip_idx = 0
@@ -947,7 +994,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    save_dir = f'../../data/transport{exp_name}'
+    save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
     except OSError:
@@ -990,7 +1037,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
                N_plot = 100000, n_transports = 70, k = 1, cond = True):
-    test_dir = f'../../data/transport/{test_name}'
+    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
     try:
         os.mkdir(test_dir)
     except OSError:
@@ -1138,8 +1185,18 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000, N_plot=10000)
-
+    #test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000, N_plot=10000)
+    #test_panel(test_name='exp', test_keys=['checker'], cond=True, N=200, n_transports=2,
+               #plot_steps = True, N_plot=100)
+    #print('here')
+    test_panel(test_name='n_cond_exp_idk', test_keys=['checker'],
+               cond=False, N=5000, n_transports=70, plot_steps=True)
+    test_panel(test_name='cond_exp_idx', test_keys=['checker'],
+               cond=True, N=5000, n_transports=70, plot_steps=True)
+    test_panel(test_name='n_cond_exp_big_idk', test_keys=['checker'],
+               cond=False, N=10000, n_transports=70, plot_steps=True)
+    test_panel(test_name='cond_exp_big_idk', test_keys=['checker'],
+               cond=True, N=10000, n_transports=70, plot_steps=True)
 
 if __name__ == '__main__':
     run()
