@@ -775,6 +775,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
         print_str2 = f'Test emd :{format(test_emd)}'
 
     print_str = print_str1 + print_str2
+    print(print_str)
     os.system(f'echo {print_str} > {save_dir}/test_res.txt')
 
     if not N_plot:
@@ -1093,7 +1094,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
-                              plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path,
+                              plot_steps=plot_steps, normal=True, bins=100, var_eps=1/6, approx_path = approx_path,
                               cond=cond)
                     fail_count +=3
                 except torch._C._LinAlgError:
@@ -1107,7 +1108,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
-                              vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
+                              vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/6,
                               approx_path = approx_path, cond =cond)
                     fail_count +=3
                 except torch._C._LinAlgError:
@@ -1188,13 +1189,14 @@ def run():
                #n_transports=2, plot_steps = True, N_plot=100)
 
     test_panel(test_name='n_cond_exp', test_keys=['checker'],
-               cond=False, N= 5000, n_transports=70, plot_steps=True)
-    test_panel(test_name='cond_exp', test_keys=['checker'],
-               cond=True, N=5000, n_transports=70, plot_steps=True)
-    test_panel(test_name='n_cond_exp_big', test_keys=['checker'],
-               cond=False, N=10000, n_transports=70, plot_steps=True)
-    test_panel(test_name='cond_exp_big', test_keys=['checker'],
-               cond=True, N=10000, n_transports=70, plot_steps=True)
+               cond=False, N= 1000, n_transports=70, plot_steps=True)
+
+    #test_panel(test_name='cond_exp', test_keys=['checker'],
+               #cond=True, N=5000, n_transports=70, plot_steps=True)
+    #test_panel(test_name='n_cond_exp_big', test_keys=['checker'],
+               #cond=False, N=10000, n_transports=70, plot_steps=True)
+    #test_panel(test_name='cond_exp_big', test_keys=['checker'],
+               #cond=True, N=10000, n_transports=70, plot_steps=True)
     #test_panel(test_name = 'exp', cond = True, N = 1000,  n_transports=70, plot_steps = True)
 
 

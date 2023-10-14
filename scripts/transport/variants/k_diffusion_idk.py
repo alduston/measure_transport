@@ -41,9 +41,6 @@ def wasserstain_distance(Y1, Y2, full = False):
         return 1
     try:
         Y1 = Y1.detach().cpu().numpy()
-    except AttributeError:
-        pass
-    try:
         Y2 = Y2.detach().cpu().numpy()
     except AttributeError:
         pass
