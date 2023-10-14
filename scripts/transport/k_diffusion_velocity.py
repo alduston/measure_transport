@@ -473,7 +473,7 @@ class CondTransportKernel(nn.Module):
         batch_idxs = [torch.tensor(list(range((j * batch_size), min((j + 1) * batch_size, N)))).long()
                       for j in range(1 + N // batch_size)]
         for batch_idx in batch_idxs:
-            x_mu  ,y_mean ,y_var, y_velocity = X_mu[batch_idx], Y_velocity[batch_idx],\
+            x_mu ,y_velocity, y_mean ,y_var = X_mu[batch_idx], Y_velocity[batch_idx],\
                                                Y_mean[batch_idx], Y_var[batch_idx]
             batch_dict = self.map_batch(x_mu, y_velocity, y_mean, y_var)
             map_dict = concat_dicts(map_dict, batch_dict)
@@ -481,7 +481,6 @@ class CondTransportKernel(nn.Module):
 
 
     def map_batch(self, x_mu, y_velocity, y_mean=0, y_var=0):
-        #y_eta = geq_1d(torch.tensor(y_velocity, device=self.device, dtype=self.dtype))
         x_mu = geq_1d(torch.tensor(x_mu, device=self.device, dtype=self.dtype))
         y_mean = geq_1d(torch.tensor(y_mean, device=self.device, dtype=self.dtype))
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
@@ -606,8 +605,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 def dict_not_valid(loss_dict):
     for key,val_list in loss_dict.items():
         for value in val_list:
-            if np.isnan(value) or value < -1:
-                return True
+            try:
+                if np.isnan(value) or value < -1:
+                    return True
+            except TypeError:
+                np_val = value.detach().cpu().numpy()
+                if np.isnan(np_val) or np_val < -1:
+                    return True
     return False
 
 

@@ -598,8 +598,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 def dict_not_valid(loss_dict):
     for key,val_list in loss_dict.items():
         for value in val_list:
-            if np.isnan(value) or value < -1:
-                return True
+            try:
+                if np.isnan(value) or value < -1:
+                    return True
+            except TypeError:
+                np_val = value.detach().cpu().numpy()
+                if np.isnan(np_val) or np_val < -1:
+                    return True
     return False
 
 
