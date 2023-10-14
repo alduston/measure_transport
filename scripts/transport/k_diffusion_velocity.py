@@ -1200,10 +1200,10 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name='n_cond_exp', test_keys=['swiss'], cond=True, N=100, N_plot=1000, n_transports=2)
+    test_panel(test_name='velocity_exp', test_keys=['checker', 'spiral'], cond=True, N=5000, n_transports=70)
 
 
-    pass
+    #pass
 
     #test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000, N_plot=10000)
     #test_panel(test_name='exp', test_keys=['checker'], cond=True, N=200, n_transports=2,
