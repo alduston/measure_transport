@@ -488,7 +488,7 @@ class CondTransportKernel(nn.Module):
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
         y_velocity = geq_1d(torch.tensor(y_velocity, device=self.device, dtype=self.dtype))
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var, y_v)
+        z_mean = self.map_mean(x_mu, y_mean, y_var, y_velocity)
         z_var = self.map_var(x_mu, y_velocity, y_mean, y_var, y_eta)
         z = z_mean + z_var
         y_approx = y_mean + y_var
