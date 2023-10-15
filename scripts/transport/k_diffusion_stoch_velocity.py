@@ -222,8 +222,8 @@ class Comp_transport_model:
         return self.submodel_params['mmd_func'](map_vec, target, kernel = kernel)
 
 
-    def map_mean(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+    def map_mean(self, x_mu, y_mean, y_var, y_v, Lambda_mean, X_mean, fit_kernel):
+        x_mean = torch.concat([x_mu, y_v, y_mean + y_var], dim=1)
         z_mean = fit_kernel(X_mean, x_mean).T @ Lambda_mean
         return z_mean
 
@@ -236,7 +236,7 @@ class Comp_transport_model:
 
     def map_batch(self, x_mu, y_mean, y_var, Lambda_mean, X_mean, X_var,
                   fit_kernel, var_kernel, Lambda_var, var_eps, y_v, y_eta):
-        z_mean = self.map_mean(x_mu, y_mean, y_var, Lambda_mean, X_mean, fit_kernel)
+        z_mean = self.map_mean(x_mu, y_mean, y_var, y_v, Lambda_mean, X_mean, fit_kernel)
         z_var = self.map_var(x_mu, y_v, y_eta, y_mean, Lambda_var, X_var, y_var, var_kernel, var_eps)
         z = z_mean + z_var
 
@@ -355,7 +355,7 @@ class CondTransportKernel(nn.Module):
 
         self.X_var = torch.concat([self.X_mu, self.Y_velocity,  self.var_eps * flip(self.Y_eta),
                                    self.Y_mean + self.Y_var], dim=1)
-        self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
+        self.X_mean = torch.concat([self.X_mu, self.Y_velocity, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
         self.Ny = len(self.Y_target)
@@ -449,8 +449,8 @@ class CondTransportKernel(nn.Module):
         return self.fit_kXXvar_inv @ (self.Z_var)
 
 
-    def map_mean(self, x_mu, y_mean, y_var):
-        x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
+    def map_mean(self, x_mu, y_mean, y_var, y_v):
+        x_mean = torch.concat([x_mu, y_v, y_mean + y_var], dim=1)
         Lambda_mean = self.get_Lambda_mean()
         z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
         return z_mean
@@ -488,7 +488,7 @@ class CondTransportKernel(nn.Module):
         y_var = geq_1d(torch.tensor(y_var, device=self.device, dtype=self.dtype))
         y_velocity = geq_1d(torch.tensor(y_velocity, device=self.device, dtype=self.dtype))
 
-        z_mean = self.map_mean(x_mu, y_mean, y_var)
+        z_mean = self.map_mean(x_mu, y_mean, y_var, y_v)
         z_var = self.map_var(x_mu, y_velocity, y_mean, y_var, y_eta)
         z = z_mean + z_var
         y_approx = y_mean + y_var
@@ -1202,8 +1202,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name='velocity_exp', test_keys=['checker', 'spiral'],
-               cond=True, N=5000, n_transports=70)
+    test_panel(test_name='velocity_exp', test_keys=['checker'],
+               cond=True, N=5000, n_transports=70, plot_steps=True)
 
 
     #pass

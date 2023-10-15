@@ -1123,7 +1123,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
-                              plot_steps=plot_steps, normal=True, bins=100, var_eps=1/8, approx_path = approx_path,
+                              plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3, approx_path = approx_path,
                               cond=cond)
                     fail_count +=3
                 except torch._C._LinAlgError:
