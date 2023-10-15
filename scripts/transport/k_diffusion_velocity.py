@@ -228,8 +228,8 @@ class Comp_transport_model:
         return z_mean
 
 
-    def map_var(self, x_mu, y_eta, y_mean, Lambda_var, X_var, y_var, var_kernel, var_eps):
-        x_var = torch.concat([x_mu, var_eps * flip(y_eta), y_mean + y_var], dim=1)
+    def map_var(self, x_mu, y_v, y_mean, Lambda_var, X_var, y_var, var_kernel, var_eps):
+        x_var = torch.concat([x_mu, y_v, y_mean + y_var], dim=1)
         z_var = var_kernel(X_var, x_var).T @ Lambda_var
         return z_var
 
