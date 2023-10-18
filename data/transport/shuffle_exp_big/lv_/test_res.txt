@@ -1,1 +1,0 @@
-Test mmd :3.4098E-05, Test emd :1.0

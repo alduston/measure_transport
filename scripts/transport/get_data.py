@@ -451,7 +451,7 @@ def sample_spirals(N):
     return inf_train_gen("2spirals", batch_size=N)
 
 
-def sample_pinweel(N):
+def sample_pinwheel(N):
     return inf_train_gen("pinwheel", batch_size=N)
 
 

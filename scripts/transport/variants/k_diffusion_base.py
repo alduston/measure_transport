@@ -92,6 +92,8 @@ def shuffle(tensor):
 
 
 def flip(tensor):
+    if True:
+        return shuffle(tensor)
     if geq_1d(tensor).shape[0] <=1:
         return tensor
     else:
@@ -247,6 +249,7 @@ class Comp_transport_model:
 
 
     def map_step(self, step_idx, param_dict):
+        self.step_idx = step_idx
         Lambda_mean = torch.tensor(self.submodel_params['Lambda_mean'][step_idx],
                                    device=self.device, dtype=self.dtype)
         Lambda_var = torch.tensor(self.submodel_params['Lambda_var'][step_idx],
@@ -350,8 +353,8 @@ class CondTransportKernel(nn.Module):
 
         self.Y_target = torch.concat([deepcopy(self.X_mu), self.Y_mu_noisy], dim=1)
         self.X_mu = self.X_mu
-
-        self.X_var = torch.concat([self.X_mu, self.var_eps * flip(self.Y_eta), self.Y_mean + self.Y_var], dim=1)
+        
+        self.X_var = torch.concat([self.X_mu,  self.var_eps * flip(self.Y_eta),self.Y_mean + self.Y_var], dim=1)
         self.X_mean = torch.concat([self.X_mu, self.Y_mean + self.Y_var], dim=1)
 
         self.Nx = len(self.X_mean)
@@ -598,8 +601,13 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
 def dict_not_valid(loss_dict):
     for key,val_list in loss_dict.items():
         for value in val_list:
-            if np.isnan(value) or value < -1:
-                return True
+            try:
+                if np.isnan(value) or value < -1:
+                    return True
+            except TypeError:
+                np_val = value.detach().cpu().numpy()
+                if np.isnan(np_val) or np_val < -1:
+                    return True
     return False
 
 
@@ -739,6 +747,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     if not len(idx_dict):
         idx_dict = {'ref': [], 'cond': [[]], 'target': []}
         if cond:
+        #if True:
             for k in range(nr):
                 idx_dict['ref'].append([k])
                 idx_dict['target'].append([k])
@@ -930,7 +939,7 @@ def spheres_exp(N=5000, exp_name='spheres_exp', n_transports=70, N_plot=5000,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plot_idx=plot_idx, plt_range=plt_range, idx_dict=idx_dict,
-                                                         var_eps= 1/3, n_transports=n_transports, mu = mu, sigma=sigma)
+                                                         var_eps= 1/2, n_transports=n_transports, mu = mu, sigma=sigma)
 
     slice_vals = np.asarray([[1, .0], [1, .4], [1, .6], [1, .75]])
     sphere_slice_plots(slice_vals, ref_gen, N_plot, trained_models, idx_dict, save_dir = save_dir,
@@ -1005,7 +1014,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
                                                          plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
-                                                         plot_idx=[], var_eps = 1/3, approx_path = approx_path, mu = mu)
+                                                         plot_idx=[], var_eps = 1/2, approx_path = approx_path, mu = mu)
     if not normal:
         mu, sigma = get_base_stats(target_gen, N)
 
@@ -1048,7 +1057,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_banana, N=N,
                               exp_name=f'/{test_name}/banana_{i_str}', n_transports=n_transports, slice_vals=[-1, 0, 1],
                               plt_range=[[-3, 3], [-1, 6]], slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1,
-                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/3,
+                              N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100, var_eps=1/2,
                               approx_path=approx_path, cond =cond)
                     fail_count += 3
                 except torch._C._LinAlgError:
@@ -1062,7 +1071,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     two_d_exp(ref_gen=sample_normal, target_gen=mgan1, N=N, exp_name=f'/{test_name}/mgan1_{i_str}',
                             n_transports=n_transports, slice_vals=[-1, 0, 1], plt_range=[[-2.5, 2.5], [-1, 3]],
                             slice_range=[-1.5, 1.5], vmax=1.2, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps,
-                            normal=True, bins=100, var_eps=1/3, approx_path = approx_path, cond =cond)
+                            normal=True, bins=100, var_eps=1/2, approx_path = approx_path, cond =cond)
                     fail_count += 3
                 except torch._C._LinAlgError:
                     fail_count += 1
@@ -1119,7 +1128,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
-                              vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/3,
+                              vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100, var_eps=1/5,
                               approx_path = approx_path, cond =cond)
                     fail_count +=3
                 except torch._C._LinAlgError:
@@ -1182,18 +1191,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    #test_panel(test_name = 'n_cond_exp', test_keys=['lv'], cond = False, N = 5000, N_plot=10000)
-    #test_panel(test_name='exp', test_keys=['checker'], cond=True, N=200, n_transports=2,
-               #plot_steps = True, N_plot=100)
-    #print('here')
-    test_panel(test_name='n_cond_exp', test_keys=['checker'],
-               cond=False, N=5000, n_transports=70, plot_steps=True)
-    test_panel(test_name='cond_exp', test_keys=['checker'],
-               cond=True, N=5000, n_transports=70, plot_steps=True)
-    test_panel(test_name='n_cond_exp_big', test_keys=['checker'],
-               cond=False, N=10000, n_transports=70, plot_steps=True)
-    test_panel(test_name='cond_exp_big', test_keys=['checker'],
-               cond=True, N=10000, n_transports=70, plot_steps=True)
+    test_panel(test_name='n_cond_exp', test_keys=['swiss'], cond=True, N=5000)
 
 if __name__ == '__main__':
     run()
