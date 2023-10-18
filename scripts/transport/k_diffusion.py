@@ -6,7 +6,7 @@ import os
 from copy import deepcopy,copy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_checkerboard, mgan1, sample_rings, \
     rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll,\
-    sample_pinwheel, sample_moons, sample_circles
+    sample_pinwheel, sample_moons, sample_circles, sample_8gaussians
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -987,7 +987,8 @@ def plot_lv_matrix(x_samps, limits, xtrue=None, symbols=None, save_dir = '.', la
     return True
 
 
-def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_plot = 0, approx_path = True):
+def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_plot = 0,
+           approx_path = False):
     ref_gen = lambda N: sample_normal(N, 4)
     target_gen = lambda N: get_VL_data(N, normal=False, Yd=Yd)
 
@@ -1003,6 +1004,11 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
+    base_ref = list(range(4, 4 + Yd))
+    alt_idx_dict =  {'ref': [[0], [1], [2], [3]],
+                    'cond': [base_ref, base_ref + [0], base_ref + [0,1], base_ref + [0,1,2]],
+                    'target': [[0], [1], [2], [3]]}
+
     save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
@@ -1014,10 +1020,11 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
         N_plot = min(10 * N, 4000)
 
     trained_models, idx_dict = conditional_transport_exp(ref_gen, normal_target_gen, N=N, N_plot=N_plot ,sigma = sigma,
-                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],
+                                                         skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],mu = mu,
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
-                                                         plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
-                                                         plot_idx=[], var_eps = 1/2, approx_path = approx_path, mu = mu)
+                                                         plt_range=None, n_transports=n_transports, #idx_dict=idx_dict,
+                                                         idx_dict= alt_idx_dict, plot_idx=[], var_eps = 1/2,
+                                                         approx_path = approx_path)
     if not normal:
         mu, sigma = get_base_stats(target_gen, N)
 
@@ -1073,7 +1080,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
             while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_pinwheel, N=N,
-                              exp_name=f'/{test_name}/pinwheel_{i_str}', n_transports=n_transports, slice_vals=[-1, 0, 1],
+                              exp_name=f'/{test_name}/pinwheel_{i_str}', n_transports=n_transports, slice_vals=[ 0, 1.5],
                               plt_range=[[-3.5, 3.5], [-3.5, 3.5]], slice_range= [-3.5, 3.5], vmax=.55, skip_idx=1,
                               N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100,
                               var_eps=(1/4) * eps_modifier, approx_path=approx_path, cond=cond)
@@ -1081,7 +1088,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                 except torch._C._LinAlgError:
                     fail_count += 1
                     os.system(
-                        f'echo "Linalg_error {fail_count}" > /{test_name}/banana_{i_str}/lin_error_log{fail_count}.txt')
+                        f'echo "Linalg_error {fail_count}" > /{test_name}/pinwheel_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'moons' in test_keys:
@@ -1090,14 +1097,14 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_moons, N=N,
                               exp_name=f'/{test_name}/moons_{i_str}', n_transports=n_transports,
-                              slice_vals=[-1, 0, 1], plt_range=[[-4, 4], [-2, 2.5]], slice_range= [-2, 2.5],
+                              slice_vals=[-1, 0, 1], plt_range=[[-4, 4], [-2.5, 3]], slice_range= [-2, 2.5],
                               vmax=.45, skip_idx=1,N_plot=N_plot, plot_steps=plot_steps, normal=True, bins=100,
                               var_eps=(1 / 4) * eps_modifier, approx_path=approx_path, cond=cond)
                     fail_count += 3
                 except torch._C._LinAlgError:
                     fail_count += 1
                     os.system(
-                        f'echo "Linalg_error {fail_count}" > /{test_name}/banana_{i_str}/lin_error_log{fail_count}.txt')
+                        f'echo "Linalg_error {fail_count}" > /{test_name}/moons_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'circles' in test_keys:
@@ -1106,14 +1113,30 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_circles, N=N,
                               exp_name=f'/{test_name}/circles_{i_str}', n_transports=n_transports,
-                              slice_vals=[-1, 0, 1], plt_range=[[-4, 4], [-4, 4]], slice_range= [-4, 4],
+                              slice_vals=[0, 1.5], plt_range=[[-4, 4], [-4, 4]], slice_range= [-4, 4],
                               vmax=.2, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
                               bins=100, var_eps=(1 / 4) * eps_modifier, approx_path=approx_path, cond=cond)
                     fail_count += 3
                 except torch._C._LinAlgError:
                     fail_count += 1
                     os.system(
-                        f'echo "Linalg_error {fail_count}" > /{test_name}/banana_{i_str}/lin_error_log{fail_count}.txt')
+                        f'echo "Linalg_error {fail_count}" > /{test_name}/circles_{i_str}/lin_error_log{fail_count}.txt')
+                    pass
+
+        if '8gaussians' in test_keys:
+            fail_count = 0
+            while fail_count <= 2:
+                try:
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_8gaussians, N=N,
+                              exp_name=f'/{test_name}/8gaussians_{i_str}', n_transports=n_transports,
+                              slice_vals=[-1.9, .1, 2.3], plt_range=[[-3.8, 4.2], [-4.2, 4.2]], slice_range= [-4.2, 4.2],
+                              vmax=.33, skip_idx=1, N_plot=N_plot, plot_steps=plot_steps, normal=True,
+                              bins=100, var_eps=(1 / 4) * eps_modifier, approx_path=approx_path, cond=cond)
+                    fail_count += 3
+                except torch._C._LinAlgError:
+                    fail_count += 1
+                    os.system(
+                        f'echo "Linalg_error {fail_count}" > /{test_name}/8gaussians_{i_str}/lin_error_log{fail_count}.txt')
                     pass
 
         if 'mgan1' in test_keys:
@@ -1243,8 +1266,11 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
+    #test_panel(test_name='lv_alt', cond = True, N = 9000,
+               #n_transports=70,  N_plot= 40000, test_keys=['lv'])
+
     test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
-    test_keys=['swiss', 'moons', 'circles','circles', 'pinwheel', 'lv'], k = 5)
+        test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
 
     #test_panel(test_name='cond_exp',cond=True, N=5000, n_transports=70, eps_modifier = 1.05,
                #test_keys=['swiss', 'moons', 'spiral','circles','circles', 'pinwheel', 'checker'])
