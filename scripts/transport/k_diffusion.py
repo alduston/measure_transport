@@ -6,7 +6,7 @@ import os
 from copy import deepcopy,copy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_checkerboard, mgan1, sample_rings, \
     rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll,\
-    sample_pinwheel, sample_moons, sample_circles, sample_8gaussians
+    sample_pinwheel, sample_moons, sample_circles, sample_8gaussians, sample_2normal
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -748,8 +748,8 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     if not len(idx_dict):
         idx_dict = {'ref': [], 'cond': [[]], 'target': []}
-        #if cond:
-        if True:
+        if cond:
+        #if True:
             for k in range(nr):
                 idx_dict['ref'].append([k])
                 idx_dict['target'].append([k])
@@ -821,6 +821,15 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
     plot_gen_sample = plot_gen_sample[:, plot_idx]
     plot_target_sample = plot_target_sample[:, plot_idx]
+
+    plt.hist( plot_target_sample[:, 0], bins=100)
+    plt.savefig('target_hist.png')
+    clear_plt()
+
+    plt.hist(plot_ref_sample[:, 0],  bins=100)
+    plt.savefig('ref_hist.png')
+    clear_plt()
+
     try:
         d = len(plot_gen_sample[0])
     except TypeError:
@@ -1266,11 +1275,11 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    #test_panel(test_name='lv_alt', cond = True, N = 9000,
-               #n_transports=70,  N_plot= 40000, test_keys=['lv'])
+    test_panel(test_name='noise_exp', cond = True, N = 10000, eps_modifier= 10,
+               n_transports=70,  test_keys=['checker'], plot_steps=True)
 
-    test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
-        test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
+    #test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
+        #test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
 
     #test_panel(test_name='cond_exp',cond=True, N=5000, n_transports=70, eps_modifier = 1.05,
                #test_keys=['swiss', 'moons', 'spiral','circles','circles', 'pinwheel', 'checker'])
