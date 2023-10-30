@@ -1282,7 +1282,7 @@ def run():
 
     test_panel(test_name='movie_exp', cond = True, N = 10000, eps_modifier= 1.05,
                n_transports=70,  test_keys=['checker', 'spiral'], plot_steps=True)
-    test_panel(test_name='movie_exp', cond=False, N=10000, eps_modifier=.6,
+    test_panel(test_name='movie_exp_ncond', cond=False, N=10000, eps_modifier=.6,
                n_transports=70, test_keys=['checker', 'spiral'], plot_steps=True)
 
     #test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
