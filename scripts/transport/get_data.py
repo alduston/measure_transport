@@ -37,6 +37,7 @@ def normalize(array, keep_axes=[], just_var = False, just_mean = False):
         normal_array = np.concatenate([normal_array, keep_array], axis = 1)
     return normal_array
 
+
 def rand_covar(N):
     A = np.random.random((N,N))
     return A @ A.T
@@ -422,11 +423,18 @@ def mgan3(N = 200, x_range = [-3,3], eps_var = .05):
     sample = np.asarray([[y, u] for y, u in zip(Y, U)])
     return sample
 
+def top_square(N = 200):
+    square = unif_square_2d(N, x_range = [0,1], y_range=[0,1])
+    resample_factors = np.asarray([np.linalg.norm(v) for v in square]).reshape(len(square))
+    resample_factors = resample_factors/np.sum(resample_factors)
+    top_square = resample(square.T, resample_factors, N)
+    return top_square.T
+
 
 def norm_square_2d(N = 200):
-    X = np.random.uniform(low = -1, high = 1, size = N)
+    X = np.random.uniform(low = 0, high = 1, size = N)
     X = X * np.abs(X)
-    Y = np.random.uniform(low = -1, high = 1, size = N)
+    Y = np.random.uniform(low = 0, high = 1, size = N)
     Y = Y * np.abs(Y)
     sample = np.asarray([[x, y] for x, y in zip(X, Y)])
     return sample

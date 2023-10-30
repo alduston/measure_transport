@@ -6,7 +6,7 @@ import os
 from copy import deepcopy,copy
 from get_data import sample_banana, sample_normal, mgan2, sample_spirals, sample_checkerboard, mgan1, sample_rings, \
     rand_covar, sample_torus, sample_x_torus, sample_sphere, sample_base_mixtures, sample_spheres, sample_swiss_roll,\
-    sample_pinwheel, sample_moons, sample_circles, sample_8gaussians, sample_2normal
+    sample_pinwheel, sample_moons, sample_circles, sample_8gaussians, sample_2normal, top_square
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -217,6 +217,7 @@ class Comp_transport_model:
         y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
         x_plot, y_plot = y_map.T
         plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
+        plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
         plt.savefig(save_loc)
         clear_plt()
 
@@ -1275,8 +1276,14 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name='noise_exp', cond = True, N = 10000, eps_modifier= 10,
-               n_transports=70,  test_keys=['checker'], plot_steps=True)
+    #two_d_exp(ref_gen=sample_normal, target_gen=top_square, N=50, exp_name=f'/exp/square',
+              #n_transports=1, slice_vals=[], skip_idx=1, N_plot=300000, plot_steps=False,
+              #plt_range= [[0 ,1], [0, 1]],normal=True, bins=100, var_eps=(1 / 6) * 1, approx_path=False, cond=True)
+
+    test_panel(test_name='movie_exp', cond = True, N = 10000, eps_modifier= 1.05,
+               n_transports=70,  test_keys=['checker', 'spiral'], plot_steps=True)
+    test_panel(test_name='movie_exp', cond=False, N=10000, eps_modifier=.6,
+               n_transports=70, test_keys=['checker', 'spiral'], plot_steps=True)
 
     #test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
         #test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
