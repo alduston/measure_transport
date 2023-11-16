@@ -856,9 +856,9 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
     mu, sigma = 0, 1
     if normal:
         mu,sigma = get_base_stats(target_gen, N)
-        normal_target_gen = lambda n: normalize(target_gen(n))
+        normal_target_gen = lambda n: shuffle(normalize(target_gen(n)))
     else:
-        normal_target_gen = target_gen
+        normal_target_gen = lambda n: shuffle(target_gen(n))
 
     if not cond:
         skip_idx = 0
@@ -1073,7 +1073,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
         i_str = i if k > 1 else ''
         if 'banana' in test_keys:
             fail_count = 0
-            ref_gen = sample_banana if self_ref else ref_gen = sample_normal
+            ref_gen = sample_banana
             while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_banana, N=N,
@@ -1196,10 +1196,10 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
         if 'checker' in test_keys:
             fail_count = 0
-            ref_gen = sample_checkerboard if self_ref else ref_gen = sample_normal
+
             while fail_count <= 2:
                 try:
-                    two_d_exp(ref_gen=ref_gen, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
+                    two_d_exp(ref_gen=sample_checkerboard, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=(1/3) * eps_modifier,
@@ -1213,9 +1213,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
         if 'spiral' in test_keys:
             fail_count = 0
             while fail_count <= 2:
-                ref_gen = sample_spirals if self_ref else ref_gen = sample_normal
                 try:
-                    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
+                    two_d_exp(ref_gen=sample_spirals, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
                               vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100,
                               var_eps=(1/6) * eps_modifier, approx_path = approx_path, cond =cond)
@@ -1281,7 +1280,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 def run():
     test_panel(test_name='marginal_exp', cond = True, N = 5000, eps_modifier= 1.05,
-               n_transports=70,  test_keys=['checker', 'spiral', 'banana'], plot_steps=True)
+               n_transports=70,  test_keys=['banana', 'spiral', 'checker'], plot_steps=True)
 
     #test_panel(test_name='exp_ncond', cond=False, N=100, eps_modifier=.6,
                #n_transports=2, test_keys=['checker', 'spiral'], plot_steps=True, N_plot= 100)
