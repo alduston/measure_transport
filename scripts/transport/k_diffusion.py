@@ -1280,10 +1280,11 @@ def run():
               #n_transports=1, slice_vals=[], skip_idx=1, N_plot=300000, plot_steps=False,
               #plt_range= [[0 ,1], [0, 1]],normal=True, bins=100, var_eps=(1 / 6) * 1, approx_path=False, cond=True)
 
-    test_panel(test_name='movie_exp', cond = True, N = 10000, eps_modifier= 1.05,
+    test_panel(test_name='exp', cond = True, N = 5000, eps_modifier= 1.05,
                n_transports=70,  test_keys=['checker', 'spiral'], plot_steps=True)
-    test_panel(test_name='movie_exp_ncond', cond=False, N=10000, eps_modifier=.6,
-               n_transports=70, test_keys=['checker', 'spiral'], plot_steps=True)
+
+    #test_panel(test_name='exp_ncond', cond=False, N=100, eps_modifier=.6,
+               #n_transports=2, test_keys=['checker', 'spiral'], plot_steps=True, N_plot= 100)
 
     #test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
         #test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
