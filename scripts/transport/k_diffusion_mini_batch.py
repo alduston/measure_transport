@@ -458,14 +458,16 @@ class CondTransportKernel(nn.Module):
     def map_mean(self, x_mu, y_mean, y_var):
         x_mean = torch.concat([x_mu, y_mean + y_var], dim=1)
         Lambda_mean = self.get_Lambda_mean()
-        z_mean = self.fit_kernel(self.X_mean, x_mean).T @ Lambda_mean
+        M_mean = self.X_mean[self.reg_indexes]
+        z_mean = self.fit_kernel(M_mean, x_mean).T @ Lambda_mean
         return z_mean
 
 
     def map_var(self, x_mu, y_eta, y_mean, y_var):
         x_var = torch.concat([x_mu, self.var_eps * flip(y_eta), y_mean + y_var], dim=1)
         Lambda_var = self.get_Lambda_var()
-        z_var = self.var_kernel(self.X_var, x_var).T @ Lambda_var
+        M_var = self.X_var[self.reg_indexes]
+        z_var = self.var_kernel(M_var, x_var).T @ Lambda_var
         return z_var
 
 
@@ -637,7 +639,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     Y_noise = Y_eta
     step_num = 1
 
-    batch_size = min(len(Y_mean), 5000)
+    batch_size = min(len(Y_mean), 10000)
     reg_indexes = random.sample(range(len(Y_mean)), k = batch_size)
 
     for i in range(n_transports):
