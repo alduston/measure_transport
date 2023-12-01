@@ -371,8 +371,13 @@ class CondTransportKernel(nn.Module):
         self.fit_kernel = get_kernel(self.params['fit_kernel_params'], self.device)
 
         self.nugget_matrix = self.params['nugget'] * torch.eye(self.Nx, device=self.device, dtype=self.dtype)
-        self.fit_kXXmean_inv = torch.linalg.inv(self.fit_kernel(self.X_mean, self.X_mean) + self.nugget_matrix)
-        self.fit_kXXvar_inv = torch.linalg.inv(self.var_kernel(self.X_var, self.X_var) + self.nugget_matrix)
+        self.nugget_matrix = self.nugget_matrix[self.reg_indexes, self.reg_indexes]
+
+        sub_k_XX_mean = self.fit_kernel(self.X_mean, self.X_mean)[self.reg_indexes,:][:, self.reg_indexes]
+        self.fit_kXXmean_inv = torch.linalg.inv(sub_k_XX_mean + self.nugget_matrix)
+
+        sub_k_XX_var = self.var_kernel(self.X_var, self.X_var)[self.reg_indexes, :][:, self.reg_indexes]
+        self.fit_kXXvar_inv = torch.linalg.inv(sub_k_XX_var + self.nugget_matrix)
 
         self.Z_mean = nn.Parameter(self.init_Z(), requires_grad=True)
         self.Z_var = nn.Parameter(self.init_Z(), requires_grad=True)
@@ -553,11 +558,8 @@ class CondTransportKernel(nn.Module):
         Z_mean = self.Z_mean[reg_indexes]
         Z_var = self.Z_var[reg_indexes]
 
-        M_mean = self.fit_kXXmean_inv[:, reg_indexes][reg_indexes, :]
-        M_var = self.fit_kXXmean_inv[:, reg_indexes][reg_indexes, :]
-
-        reg_mean = torch.trace(Z_mean.T @ M_mean @ Z_mean)
-        reg_var =  torch.trace(Z_var.T @ M_var @ Z_var)
+        reg_mean = torch.trace(Z_mean.T @  self.fit_kXXmean_inv @ Z_mean)
+        reg_var =  torch.trace(Z_var.T @ self.fit_kXXmean_inv @ Z_var)
         return  self.reg_lambda * (reg_mean + reg_var)
 
 
