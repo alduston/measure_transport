@@ -639,7 +639,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     Y_noise = Y_eta
     step_num = 1
 
-    batch_size = min(len(Y_mean), 10000)
+    batch_size = min(len(Y_mean), 5000)
     reg_indexes = random.sample(range(len(Y_mean)), k = batch_size)
 
     for i in range(n_transports):
@@ -1294,8 +1294,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 def run():
     #test_panel(test_name='exp', cond=True, N=500, eps_modifier=1.05,
                #n_transports=70, test_keys=['spiral', 'checker'], plot_steps=True, N_plot = 1000)
-    
-    test_panel(test_name='exp', cond = True, N = 25000, eps_modifier= 1.05,
+
+    test_panel(test_name='exp', cond = True, N = 10000, eps_modifier= 1.05,
                n_transports=70,  test_keys=['spiral', 'checker'], plot_steps=True)
 
 
