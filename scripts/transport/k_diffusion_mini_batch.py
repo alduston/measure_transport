@@ -559,7 +559,7 @@ class CondTransportKernel(nn.Module):
         Z_var = self.Z_var[reg_indexes]
 
         reg_mean = torch.trace(Z_mean.T @  self.fit_kXXmean_inv @ Z_mean)
-        reg_var =  torch.trace(Z_var.T @ self.fit_kXXmean_inv @ Z_var)
+        reg_var =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
         return  self.reg_lambda * (reg_mean + reg_var)
 
 
