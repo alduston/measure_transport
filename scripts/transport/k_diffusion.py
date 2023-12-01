@@ -217,7 +217,7 @@ class Comp_transport_model:
         y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
         x_plot, y_plot = y_map.T
         plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-        plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
+        #plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
         plt.savefig(save_loc)
         clear_plt()
 

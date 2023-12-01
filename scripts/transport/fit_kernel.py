@@ -155,7 +155,7 @@ def sample_hmap(sample, save_loc, bins = 70, d = 2, range = None, vmax= None,
         x = np.asarray(x)
         y = np.asarray(y)
         plt.hist2d(x,y, density=True, bins = bins, range = range, cmin = 0, vmin=0, vmax = vmax,
-                   cmap = plt.cm.jet)
+                   cmap = cmap)
         if cbar:
             plt.colorbar()
         plt.subplot(1, 2, 2)

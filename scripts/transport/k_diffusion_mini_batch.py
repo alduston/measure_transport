@@ -217,7 +217,7 @@ class Comp_transport_model:
         y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
         x_plot, y_plot = y_map.T
         plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-        plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
+        #plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
         plt.savefig(save_loc)
         clear_plt()
 
@@ -333,6 +333,7 @@ class CondTransportKernel(nn.Module):
         self.noise_eps = self.params['target_eps']
         self.var_eps =  self.params['var_eps']
         self.step_num = self.params['step_num']
+        self.reg_indexes =  torch.tensor(self.params['reg_indexes'], device = self.device).long()
 
         self.Y_eta = geq_1d(torch.tensor(base_params['Y_eta'], device=self.device, dtype=self.dtype))
         self.Y_eta_flip = flip(self.Y_eta)
@@ -548,11 +549,15 @@ class CondTransportKernel(nn.Module):
 
 
     def loss_reg(self):
-        Z_mean = self.Z_mean
-        Z_var = self.Z_var
+        reg_indexes = self.reg_indexes
+        Z_mean = self.Z_mean[reg_indexes]
+        Z_var = self.Z_var[reg_indexes]
 
-        reg_mean = torch.trace(Z_mean.T @ self.fit_kXXmean_inv @ Z_mean)
-        reg_var =  torch.trace(Z_var.T @ self.fit_kXXvar_inv @ Z_var)
+        M_mean = self.fit_kXXmean_inv[:, reg_indexes][reg_indexes, :]
+        M_var = self.fit_kXXmean_inv[:, reg_indexes][reg_indexes, :]
+
+        reg_mean = torch.trace(Z_mean.T @ M_mean @ Z_mean)
+        reg_var =  torch.trace(Z_var.T @ M_var @ Z_var)
         return  self.reg_lambda * (reg_mean + reg_var)
 
 
@@ -579,9 +584,10 @@ class CondTransportKernel(nn.Module):
         return loss, loss_dict
 
 
-def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test, X_mu_val,
-                          Y_mean_test, Y_var_test, Y_noise, params, iters=-1, approx=False, mmd_lambda=0, step_num = 1,
-                          reg_lambda=1e-7, grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
+def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
+                          X_mu_val, Y_mean_test, Y_var_test, Y_noise, params, reg_indexes,
+                          iters=-1, approx=False, mmd_lambda=0, step_num = 1,reg_lambda=1e-7,
+                          grad_cutoff = .0001, n_iter = 200, target_eps = 1, var_eps = 1/3):
     d = X_mu.shape[-1]
     if d > 2:
         M = 8000
@@ -593,7 +599,7 @@ def cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_tes
                         'Y_eta_test': Y_eta_test, 'X_mu_test': X_mu_test, 'Y_mu_test': Y_mu_test, 'X_mu_val': X_mu_val,
                         'Y_mean_test': Y_mean_test, 'approx': approx, 'mmd_lambda': mmd_lambda,'target_eps': target_eps,
                         'Y_var_test': Y_var_test, 'iters': iters, 'grad_cutoff': grad_cutoff, 'step_num': step_num,
-                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), M)}
+                        'Y_noise': Y_noise, 'batch_size': min(len(X_mu), M), 'reg_indexes': reg_indexes}
 
     model = CondTransportKernel(transport_params)
     model, loss_dict = train_kernel(model, n_iter= n_iter)
@@ -629,11 +635,15 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
     Y_noise = Y_eta
     step_num = 1
 
+    batch_size = min(len(Y_mean), 5000)
+    reg_indexes = random.sample(range(len(Y_mean)), k = batch_size)
+
     for i in range(n_transports):
         model, loss_dict = cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_mean, Y_var, X_mu_test, Y_eta_test, Y_mu_test,
                                      X_mu_val, Y_mean_test, Y_var_test, Y_noise, n_iter = n_iter, params=params,
                                      mmd_lambda=mmd_lambda, reg_lambda=reg_lambda, grad_cutoff = grad_cutoff,
-                                     var_eps = var_eps, target_eps = target_eps, iters=iters, step_num = step_num)
+                                     var_eps = var_eps, target_eps = target_eps, iters=iters, step_num = step_num,
+                                     reg_indexes = reg_indexes)
         if dict_not_valid(loss_dict):
             break
 
@@ -659,6 +669,8 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         if approx_path:
             Y_noise = Y_mean + Y_var
 
+
+        reg_indexes = random.sample(range(len(Y_mean)), k=batch_size)
         step_num += 1
         iters = model.iters
 
@@ -702,14 +714,13 @@ def train_cond_transport(ref_gen, target_gen, params, N = 4000,  process_funcs=[
         Y_mu = target_sample[:, target_idx_tensors[i]]
         Y_mu_test = test_target_sample[:, target_idx_tensors[i]]
 
-        #Y_eta = ref_sample[:, ref_idx_tensors[i]]
-        #Y_eta_test = test_sample[:, ref_idx_tensors[i]]
-        Y_eta = ref_sample[:, target_idx_tensors[i]]
-        Y_eta_test = test_sample[:,  target_idx_tensors[i]]
+        Y_eta = ref_sample[:, ref_idx_tensors[i]]
+        Y_eta_test = test_sample[:, ref_idx_tensors[i]]
 
         trained_models.append(cond_model_trainer(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val,
                                                  params=params, reg_lambda=reg_lambda,  n_transports=n_transports,
                                                  var_eps = var_eps, approx_path =  approx_path))
+
     return trained_models
 
 
@@ -846,7 +857,7 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], normal = True,
               slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3,
-              approx_path=True, exp_func = conditional_transport_exp, cond = True):
+              approx_path=True, exp_func = conditional_transport_exp, cond = True, shuffle = False):
     save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
@@ -856,9 +867,9 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
     mu, sigma = 0, 1
     if normal:
         mu,sigma = get_base_stats(target_gen, N)
-        normal_target_gen = lambda n: shuffle(normalize(target_gen(n)))
+        normal_target_gen = lambda n: normalize(target_gen(n))
     else:
-        normal_target_gen = lambda n: shuffle(target_gen(n))
+        normal_target_gen = target_gen
 
     if not cond:
         skip_idx = 0
@@ -1015,10 +1026,10 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
                 'cond': [list(range(4, 4 + Yd))],
                 'target': [[0, 1, 2, 3]]}
 
-    #base_ref = list(range(4, 4 + Yd))
-    #alt_idx_dict =  {'ref': [[0], [1], [2], [3]],
-                    #'cond': [base_ref, base_ref + [0], base_ref + [0,1], base_ref + [0,1,2]],
-                    #'target': [[0], [1], [2], [3]]}
+    base_ref = list(range(4, 4 + Yd))
+    alt_idx_dict =  {'ref': [[0], [1], [2], [3]],
+                    'cond': [base_ref, base_ref + [0], base_ref + [0,1], base_ref + [0,1,2]],
+                    'target': [[0], [1], [2], [3]]}
 
     save_dir = f'../../data/transport{exp_name}'.replace('//', '/')
     try:
@@ -1033,9 +1044,9 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
     trained_models, idx_dict = conditional_transport_exp(ref_gen, normal_target_gen, N=N, N_plot=N_plot ,sigma = sigma,
                                                          skip_idx=skip_idx, exp_name=exp_name, process_funcs=[],mu = mu,
                                                          cond_model_trainer=comp_cond_kernel_transport, vmax=None,
-                                                         plt_range=None, n_transports=n_transports, idx_dict=idx_dict,
-                                                         plot_idx=[], var_eps = 1/2, approx_path = approx_path) #idx_dict= alt_idx_dict,
-
+                                                         plt_range=None, n_transports=n_transports, #idx_dict=idx_dict,
+                                                         idx_dict= alt_idx_dict, plot_idx=[], var_eps = 1/2,
+                                                         approx_path = approx_path)
     if not normal:
         mu, sigma = get_base_stats(target_gen, N)
 
@@ -1063,7 +1074,7 @@ def lv_exp(N=10000, Yd=18, normal=True, exp_name='lv_exp', n_transports=100,  N_
 
 def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 'test',
                test_keys = ['mgan1','mgan2','swiss','checker','spiral','elden','spheres', 'lv', 't_fractal', 'banana'],
-               N_plot = 100000, n_transports = 70, k = 1, cond = True, eps_modifier = 1, self_ref = False):
+               N_plot = 100000, n_transports = 70, k = 1, cond = True, eps_modifier = 1):
     test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
     try:
         os.mkdir(test_dir)
@@ -1073,7 +1084,6 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
         i_str = i if k > 1 else ''
         if 'banana' in test_keys:
             fail_count = 0
-            ref_gen = sample_banana
             while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_banana, N=N,
@@ -1196,10 +1206,9 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
         if 'checker' in test_keys:
             fail_count = 0
-
             while fail_count <= 2:
                 try:
-                    two_d_exp(ref_gen=sample_checkerboard, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
                               exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
                               plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=(1/3) * eps_modifier,
@@ -1214,7 +1223,7 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
             fail_count = 0
             while fail_count <= 2:
                 try:
-                    two_d_exp(ref_gen=sample_spirals, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
+                    two_d_exp(ref_gen=sample_normal, target_gen=sample_spirals, N=N, exp_name=f'/{test_name}/spiral_{i_str}',
                               n_transports= n_transports, slice_vals=[0], plt_range=[[-3, 3], [-3, 3]], slice_range=[-3,3],
                               vmax=.33,skip_idx=1, N_plot=N_plot, plot_steps=plot_steps , normal=True, bins=100,
                               var_eps=(1/6) * eps_modifier, approx_path = approx_path, cond =cond)
@@ -1279,18 +1288,9 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name='marginal_exp', cond = True, N = 5000, eps_modifier= 1.05,
-               n_transports=70,  test_keys=['banana', 'spiral', 'checker'], plot_steps=True)
+    test_panel(test_name='exp', cond = True, N = 500, eps_modifier= 1.05,
+               n_transports=70,  test_keys=['spiral'], plot_steps=True, N_plot=1000)
 
-    #test_panel(test_name='exp_ncond', cond=False, N=100, eps_modifier=.6,
-               #n_transports=2, test_keys=['checker', 'spiral'], plot_steps=True, N_plot= 100)
 
-    #test_panel(test_name='n_cond_exp_alt', cond=False, N=5000, n_transports=70, eps_modifier=1.05,
-        #test_keys=['8gaussians', 'moons', 'circles', 'pinwheel'], k = 5)
-
-    #test_panel(test_name='cond_exp',cond=True, N=5000, n_transports=70, eps_modifier = 1.05,
-               #test_keys=['swiss', 'moons', 'spiral','circles','circles', 'pinwheel', 'checker'])
-    #test_panel(test_name='n_cond_exp',cond=False, N=5000, n_transports=70, eps_modifier = .75,
-               #test_keys=['swiss', 'moons', 'spiral','circles','circles', 'pinwheel', 'checker'])
 if __name__ == '__main__':
     run()
