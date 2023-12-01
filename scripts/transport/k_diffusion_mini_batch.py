@@ -1292,8 +1292,11 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
 
 
 def run():
-    test_panel(test_name='exp', cond = True, N = 500, eps_modifier= 1.05,
-               n_transports=70,  test_keys=['spiral'], plot_steps=True, N_plot=1000)
+    #test_panel(test_name='exp', cond=True, N=500, eps_modifier=1.05,
+               #n_transports=70, test_keys=['spiral', 'checker'], plot_steps=True, N_plot = 1000)
+    
+    test_panel(test_name='exp', cond = True, N = 25000, eps_modifier= 1.05,
+               n_transports=70,  test_keys=['spiral', 'checker'], plot_steps=True)
 
 
 if __name__ == '__main__':
