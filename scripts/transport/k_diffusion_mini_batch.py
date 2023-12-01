@@ -448,11 +448,11 @@ class CondTransportKernel(nn.Module):
 
 
     def get_Lambda_mean(self):
-        return self.fit_kXXmean_inv @ (self.Z_mean)
+        return self.fit_kXXmean_inv @ (self.Z_mean[self.reg_indexes])
 
 
     def get_Lambda_var(self):
-        return self.fit_kXXvar_inv @ (self.Z_var)
+        return self.fit_kXXvar_inv @ (self.Z_var[self.reg_indexes])
 
 
     def map_mean(self, x_mu, y_mean, y_var):
