@@ -32,7 +32,8 @@ def concat_dicts(base_dict, udpate_dict):
             base_dict[key] = val
     return base_dict
 
-def wasserstain_distance(Y1, Y2, full = False):
+
+def wasserstein_distance(Y1, Y2, full = False):
     if not full:
         Y1 = Y1[:2000]
         Y2 = Y2[:2000]
@@ -60,9 +61,8 @@ def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
     for batch_idx in batch_idxs:
         Y1_batch = Y_1[batch_idx]
         Y2_batch = Y_2[batch_idx]
-        w_distances.append(wasserstain_distance(Y1_batch, Y2_batch, full = True))
+        w_distances.append(wasserstein_distance(Y1_batch, Y2_batch, full = True))
     return np.mean(w_distances)
-
 
 
 def get_base_stats(gen, N = 10000):
@@ -404,7 +404,7 @@ class CondTransportKernel(nn.Module):
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
-        goal_emd = wasserstain_distance(self.Y_target, self.Y_test)
+        goal_emd = wasserstein_distance(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
               f"Goal emd is {goal_emd}")
 
@@ -565,7 +565,7 @@ class CondTransportKernel(nn.Module):
 
         map_vec = self.map(x_mu, y_eta, y_mean, y_var)['y']
         test_mmd = self.mmd(map_vec, target, test = True)
-        test_emd = wasserstain_distance(map_vec, target)
+        test_emd = wasserstein_distance(map_vec, target)
         return  test_mmd, test_emd
 
 

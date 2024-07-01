@@ -153,7 +153,7 @@ class Comp_transport_model:
         self.submodel_params = submodels_params
         self.dtype = torch.float32
         self.plot_steps = False
-        self.save_dir = '../../../data/transport/exp/'
+        self.save_dir = '../../../data/transport/archive/exp/'
         self.plt_range = [[-2.5, 2.5], [-2.5, 2.5]]
         self.vmax = None
         self.bins = 75
