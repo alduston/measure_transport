@@ -618,7 +618,7 @@ def dict_not_valid(loss_dict):
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 2001,var_eps = 1/3,
+                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 801,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
     param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps','norm']
     models_param_dict = {key: [] for key in param_keys}
@@ -1301,29 +1301,26 @@ def get_r_tilde(T_tilde,  ref_gen = sample_normal, M = 10000):
     r_tilde = trained_models[0].norm.detach().cpu().numpy()
     return r_tilde
 
+
 def compute_bound(T_norm, r_tilde, delta, N, C = 1):
     S_1 = (np.sqrt((1/N)))*(1+np.sqrt((np.log(1/delta))))
     S_2 = max(0, T_norm - r_tilde)
     return C *(S_1+S_2)
 
 
-
 def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal,
-                 N = 1000, i = 0, plot = False):
+                 N = 1000, i = 0, plot = False, save_dir = None):
     return_dict = two_d_exp(ref_gen=ref_gen, target_gen=T_tilde, N=N, cond=False, n_transports=1)
     gen_samples, target_samples = return_dict['samples']
 
-    target_likelyhoods =  l_func(target_samples, y)
-    gen_likelyhoods = l_func(gen_samples,y)
+    target_likelyhoods =  L_func(target_samples, y)
+    gen_likelyhoods = L_func(gen_samples,y)
 
     resampled_target = resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
     resampled_gen = resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
 
-    test_name = 'exp'
-    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
-    save_dir = f'{test_dir}/banana'
 
-    if plot:
+    if plot and save_dir:
         sample_hmap(resampled_gen, f'{save_dir}/resampled_gen_map_{i}.png', bins=100, d=2,
                     range=[[-3, 3], [-1, 6]], vmax=1.2)
         sample_hmap(resampled_target, f'{save_dir}/resampled_target_map_{i}.png', bins=100, d=2,
@@ -1335,10 +1332,15 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
 
 
 def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .9,
-               ref_gen = sample_normal, N = 10000, M = 7000, m = 30):
-    test_name = 'exp'
-    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
-    save_dir = f'{test_dir}/banana'
+               ref_gen = sample_normal, N = 10000, M = 7000, m = 30,
+               exp_name = 'exp', dir_name = 'spiral'):
+    exp_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
+    save_dir = f'{exp_dir}/{dir_name}'
+    for dir in [exp_dir, save_dir]:
+        try:
+            os.mkdir(dir)
+        except OSError:
+            pass
     T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
                                                    N = N, reg_lambda=5e-8)
     r_tilde = get_r_tilde(T_tilde,  ref_gen = sample_normal, M = M)
@@ -1372,22 +1374,23 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
             scatter_x += m * [N_i]
 
         probs.append(p)
-        print(' ')
-        print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}')
-        print(' ')
+        #print(' ')
+        #print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}')
+        #print(' ')
 
     plt.scatter(scatter_x, scatter_y)
     plt.plot(sample_sizes,bounds)
-    print(bounds)
+
     plt.savefig(f'{save_dir}/hist_plot.png')
     clear_plt()
 
     plt.plot(probs)
     plt.savefig(f'{save_dir}/prob_plot.png')
+    clear_plt()
 
 
 def run():
-    test_bound(sample_banana, N = 10000, M = 10000,
+    test_bound(sample_elden_ring, N = 10000, M = 10000, exp_name='exp', dir_name = 'elden',
                sample_sizes = [500, 800, 1300, 2000, 3200, 4800, 7000], m = 15)
 
 
