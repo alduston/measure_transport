@@ -1368,7 +1368,7 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
             cond_MMDS *= C
             plt.scatter(m * [N_i], cond_MMDS)
             p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
-            scatter_y += cond_MMDS
+            scatter_y += list(cond_MMDS)
             scatter_x += m * [N_i]
 
         probs.append(p)
