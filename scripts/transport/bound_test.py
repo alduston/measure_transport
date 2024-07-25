@@ -1387,8 +1387,8 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
 
 
 def run():
-    test_bound(sample_banana, N = 300, M = 300,
-               sample_sizes = [70, 150, 200], m = 3)
+    test_bound(sample_banana, N = 10000, M = 10000,
+               sample_sizes = [500, 800, 1300, 2000, 3200, 4800, 7000], m = 15)
 
 
 if __name__ == '__main__':
