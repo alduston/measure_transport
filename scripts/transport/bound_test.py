@@ -618,7 +618,7 @@ def dict_not_valid(loss_dict):
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 801,var_eps = 1/3,
+                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 2001,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
     param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps','norm']
     models_param_dict = {key: [] for key in param_keys}
@@ -1291,14 +1291,14 @@ def get_T_tilde(target_gen, ref_gen = sample_normal, N = 15000, reg_lambda = 1e-
     trained_models = return_dict['models']
     idx_dict =  return_dict['idx_dict']
     T_tilde = lambda N: compositional_gen(trained_models, ref_gen(N), target_gen(N), idx_dict= idx_dict)
-    T_tilde_norm = trained_models[0].norm.detach().numpy()
+    T_tilde_norm = trained_models[0].norm.detach().cpu().numpy()
     return T_tilde, T_tilde_norm, return_dict
 
 
 def get_r_tilde(T_tilde,  ref_gen = sample_normal, M = 10000):
     return_dict = two_d_exp(ref_gen=ref_gen, target_gen=T_tilde, N=M, cond=False, n_transports=1)
     trained_models = return_dict['models']
-    r_tilde = trained_models[0].norm.detach().numpy()
+    r_tilde = trained_models[0].norm.detach().cpu().numpy()
     return r_tilde
 
 def compute_bound(T_norm, r_tilde, delta, N, C = 1):
@@ -1343,26 +1343,46 @@ def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = 
     y = 0 * model_dict['samples'][0][0]
     C = 0
     MMD_func = model_dict['models'][0].mmd
-
+    bounds = []
+    probs = []
     for i, N_i in enumerate(samples_sizes):
         bound_val = compute_bound(T_tilde_norm, r_tilde, delta, N_i)
-        cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
+        bounds.append(bound_val)
+        if i:
+            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
+            plt.scatter(m*[N_i],cond_MMDS)
 
-        if i==0:
+        else:
+            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(4*m)])
+            plt.scatter(4*m*[N_i],cond_MMDS)
             c = np.percentile(cond_MMDS, 100 * delta)
             C = bound_val / c
 
         cond_MMDS *= C
+        p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
+        probs.append(p)
 
         print(' ')
-        print(f'For N = {N_i}, p(cond_MMD < bound) = {len(cond_MMDS[cond_MMDS <= bound_val]) / m}')
+        print(f'For N = {N_i}, p(cond_MMD < bound) = {p}')
         print(' ')
+
+    test_name = 'exp'
+    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
+    save_dir = f'{test_dir}/banana'
+
+    plt.plot(zip(sample_sizes,bounds))
+    plt.savefig(f'{save_dir}/hist_plot.png')
+    clear_plt()
+
+    plt.plot(probs)
+    plt.savefig(f'{save_dir}/prob_plot.png')
+
 
 
 
 def run():
-    test_bound(sample_banana, N = 10000, M = 7000,
-               samples_sizes = [700, 1500, 2000, 3000], m = 30)
+    test_bound(sample_banana, N = 1000, M = 700,
+               samples_sizes = [70, 150], m = 2)
 
 
 
