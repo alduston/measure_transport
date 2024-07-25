@@ -1336,6 +1336,9 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
 
 def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .9,
                ref_gen = sample_normal, N = 10000, M = 7000, m = 30):
+    test_name = 'exp'
+    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
+    save_dir = f'{test_dir}/banana'
     T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
                                                    N = N, reg_lambda=5e-8)
     r_tilde = get_r_tilde(T_tilde,  ref_gen = sample_normal, M = M)
@@ -1345,6 +1348,8 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
     MMD_func = model_dict['models'][0].mmd
     bounds = []
     probs = []
+    scatter_x = []
+    scatter_y = []
     for i, N_i in enumerate(sample_sizes):
         bound_val = compute_bound(T_tilde_norm, r_tilde, delta, N_i)
         bounds.append(bound_val)
@@ -1355,22 +1360,25 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
             cond_MMDS *= C
             p = len(cond_MMDS[cond_MMDS <= bound_val]) / (4 * m)
 
+            scatter_y += list(cond_MMDS)
+            scatter_x += 4 * m * [N_i]
+
         else:
             cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
             cond_MMDS *= C
             plt.scatter(m * [N_i], cond_MMDS)
             p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
+            scatter_y += cond_MMDS
+            scatter_x += m * [N_i]
 
         probs.append(p)
         print(' ')
-        print(f'For N = {N_i}, p(cond_MMD < bound) = {p}')
+        print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}')
         print(' ')
 
-    test_name = 'exp'
-    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
-    save_dir = f'{test_dir}/banana'
-
+    plt.scatter(scatter_x, scatter_y)
     plt.plot(sample_sizes,bounds)
+    print(bounds)
     plt.savefig(f'{save_dir}/hist_plot.png')
     clear_plt()
 
@@ -1378,14 +1386,9 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
     plt.savefig(f'{save_dir}/prob_plot.png')
 
 
-
-
 def run():
     test_bound(sample_banana, N = 300, M = 300,
-               sample_sizes = [70, 150], m = 2)
-
-
-
+               sample_sizes = [70, 150, 200], m = 3)
 
 
 if __name__ == '__main__':
