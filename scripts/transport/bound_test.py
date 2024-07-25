@@ -209,7 +209,7 @@ class Comp_transport_model:
                 self.device = 'cuda'
             else:
                 self.device = 'cpu'
-
+        self.norm = torch.sum(torch.tensor(submodels_params['norm'], device = self.device, dtype=self.dtype))
 
     def plot_step(self, step_idx, param_dict):
         plt.figure(figsize=(10, 10))
@@ -217,7 +217,6 @@ class Comp_transport_model:
         y_map = param_dict['y'].detach().cpu().numpy() * self.sigma + self.mu
         x_plot, y_plot = y_map.T
         plt.hist2d(x_plot, y_plot, density=True, bins=self.bins, range=self.plt_range, vmin=0, vmax=self.vmax)
-        #plt.scatter([x_plot[0], x_plot[-1]],[y_plot[0], y_plot[-1]], c = ['red', 'yellow'])
         plt.savefig(save_loc)
         clear_plt()
 
@@ -404,12 +403,15 @@ class CondTransportKernel(nn.Module):
         self.mmd_lambda = (1 / self.loss_mmd().detach())
 
         self.reg_lambda = self.params['reg_lambda'] * self.mmd_lambda
+        self.norm = self.get_norm()
 
         goal_mmd = self.mmd(self.Y_target, self.Y_test)
         goal_emd = wasserstein_distance(self.Y_target, self.Y_test)
         print(f"Transport {self.step_num}: Goal mmd is {format(float(goal_mmd.detach().cpu()))},"
               f"Goal emd is {goal_emd}")
 
+    def get_norm(self):
+        return self.loss_reg() * (1 / self.params['reg_lambda'])
 
     def total_grad(self):
         total_norm = 0
@@ -616,9 +618,9 @@ def dict_not_valid(loss_dict):
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = .1, n_transports=70, reg_lambda=1e-7, n_iter = 200,var_eps = 1/3,
+                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 801,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
-    param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps']
+    param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps','norm']
     models_param_dict = {key: [] for key in param_keys}
 
     Y_mean = deepcopy(Y_eta)
@@ -646,6 +648,7 @@ def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_te
         models_param_dict['X_mean'].append(model.X_mean.detach().cpu().numpy())
         models_param_dict['X_var'].append(model.X_var.detach().cpu().numpy())
         models_param_dict['var_eps'].append(model.var_eps)
+        models_param_dict['norm'].append(model.get_norm())
         mmd_lambda = model.mmd_lambda
 
         if i == 0:
@@ -846,9 +849,9 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
 
 
 def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], normal = True,
-              slice_range=None, N_plot=5000, slice_vals=[], bins=70, exp_name='exp', skip_idx=1,
-              vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 1/3,
-              approx_path=True, exp_func = conditional_transport_exp, cond = True, shuffle = False):
+              slice_range=None, N_plot=10, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
+              vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 0,
+              approx_path=False, exp_func = conditional_transport_exp, cond = True):
     save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     try:
         os.mkdir(save_dir)
@@ -890,6 +893,7 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         kdeplot(x=slice_sample[:, 1], fill=False, bw_adjust=0.4, label=f'x = {slice_val}')
         plt.xlim([slice_range[0], slice_range[1]])
 
+
     if len(slice_vals):
         plt.legend()
         plt.savefig(f'{save_dir}/slice_posteriors.png')
@@ -897,7 +901,8 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
 
     if plot_steps:
         process_frames(save_dir)
-    return plotted_samples
+    return_dict = {'samples': plotted_samples, 'models': trained_models, 'idx_dict': idx_dict}
+    return return_dict
 
 
 def sphere_slice_plots(slice_vals, ref_gen, N_plot,  trained_models, idx_dict, save_dir,
@@ -1202,8 +1207,8 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
             while fail_count <= 2:
                 try:
                     two_d_exp(ref_gen=sample_normal, target_gen=sample_checkerboard, N=N, n_transports= n_transports,
-                              exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1],skip_idx=1,
-                              plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12,N_plot=N_plot,
+                              exp_name=f'/{test_name}/checker{i_str}', slice_vals=[-1, 0, 1], skip_idx=1,
+                              plt_range=[[-4.4, 4.4], [-4.1, 4.1]], slice_range=[-4.4, 4.4], vmax=.12, N_plot=N_plot,
                               plot_steps=plot_steps, normal=True, bins=100, var_eps=(1/3) * eps_modifier,
                               approx_path = approx_path, cond=cond)
                     fail_count +=3
@@ -1280,35 +1285,84 @@ def test_panel(plot_steps = False, approx_path = False, N = 4000, test_name = 't
                     pass
 
 
-def test_bound(data_gen, samples_sizes, delta):
-    N = 15000
+def get_T_tilde(target_gen, ref_gen = sample_normal, N = 15000, reg_lambda = 1e-7):
+    return_dict = two_d_exp(ref_gen=ref_gen, target_gen=target_gen,
+                            N=N, cond=False, n_transports=1, reg_lambda=reg_lambda)
+    trained_models = return_dict['models']
+    idx_dict =  return_dict['idx_dict']
+    T_tilde = lambda N: compositional_gen(trained_models, ref_gen(N), target_gen(N), idx_dict= idx_dict)
+    T_tilde_norm = trained_models[0].norm.detach().numpy()
+    return T_tilde, T_tilde_norm, return_dict
 
+
+def get_r_tilde(T_tilde,  ref_gen = sample_normal, M = 10000):
+    return_dict = two_d_exp(ref_gen=ref_gen, target_gen=T_tilde, N=M, cond=False, n_transports=1)
+    trained_models = return_dict['models']
+    r_tilde = trained_models[0].norm.detach().numpy()
+    return r_tilde
+
+def compute_bound(T_norm, r_tilde, delta, N, C = 1):
+    S_1 = (np.sqrt((1/N)))*(1+np.sqrt((np.log(1/delta))))
+    S_2 = max(0, T_norm - r_tilde)
+    return C *(S_1+S_2)
+
+
+
+def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal,
+                 N = 1000, i = 0, plot = False):
+    return_dict = two_d_exp(ref_gen=ref_gen, target_gen=T_tilde, N=N, cond=False, n_transports=1)
+    gen_samples, target_samples = return_dict['samples']
+
+    target_likelyhoods =  l_func(target_samples, y)
+    gen_likelyhoods = l_func(gen_samples,y)
+
+    resampled_target = resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
+    resampled_gen = resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
+
+    test_name = 'exp'
+    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
+    save_dir = f'{test_dir}/banana'
+
+    if plot:
+        sample_hmap(resampled_gen, f'{save_dir}/resampled_gen_map_{i}.png', bins=100, d=2,
+                    range=[[-3, 3], [-1, 6]], vmax=1.2)
+        sample_hmap(resampled_target, f'{save_dir}/resampled_target_map_{i}.png', bins=100, d=2,
+                    range=[[-3, 3], [-1, 6]], vmax=1.2)
+
+    cond_MMD = MMD_func(resampled_target, resampled_gen)
+    return cond_MMD
+
+
+
+def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = .9,
+               ref_gen = sample_normal, N = 10000, M = 7000, m = 30):
+    T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
+                                                   N = N, reg_lambda=5e-8)
+    r_tilde = get_r_tilde(T_tilde,  ref_gen = sample_normal, M = M)
+
+    y = 0 * model_dict['samples'][0][0]
+    C = 0
+    MMD_func = model_dict['models'][0].mmd
+
+    for i, N_i in enumerate(samples_sizes):
+        bound_val = compute_bound(T_tilde_norm, r_tilde, delta, N_i)
+        cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
+
+        if i==0:
+            c = np.percentile(cond_MMDS, 100 * delta)
+            C = bound_val / c
+
+        cond_MMDS *= C
+
+        print(' ')
+        print(f'For N = {N_i}, p(cond_MMD < bound) = {len(cond_MMDS[cond_MMDS <= bound_val]) / m}')
+        print(' ')
 
 
 
 def run():
-    test_name = 'mcmc'
-    test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
-    try:
-        os.mkdir(test_dir)
-    except OSError:
-        pass
-
-    sample_sizes = [100, 500, 1000, 2500, 4000, 6000, 8000, 10000, 12500, 15000]
-
-    gen_samples, target_samples = two_d_exp(ref_gen=sample_normal, target_gen=sample_elden_ring, N=300,
-                                exp_name=f'/{test_name}/elden',n_transports=2, slice_vals=[],
-                                plt_range=[[-1, 1], [-1.05, 1.05]], slice_range=[-3, 3] ,vmax=8,
-                                skip_idx=1, N_plot=40000, plot_steps=False, normal=True, bins=100,
-                                var_eps=(1 / 10) * 1.05, approx_path=False, cond=True)
-
-    y = np.asarray([[.37,.24]])
-    likelyhoods = l_func(target_samples, y)
-    X_resampled = resample(target_samples, alpha = likelyhoods, N = len(target_samples))
-
-    save_dir = f'{test_dir}/elden'
-    sample_hmap(X_resampled, f'{save_dir}/resampled_gen_map.png', bins=100, d=2,
-                range=[[-1, 1], [-1.05, 1.05]], vmax=8)
+    test_bound(sample_banana, N = 10000, M = 7000,
+               samples_sizes = [700, 1500, 2000, 3000], m = 30)
 
 
 

@@ -64,7 +64,6 @@ def batch_wasserstein(Y_1, Y_2, batch_size = 1500):
     return np.mean(w_distances)
 
 
-
 def get_base_stats(gen, N = 10000):
     gen_sample = geq_1d(torch.tensor(gen(N)))
     mu = torch.mean(gen_sample, dim = 0).detach().numpy()
