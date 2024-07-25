@@ -1329,12 +1329,12 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
         sample_hmap(resampled_target, f'{save_dir}/resampled_target_map_{i}.png', bins=100, d=2,
                     range=[[-3, 3], [-1, 6]], vmax=1.2)
 
-    cond_MMD = MMD_func(resampled_target, resampled_gen)
+    cond_MMD = MMD_func(resampled_target, resampled_gen).detach().cpu().numpy()
     return cond_MMD
 
 
 
-def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = .9,
+def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .9,
                ref_gen = sample_normal, N = 10000, M = 7000, m = 30):
     T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
                                                    N = N, reg_lambda=5e-8)
@@ -1345,23 +1345,23 @@ def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = 
     MMD_func = model_dict['models'][0].mmd
     bounds = []
     probs = []
-    for i, N_i in enumerate(samples_sizes):
+    for i, N_i in enumerate(sample_sizes):
         bound_val = compute_bound(T_tilde_norm, r_tilde, delta, N_i)
         bounds.append(bound_val)
-        if i:
-            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
-            plt.scatter(m*[N_i],cond_MMDS)
-
-        else:
-            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(4*m)])
-            plt.scatter(4*m*[N_i],cond_MMDS)
+        if not i:
+            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(4 * m)])
             c = np.percentile(cond_MMDS, 100 * delta)
             C = bound_val / c
+            cond_MMDS *= C
+            p = len(cond_MMDS[cond_MMDS <= bound_val]) / (4 * m)
 
-        cond_MMDS *= C
-        p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
+        else:
+            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
+            cond_MMDS *= C
+            plt.scatter(m * [N_i], cond_MMDS)
+            p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
+
         probs.append(p)
-
         print(' ')
         print(f'For N = {N_i}, p(cond_MMD < bound) = {p}')
         print(' ')
@@ -1370,7 +1370,7 @@ def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = 
     test_dir = f'../../data/transport/{test_name}'.replace('//', '/')
     save_dir = f'{test_dir}/banana'
 
-    plt.plot(zip(sample_sizes,bounds))
+    plt.plot(sample_sizes,bounds)
     plt.savefig(f'{save_dir}/hist_plot.png')
     clear_plt()
 
@@ -1381,8 +1381,8 @@ def test_bound(data_generator, samples_sizes = [500, 1000, 2000, 5000], delta = 
 
 
 def run():
-    test_bound(sample_banana, N = 1000, M = 700,
-               samples_sizes = [70, 150], m = 2)
+    test_bound(sample_banana, N = 300, M = 300,
+               sample_sizes = [70, 150], m = 2)
 
 
 
