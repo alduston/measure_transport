@@ -844,12 +844,12 @@ def conditional_transport_exp(ref_gen, target_gen, N=4000, vmax=None, exp_name='
     sample_hmap(plot_gen_sample, f'{save_dir}/gen_map_final.png', bins=bins, d=d, range=plt_range, vmax=vmax)
     sample_hmap(plot_target_sample, f'{save_dir}/target_map.png', bins=bins, d=d, range=plt_range, vmax=vmax)
 
-    plotted_samples = (plot_gen_sample, plot_target_sample)
-    return trained_models, idx_dict, plotted_samples
+    test_samples = (test_gen_sample, test_target_sample)
+    return trained_models, idx_dict, test_samples
 
 
 def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], normal = True,
-              slice_range=None, N_plot=10, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
+              slice_range=None, N_plot=2000, slice_vals=[], bins=70, exp_name='exp', skip_idx=0,
               vmax=None, n_transports=70, reg_lambda=1e-7, plot_steps = False, var_eps = 0,
               approx_path=False, exp_func = conditional_transport_exp, cond = True):
     save_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
@@ -869,8 +869,8 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
         slice_vals = []
 
     plot_idx = torch.tensor([0, 1]).long()
-    trained_models, idx_dict, plotted_samples = \
-        exp_func(ref_gen, normal_target_gen, N=N, vmax=vmax,N_plot=N_plot,
+    trained_models, idx_dict, test_samples = \
+        exp_func(ref_gen, normal_target_gen, N=N, vmax=vmax, N_plot=N_plot,
                  skip_idx=skip_idx, exp_name=exp_name, plot_steps = plot_steps,
                  n_transports=n_transports, process_funcs=process_funcs,
                  plt_range=plt_range,  bins=bins, mu = mu, sigma = sigma,
@@ -901,7 +901,7 @@ def two_d_exp(ref_gen, target_gen, N=5000, plt_range=None, process_funcs=[], nor
 
     if plot_steps:
         process_frames(save_dir)
-    return_dict = {'samples': plotted_samples, 'models': trained_models, 'idx_dict': idx_dict}
+    return_dict = {'samples': test_samples, 'models': trained_models, 'idx_dict': idx_dict}
     return return_dict
 
 
@@ -1305,6 +1305,8 @@ def get_r_tilde(T_tilde,  ref_gen = sample_normal, M = 10000):
 def compute_bound(T_norm, r_tilde, delta, N, C = 1):
     S_1 = (np.sqrt((1/N)))*(1+np.sqrt((np.log(1/delta))))
     S_2 = max(0, T_norm - r_tilde)
+    print(f'For N = {N}, S_1 = {S_1}')
+    print(f'Since T_norm = {T_norm}, r_tilde = {r_tilde}, we have S_2 = {S_2 }')
     return C *(S_1+S_2)
 
 
@@ -1316,8 +1318,8 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
     target_likelyhoods =  L_func(target_samples, y)
     gen_likelyhoods = L_func(gen_samples,y)
 
-    resampled_target = resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
-    resampled_gen = resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
+    resampled_target = target_samples #resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
+    resampled_gen = gen_samples #resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
 
 
     if plot and save_dir:
@@ -1342,7 +1344,7 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
         except OSError:
             pass
     T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
-                                                   N = N, reg_lambda=5e-8)
+                                                   N = N, reg_lambda=2e-7)
     r_tilde = get_r_tilde(T_tilde,  ref_gen = sample_normal, M = M)
 
     y = 0 * model_dict['samples'][0][0]
@@ -1373,10 +1375,12 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
             scatter_y += list(cond_MMDS)
             scatter_x += m * [N_i]
 
+        avg_mmd = float(np.sum(cond_MMDS)/len(cond_MMDS))
         probs.append(p)
-        #print(' ')
-        #print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}')
-        #print(' ')
+
+        print(' ')
+        print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}, avg MMD = {avg_mmd}')
+        print(' ')
 
     plt.scatter(scatter_x, scatter_y)
     plt.plot(sample_sizes,bounds)
@@ -1385,14 +1389,20 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
     clear_plt()
 
     plt.plot(probs)
+    plt.ylim((0, 1.2))
     plt.savefig(f'{save_dir}/prob_plot.png')
     clear_plt()
 
 
 def run():
-    test_bound(sample_elden_ring, N = 10000, M = 10000, exp_name='exp', dir_name = 'elden',
-               sample_sizes = [500, 800, 1300, 2000, 3200, 4800, 7000], m = 15)
+    test_bound(sample_banana, N = 1200, M = 1200, exp_name='exp2', dir_name = 'banana',
+               sample_sizes = [5, 10, 50, 100, 200, 400, 600, 800], m = 5)
 
 
 if __name__ == '__main__':
     run()
+    probs = [.8,.9, 1.1, .95, 1.03]
+    plt.plot(probs)
+    plt.ylim((0, 1.2))
+    plt.savefig('test.png')
+    #run()

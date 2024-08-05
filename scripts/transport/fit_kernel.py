@@ -30,7 +30,7 @@ def clear_plt():
     plt.close()
     plt.cla()
     plt.clf()
-    #plt.figure(plt.rcParams.get('figure.figsize'))
+    #plt.figure(plt.rcarams.get('figure.figsize'))
     return True
 
 
@@ -59,7 +59,7 @@ def print_losses(loss_dict):
         free_mem, total_mem = torch.cuda.mem_get_info()
         mem_str = f', Using {round(100 * (1 - (free_mem / total_mem)), 2)}% GPU mem'
     print_str += mem_str
-    print(print_str)
+    #print(print_str)
 
 
 
