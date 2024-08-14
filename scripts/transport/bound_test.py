@@ -618,7 +618,7 @@ def dict_not_valid(loss_dict):
 
 
 def comp_cond_kernel_transport(X_mu, Y_mu, Y_eta, Y_eta_test, X_mu_test, Y_mu_test, X_mu_val, params,
-                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 801,var_eps = 1/3,
+                               target_eps = 1, n_transports=70, reg_lambda=1e-7, n_iter = 1001,var_eps = 1/3,
                                grad_cutoff = .0001, approx_path = False):
     param_keys = ['fit_kernel', 'var_kernel', 'Lambda_mean', 'X_mean',  'Lambda_var', 'X_var', 'var_eps','norm']
     models_param_dict = {key: [] for key in param_keys}
@@ -1318,8 +1318,8 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
     target_likelyhoods =  L_func(target_samples, y)
     gen_likelyhoods = L_func(gen_samples,y)
 
-    resampled_target = target_samples #resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
-    resampled_gen = gen_samples #resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
+    resampled_target = resample(target_samples, alpha = target_likelyhoods, N = len(target_samples))
+    resampled_gen = resample(gen_samples, alpha = gen_likelyhoods, N = len(gen_samples))
 
 
     if plot and save_dir:
@@ -1334,8 +1334,8 @@ def get_cond_MMD(T_tilde,  MMD_func, y, L_func = l_func, ref_gen = sample_normal
 
 
 def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .9,
-               ref_gen = sample_normal, N = 10000, M = 7000, m = 30,
-               exp_name = 'exp', dir_name = 'spiral'):
+               ref_gen = sample_normal, N = 10000, M = 7000, m = 25,
+               exp_name = 'exp', dir_name = 'spiral', reg_lambda=1e-7):
     exp_dir = f'../../data/transport/{exp_name}'.replace('//', '/')
     save_dir = f'{exp_dir}/{dir_name}'
     for dir in [exp_dir, save_dir]:
@@ -1344,65 +1344,64 @@ def test_bound(data_generator, sample_sizes = [500, 1000, 2000, 5000], delta = .
         except OSError:
             pass
     T_tilde,T_tilde_norm, model_dict = get_T_tilde(data_generator, ref_gen=ref_gen,
-                                                   N = N, reg_lambda=2e-7)
+                                                   N = N, reg_lambda=reg_lambda)
     r_tilde = get_r_tilde(T_tilde,  ref_gen = sample_normal, M = M)
 
     y = 0 * model_dict['samples'][0][0]
     C = 0
-    MMD_func = model_dict['models'][0].mmd
+    MMD_func = lambda x,y: np.sqrt(model_dict['models'][0].mmd(x,y))
     bounds = []
     probs = []
     scatter_x = []
     scatter_y = []
+    avg_y = []
     for i, N_i in enumerate(sample_sizes):
         bound_val = compute_bound(T_tilde_norm, r_tilde, delta, N_i)
         bounds.append(bound_val)
         if not i:
-            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(4 * m)])
+            cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(2 * m)])
             c = np.percentile(cond_MMDS, 100 * delta)
             C = bound_val / c
             cond_MMDS *= C
-            p = len(cond_MMDS[cond_MMDS <= bound_val]) / (4 * m)
-
-            scatter_y += list(cond_MMDS)
-            scatter_x += 4 * m * [N_i]
+            p = len(cond_MMDS[cond_MMDS <= bound_val]) / (2 * m)
+            scatter_x += 2 * m * [N_i]
 
         else:
             cond_MMDS = np.asarray([get_cond_MMD(T_tilde, MMD_func, y, N=N_i, i=i) for i in range(m)])
             cond_MMDS *= C
             plt.scatter(m * [N_i], cond_MMDS)
             p = len(cond_MMDS[cond_MMDS <= bound_val]) / m
-            scatter_y += list(cond_MMDS)
             scatter_x += m * [N_i]
 
+        scatter_y += list(cond_MMDS)
         avg_mmd = float(np.sum(cond_MMDS)/len(cond_MMDS))
+
         probs.append(p)
+        avg_y.append(avg_mmd)
 
         print(' ')
         print(f'For N = {N_i}, p(cond_MMD <= bound) = {p}, avg MMD = {avg_mmd}')
         print(' ')
 
     plt.scatter(scatter_x, scatter_y)
-    plt.plot(sample_sizes,bounds)
+    plt.plot(sample_sizes, bounds, label='mmd_bound')
+    plt.plot(sample_sizes, avg_y, label='mmd_avg')
+    plt.legend()
 
     plt.savefig(f'{save_dir}/hist_plot.png')
     clear_plt()
 
-    plt.plot(probs)
+    plt.plot(sample_sizes, probs)
     plt.ylim((0, 1.2))
+    plt.savefig(f'{save_dir}/prob_plot.png')
     plt.savefig(f'{save_dir}/prob_plot.png')
     clear_plt()
 
 
 def run():
-    test_bound(sample_banana, N = 1200, M = 1200, exp_name='exp2', dir_name = 'banana',
-               sample_sizes = [5, 10, 50, 100, 200, 400, 600, 800], m = 5)
+    test_bound(sample_banana, N = 1200, M = 1200, exp_name='Exp', dir_name = 'banana', delta = .8,
+               sample_sizes = [5, 10, 50, 100, 200, 400, 600, 800], m = 8, reg_lambda = 2e-7)
 
 
 if __name__ == '__main__':
     run()
-    probs = [.8,.9, 1.1, .95, 1.03]
-    plt.plot(probs)
-    plt.ylim((0, 1.2))
-    plt.savefig('test.png')
-    #run()
